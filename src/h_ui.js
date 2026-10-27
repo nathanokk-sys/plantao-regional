@@ -24,7 +24,7 @@ function renderTop(){
    +'<div class="mini">'+ch('Emerg.','emg')+ch('Obs.','obs')+ch('Enf.','enf')+ch('UTI','uti')+'<span class="chip">Insumos <b>'+G.ins+'</b></span><span class="chip">Pacientes <b>'+G.pts.filter(p=>p.st!=='wait').length+'/'+G.slots.length+'</b></span></div>'
    +'<div class="mini">'+m('Equipe',G.eq)+m('Reputação',G.rep)+'</div>'
    +'<div class="alerts" aria-live="polite">'+G.al.slice(0,3).map(a=>'<div class="'+(a.hot?'hot':'')+'">'+esc(a.txt)+'</div>').join('')+'</div>'
-   +'<div class="mini"><button class="btn'+(G.unread?' amber':'')+'" data-a="news">Recados'+(G.unread?' ('+G.unread+')':'')+'</button><button class="btn" data-a="snd" aria-pressed="'+UI.snd+'">Som: '+(UI.snd?'on':'off')+'</button><button class="btn" data-a="mus" aria-pressed="'+MUS.on+'">Música: '+(MUS.on?'on':'off')+'</button></div>';
+   +'<div class="mini"><button class="btn'+(G.unread?' amber':'')+'" data-a="news">Recados'+(G.unread?' ('+G.unread+')':'')+'</button><button class="btn" data-a="snd" aria-pressed="'+UI.snd+'">Som: '+(UI.snd?'on':'off')+'</button></div><div class="musbox"><label for="trk">Trilha sonora</label><select id="trk" data-s="trk">'+trackSelectHtml()+'</select><div class="np" id="np">'+esc(npText())+'</div><button class="btn" data-a="mus" aria-pressed="'+MUS.on+'">'+(MUS.on?'Pausar música':'Tocar música')+'</button></div>';
 }
 function renderQueue(){
   const q=$('#queue'),L=active();
@@ -172,6 +172,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('change',e=>{
   const s=e.target.closest('[data-s]');if(!s||!G)return;const P=cur(),n=s.dataset.s,F=UI.F;
+  if(n==='trk'){musSelect(s.value);renderTop();return}
   if(n==='drug'){F.drug=s.value;F.dose=0;F.via=0;const D=DRUGS[F.drug];if(D){F.freq=D.f.split(' ')[0];F.dur=D.dr.split(' ')[0]}}
   else if(n==='dose')F.dose=+s.value;else if(n==='via')F.via=+s.value;else if(n==='freq')F.freq=s.value;else if(n==='dur')F.dur=s.value;
   else if(n==='hyp'&&P)setHyp(P,s.value);
