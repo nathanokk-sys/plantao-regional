@@ -1,0 +1,1349 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Plantão Regional</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Layout: estação de trabalho médica. Fila de rostos no topo, paciente em pixel art à esquerda, documentos à direita, carimbos de destino embaixo. Visual único e escuro, como a mesa de um plantão noturno. */
+:root{
+  --bg:#1b211e;--bg2:#242c28;--panel:#2e3833;--panel2:#3a463f;--paper:#ddd5b6;--paper2:#cfc6a2;--ink:#23211b;--ink2:#5d5846;
+  --fg:#e8e2c8;--fg2:#a9b0a3;--amber:#ecb44a;--red:#d24a36;--green:#6aa86f;--blue:#5b8dc0;--line:#0d120f;
+  --tc-VERMELHO:#d24a36;--tc-LARANJA:#e0873a;--tc-AMARELO:#e6c844;--tc-VERDE:#5fae68;--tc-AZUL:#5b8dc0;
+  --px:'VT323','Courier New',monospace;--hd:'Press Start 2P','Courier New',monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--px);font-size:20px;line-height:1.15;
+  padding-block:10px 36px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px)}
+button,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--amber);outline-offset:1px}
+[hidden]{display:none!important}
+.app{max-width:1180px;margin:0 auto;display:grid;gap:10px;min-width:0}
+.px{border:2px solid var(--line);box-shadow:inset 0 0 0 2px rgba(255,255,255,.06),3px 3px 0 var(--line)}
+.top{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:var(--panel);padding:8px 10px}
+.brand{font-family:var(--hd);font-size:12px;line-height:1.5;color:var(--amber);letter-spacing:.04em}
+.brand small{display:block;font-family:var(--px);font-size:17px;color:var(--fg2);letter-spacing:0}
+.lcd{font-family:var(--hd);font-size:20px;color:var(--amber);background:#0b100d;padding:7px 10px;letter-spacing:.08em;text-shadow:0 0 6px rgba(236,180,74,.4)}
+.mini{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:#141a17;border:2px solid var(--line);padding:2px 7px;font-size:18px;white-space:nowrap}
+.chip b{color:var(--amber);font-weight:400}
+.chip.full{border-color:var(--red);color:#f0a79b}
+.meter{display:flex;gap:6px;align-items:center;font-size:17px;color:var(--fg2)}
+.meter i{display:block;width:60px;height:8px;background:#141a17;border:1px solid var(--line)}
+.meter i b{display:block;height:100%;background:var(--green)}
+.alerts{flex:1 1 260px;min-width:0;font-size:17px;color:var(--fg2);display:grid;gap:1px}
+.alerts div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alerts .hot{color:#f0a79b}
+.btn{background:var(--panel2);border:2px solid var(--line);box-shadow:3px 3px 0 var(--line);padding:5px 10px;min-height:36px}
+.btn:hover:not(:disabled){background:#4a594f}
+.btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.amber{background:#8a6420;color:#fff3d0}
+.btn.red{background:#8a2e22;color:#ffe2dc}
+.queue{display:flex;gap:8px;overflow-x:auto;padding:8px;background:var(--bg2);min-height:98px;align-items:stretch}
+.qempty{align-self:center;color:var(--fg2);display:flex;gap:10px;align-items:center}
+.qc{flex:none;width:136px;background:var(--panel);border:2px solid var(--line);border-top:7px solid var(--tc);padding:4px;text-align:left;display:grid;grid-template-columns:48px 1fr;gap:5px;color:var(--fg);box-shadow:3px 3px 0 var(--line)}
+.qc[aria-pressed=true]{background:#4f5f50;outline:2px solid var(--amber)}
+.qc canvas{width:48px;height:48px;image-rendering:pixelated;background:#7f9886}
+.qc span{font-size:16px;line-height:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.qc em{grid-column:1/-1;font-style:normal;font-size:15px;color:var(--fg2);display:flex;gap:4px;flex-wrap:wrap}
+.qc em u{text-decoration:none;background:#141a17;padding:0 4px;color:var(--amber)}
+.work{display:grid;gap:10px;grid-template-columns:minmax(0,1fr);align-items:start}
+@media(min-width:920px){.work{grid-template-columns:minmax(0,410px) minmax(0,1fr)}}
+.left,.right{display:grid;gap:10px;min-width:0}
+.scene canvas{width:100%;height:auto;aspect-ratio:4/3;image-rendering:pixelated;display:block;background:#7f9886}
+.doc{background:var(--paper);color:var(--ink);padding:10px 12px;position:relative;min-width:0}
+.doc h3{font-family:var(--hd);font-size:10px;font-weight:400;margin:0 0 8px;padding-bottom:5px;border-bottom:2px solid var(--ink);letter-spacing:.04em;line-height:1.4;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.doc h3 span{font-family:var(--px);font-size:17px;letter-spacing:0;color:var(--ink2)}
+.idn{font-size:24px;line-height:1}
+.dl{display:grid;gap:3px;margin-top:6px}
+.dl div{display:grid;grid-template-columns:88px minmax(0,1fr);gap:6px;border-bottom:1px dotted #a29a7a;padding-bottom:2px}
+.dl dt{font-size:16px;text-transform:uppercase;color:var(--ink2)}
+.dl dd{margin:0;overflow-wrap:anywhere}
+.dl .unk{color:#8a8368;font-style:italic}
+.stamp{position:absolute;right:10px;top:40px;border:3px double currentColor;padding:2px 8px;font-family:var(--hd);font-size:9px;transform:rotate(-6deg);opacity:.9;line-height:1.5;text-align:center;mix-blend-mode:multiply;pointer-events:none}
+.vit{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:6px}
+.v{border:2px solid var(--ink);padding:3px 5px;background:rgba(255,255,255,.3)}
+.v label{display:block;font-size:15px;color:var(--ink2);text-transform:uppercase}
+.v b{font-size:26px;font-weight:400;line-height:1}
+.v small{font-size:15px;color:var(--ink2)}
+.v.abn b{color:#b02a1a}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.btn.paper{background:var(--paper2);color:var(--ink);border-color:var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.btn.paper:hover:not(:disabled){background:#e6dfc3}
+.btn.paper.on{background:var(--ink);color:var(--paper)}
+.tabs{display:flex;flex-wrap:wrap;gap:3px}
+.tab{font-family:var(--hd);font-size:9px;padding:8px 9px;background:var(--panel);border:2px solid var(--line);border-bottom:0;color:var(--fg2)}
+.tab[aria-selected=true]{background:var(--paper);color:var(--ink)}
+.sheet{border:2px solid var(--line);min-height:300px}
+.qa{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.qa li{border-left:4px solid var(--ink2);padding-left:8px}
+.qa li b{font-weight:400;color:var(--ink2)}
+.qa .new{border-color:#b02a1a}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:6px}
+.opt{text-align:left;display:grid;gap:0;line-height:1.05;padding:5px 7px}
+.opt small{font-size:15px;color:var(--ink2)}
+.opt.on small{color:#cfc8ad}
+.sub{font-family:var(--hd);font-size:9px;margin:12px 0 6px;color:var(--ink2);font-weight:400}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px}
+.form label{display:grid;gap:2px;font-size:16px;color:var(--ink2);text-transform:uppercase;min-width:0}
+.form select,textarea{background:#efe9d1;color:var(--ink);border:2px solid var(--ink);padding:4px;min-width:0;width:100%}
+textarea{min-height:70px;resize:vertical}
+.rxl{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:4px}
+.rxl li{border:2px dashed var(--ink2);padding:3px 6px}
+.warn{color:#9c2a1a}
+.good{color:#2f6a3a}
+.decide{background:var(--panel);padding:8px 10px;display:grid;gap:8px}
+.decide h4{font-family:var(--hd);font-size:9px;font-weight:400;margin:0;color:var(--fg2)}
+.dests{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px}
+.dest{border:3px double var(--fg2);background:transparent;padding:6px 4px;font-family:var(--hd);font-size:8px;line-height:1.5;color:var(--fg);min-height:52px;text-transform:uppercase}
+.dest small{display:block;font-family:var(--px);font-size:16px;text-transform:none;color:var(--fg2)}
+.dest[aria-pressed=true]{background:var(--amber);color:#2a1d05;border-color:#2a1d05}
+.dest[aria-pressed=true] small{color:#4a3510}
+.dest:disabled{opacity:.4}
+.orient{display:flex;flex-wrap:wrap;gap:6px}
+.orient label{background:#141a17;border:2px solid var(--line);padding:3px 8px;display:flex;gap:5px;align-items:center}
+.veil{position:fixed;inset:0;background:rgba(6,9,7,.82);z-index:30;overflow:auto;display:grid;place-items:start center;padding:max(14px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) max(14px,env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px))}
+.card{max-width:700px;width:100%;margin-block:8px}
+.big{font-family:var(--hd);font-size:18px;line-height:1.5;margin:4px 0 10px}
+.card p{margin:6px 0}
+.card ul{margin:6px 0;padding-left:20px}
+.rep{display:grid;gap:8px;margin-top:8px}
+.rp{border:2px solid var(--ink);padding:6px 8px;background:rgba(255,255,255,.25)}
+.rp h4{margin:0 0 2px;font-weight:400;font-size:22px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tag{font-family:var(--hd);font-size:8px;padding:3px 6px;border:2px solid currentColor;line-height:1}
+.t-otimo,.t-bom{color:#2f6a3a}.t-parcial{color:#8a6420}.t-ruim,.t-obito,.t-pend{color:#9c2a1a}
+.foot{font-size:16px;color:var(--fg2);max-width:80ch}
+.hint{color:var(--fg2);font-size:18px;padding:18px}
+.grid.mov{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+.grid.mov .opt{overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<header class="top px" id="top"></header>
+<section class="queue px" id="queue" aria-label="Fila de pacientes"></section>
+<main class="work" id="work"></main>
+<footer class="decide px" id="decide" hidden></footer>
+<p class="foot">Simulação educacional com casos fictícios. Doses e condutas simplificadas a partir de diretrizes brasileiras e da RENAME; não substituem protocolos institucionais nem a supervisão do preceptor.</p>
+</div>
+<div class="veil" id="veil" hidden></div>
+<script>
+/* ===== DADOS: catálogos clínicos (separados da lógica e da interface) ===== */
+const T0=19*60,SHIFT=360;
+const FREQ={u:'Dose única / agora',s4:'4/4 h',s6:'6/6 h',s8:'8/8 h',s12:'12/12 h',s24:'1x ao dia',ic:'Infusão contínua',sn:'Se necessário'};
+const DUR={u:'Dose única',h24:'24 h',d3:'3 dias',d5:'5 dias',d7:'7 dias',d10:'10 a 14 dias',ct:'Até a reavaliação'};
+/* d: doses em ordem crescente; tox: primeiro índice com dose insegura; f/dr: frequências e durações aceitas (a primeira é o padrão); al: classe de alergia */
+const DRUGS={
+ o2:{n:'Oxigênio',v:['Inalatória'],d:['Cateter nasal 2 L/min','Máscara com reservatório 10–15 L/min','VNI/CPAP 8–10 cmH2O'],f:'ic',dr:'ct'},
+ furo:{n:'Furosemida',v:['EV'],d:['20 mg','40 mg','80 mg','160 mg em bolus'],tox:3,ae:'Hipovolemia e hipocalemia: PA 80/50 e extrassístoles ventriculares.',f:'u s8 s12',dr:'u h24 ct'},
+ nitro:{n:'Nitroglicerina',v:['EV contínua'],d:['5–10 mcg/min (titular)','20–50 mcg/min (titular)','200 mcg/min em bolus'],tox:2,ae:'Hipotensão grave com síncope.',f:'ic',dr:'ct h24'},
+ morf:{n:'Morfina',v:['EV'],d:['2 mg','4 mg','10 mg'],tox:2,ae:'Depressão respiratória: FR 8 irpm e SatO2 82%.',f:'u s6 sn',dr:'u h24'},
+ aas:{n:'AAS',v:['VO'],d:['100 mg','200–300 mg mastigado','1 g'],tox:2,ae:'Hemorragia digestiva alta.',f:'u s24',dr:'u ct'},
+ clop:{n:'Clopidogrel',v:['VO'],d:['75 mg','300 mg (ataque)','600 mg'],tox:2,ae:'Sangramento de mucosas e hematomas.',f:'u s24',dr:'u ct'},
+ strep:{n:'Estreptoquinase',v:['EV'],d:['750.000 UI em 60 min','1.500.000 UI em 60 min','3.000.000 UI em bolus'],tox:2,ae:'Hipotensão e hemorragia grave.',f:'u',dr:'u'},
+ enox:{n:'Enoxaparina',v:['SC/EV'],d:['20 mg SC','30 mg EV + 1 mg/kg SC','2 mg/kg SC'],tox:2,ae:'Hemorragia: hematoma volumoso e queda da Hb.',f:'s12 s24 u',dr:'ct d3 d5'},
+ sf:{n:'Soro fisiológico 0,9%',v:['EV'],d:['250 mL','500 mL','1.000 mL','2.000 mL (30 mL/kg)'],f:'u',dr:'u ct'},
+ insu:{n:'Insulina regular',v:['EV/SC'],d:['0,1 U/kg/h em infusão contínua','10 U EV em bolus','20 U subcutânea'],tox:1,ae:'Hipoglicemia grave e hipocalemia: glicemia 38 e arritmia.',f:'ic u',dr:'ct h24'},
+ kcl:{n:'Cloreto de potássio',v:['EV'],d:['10 mEq em 1 h','20 mEq em 1 h','40 mEq em bolus'],tox:2,ae:'Hipercalemia aguda: bradicardia e risco de parada.',f:'u ic',dr:'u ct h24'},
+ bic:{n:'Bicarbonato de sódio',v:['EV'],d:['50 mEq','100 mEq','200 mEq'],f:'u',dr:'u'},
+ ceftri:{n:'Ceftriaxona',v:['EV'],d:['500 mg','1 g','2 g','4 g'],tox:3,ae:'Reação alérgica e diarreia por excesso de dose.',f:'s24 s12',dr:'d5 d7 d10'},
+ mero:{n:'Meropeném',v:['EV'],d:['500 mg','1 g','2 g'],tox:2,ae:'Convulsão por excesso de dose em lesão renal.',f:'s8',dr:'d7 d10'},
+ pip:{n:'Piperacilina + tazobactam',v:['EV'],d:['2,25 g','4,5 g'],al:'penic',f:'s6 s8',dr:'d7 d10'},
+ omep:{n:'Omeprazol',v:['EV','VO'],d:['20 mg','40 mg','80 mg em bolus'],f:'s12 s24 u',dr:'d3 d5 ct'},
+ terli:{n:'Terlipressina',v:['EV'],d:['0,5 mg','2 mg (ataque)','4 mg em bolus'],tox:2,ae:'Isquemia periférica e arritmia.',f:'s4 s6',dr:'d3 d5 ct'},
+ hemac:{n:'Concentrado de hemácias',v:['EV'],d:['1 concentrado','2 concentrados','4 concentrados'],tox:2,ae:'Sobrecarga volêmica e piora da pressão portal.',f:'u',dr:'u'},
+ sorobot:{n:'Soro antibotrópico',v:['EV'],d:['2 ampolas','4 ampolas','8 ampolas','12 ampolas'],tox:3,ae:'Reação alérgica ao soro heterólogo e consumo desnecessário do estoque.',f:'u',dr:'u'},
+ dipi:{n:'Dipirona',v:['EV'],d:['500 mg','1 g','2 g'],f:'s6 sn u',dr:'d3 ct u'},
+ para:{n:'Paracetamol',v:['VO'],d:['500 mg','750 mg','1 g'],f:'s6 s8 sn',dr:'d3 ct'},
+ diclo:{n:'Diclofenaco',v:['IM'],d:['75 mg'],f:'s12 u',dr:'d3 u'},
+ capto:{n:'Captopril',v:['VO'],d:['12,5 mg','25 mg','50 mg'],f:'u s8 s12',dr:'u d3 ct'},
+ losa:{n:'Losartana',v:['VO'],d:['50 mg','100 mg'],f:'s12 s24',dr:'ct'},
+ anlo:{n:'Anlodipino',v:['VO'],d:['5 mg','10 mg'],f:'s24',dr:'ct'},
+ norad:{n:'Noradrenalina',v:['EV contínua'],d:['0,05 mcg/kg/min','0,1–0,5 mcg/kg/min (titular)','3 mcg/kg/min'],tox:2,ae:'Isquemia de extremidades e hipertensão grave.',f:'ic',dr:'ct'},
+ torn:{n:'Retirar torniquete',v:['Procedimento'],d:['Retirar torniquete e elevar o membro'],f:'u',dr:'u'},
+ sonda:{n:'Trocar sonda vesical',v:['Procedimento'],d:['Trocar a sonda e coletar urocultura'],f:'u',dr:'u'}
+};
+/* c: custo em insumos · t: minutos até o resultado */
+const EXAMS={
+ glic:{n:'Glicemia capilar',t:1,c:0},ecg:{n:'ECG de 12 derivações',t:8,c:1},cet:{n:'Cetonemia / cetonúria',t:10,c:1},
+ lact:{n:'Lactato',t:15,c:2},gaso:{n:'Gasometria arterial',t:20,c:3},hemo:{n:'Hemograma',t:45,c:2},
+ trop:{n:'Troponina',t:60,c:4},eletr:{n:'Sódio e potássio',t:40,c:2},cr:{n:'Ureia e creatinina',t:40,c:2},
+ coag:{n:'Coagulograma (TC/INR)',t:50,c:3},urina:{n:'Urina tipo I',t:35,c:2},hemoc:{n:'Hemoculturas',t:30,c:3},
+ rx:{n:'Raio-X de tórax',t:25,c:3},us:{n:'Ultrassom à beira-leito',t:20,c:3},tc:{n:'Tomografia',t:70,c:8}
+};
+const SYS=[['geral','Aspecto geral'],['cab','Cabeça e pescoço'],['cardio','Cardiovascular'],['resp','Respiratório'],['abd','Abdome'],['neuro','Neurológico'],['ext','Extremidades e pele']];
+const DXS=[['ans','Crise de ansiedade'],['avc','AVC isquêmico'],['cad','Cetoacidose diabética'],['cel','Celulite / erisipela'],['dengue','Dengue com sinais de alarme'],['dis','Dissecção de aorta'],['dpoc','Exacerbação de DPOC'],['eap','Edema agudo de pulmão (ICC descompensada)'],['eh','Encefalopatia hepática'],['gea','Gastroenterite aguda'],['hda','Hemorragia digestiva alta varicosa'],['hipo','Hipoglicemia'],['iam','IAM com supra de ST'],['sca','Angina instável / IAM sem supra'],['ofid','Acidente botrópico'],['pan','Pancreatite aguda'],['pneu','Pneumonia comunitária'],['sepse','Sepse de foco urinário'],['tb','Tuberculose pulmonar'],['tep','Tromboembolismo pulmonar'],['ulc','Úlcera péptica complicada'],['has','Urgência hipertensiva']];
+const DESTS=[['ALTA','Alta hospitalar'],['OBS','Observação'],['ENF','Enfermaria'],['EMG','Sala de emergência'],['UTI','UTI'],['TRANS','Transferência regulada']];
+const ORIENT=[['sinais','Sinais de alarme e quando retornar'],['med','Medicações em uso explicadas'],['ubs','Retorno à UBS em 7 dias'],['enc','Encaminhamentos e atestado']];
+const GEN_Q=[['comorb','Tem alguma doença ou já se internou antes?'],['uso','Que medicamentos usa?'],['alerg','Tem alergia a algum medicamento?'],['drogas','Usa álcool, cigarro ou outras drogas?'],['dor','De 0 a 10, quanto está a dor?'],['cirurgias','Já fez cirurgia ou internação recente?'],['familia','Tem doença na família?'],['vacinas','As vacinas estão em dia, incluindo a antitetânica?'],['ultima','Quando e o que comeu por último?'],['viagem','Viajou ou teve contato com alguém doente?'],['trabalho','Teve alguma exposição no trabalho (veneno, poeira, animais)?']];
+const okIdx=(k,id)=>Array.isArray(k.ok)?k.ok:(k.ok[id]||[]);
+/* ===== catálogo ampliado (Parte 2): cobre as especialidades de Clínica Médica para os casos inéditos ===== */
+DRUGS.dipi.al='dipi';DRUGS.diclo.al='aine';
+Object.assign(DRUGS,{
+ atrop:{n:'Atropina',v:['EV'],d:['0,5 mg','1 mg','2–5 mg, dobrando a cada 5 min até atropinização','10 mg em bolus'],tox:3,ae:'Taquicardia extrema, delirium e hipertermia anticolinérgica.',f:'u ic',dr:'u ct'},
+ cagl:{n:'Gluconato de cálcio 10%',v:['EV'],d:['10 mL em 10 min','30 mL em 10 min','100 mL em bolus'],tox:2,ae:'Bradicardia e arritmia por infusão rápida.',f:'u',dr:'u'},
+ mag:{n:'Sulfato de magnésio',v:['EV'],d:['1 g','2 g em 20 min','10 g em bolus'],tox:2,ae:'Depressão respiratória e arreflexia.',f:'u',dr:'u'},
+ diaz:{n:'Diazepam',v:['EV'],d:['5 mg','10 mg','30 mg em bolus'],tox:2,ae:'Depressão respiratória e rebaixamento.',f:'u sn',dr:'u'},
+ feni:{n:'Fenitoína',v:['EV'],d:['10 mg/kg em 30 min','20 mg/kg (até 50 mg/min)','20 mg/kg em bolus'],tox:2,ae:'Hipotensão e arritmia pela infusão rápida.',f:'u',dr:'u'},
+ halo:{n:'Haloperidol',v:['IM','EV'],d:['0,5–1 mg','2,5–5 mg','20 mg'],tox:2,ae:'Distonia aguda, QT longo e sedação excessiva.',f:'u sn',dr:'u'},
+ nalox:{n:'Naloxona',v:['EV'],d:['0,04 mg (titular)','0,4 mg','4 mg em bolus'],tox:2,ae:'Abstinência aguda: agitação, vômitos e hipertensão.',f:'u sn',dr:'u'},
+ tiam:{n:'Tiamina',v:['EV'],d:['100 mg','300 mg','5 g'],tox:2,ae:'Reação alérgica.',f:'u s8 s24',dr:'u d3 d5'},
+ glic50:{n:'Glicose 50%',v:['EV'],d:['10 mL','40 mL (20 g)','200 mL'],tox:2,ae:'Hiperglicemia de rebote e flebite química.',f:'u',dr:'u'},
+ alte:{n:'Alteplase',v:['EV'],d:['0,6 mg/kg','0,9 mg/kg (10% em bolus, resto em 1 h)','1,5 mg/kg'],tox:2,ae:'Hemorragia intracraniana.',f:'u',dr:'u'},
+ hepa:{n:'Heparina não fracionada',v:['EV/SC'],d:['5.000 UI SC (profilaxia)','80 UI/kg em bolus + 18 UI/kg/h','40.000 UI em bolus'],tox:2,ae:'Hemorragia com queda da Hb.',f:'ic s8',dr:'ct'},
+ amio:{n:'Amiodarona',v:['EV'],d:['150 mg em 10 min','300 mg em 30–60 min','1.200 mg em bolus'],tox:2,ae:'Hipotensão e bradicardia graves.',f:'u ic',dr:'u h24'},
+ aden:{n:'Adenosina',v:['EV'],d:['3 mg','6 mg em bolus rápido (repetir 12 mg)','30 mg'],tox:2,ae:'Assistolia prolongada.',f:'u',dr:'u'},
+ meto:{n:'Metoprolol',v:['EV'],d:['2,5 mg','5 mg (até 3 doses)','20 mg em bolus'],tox:2,ae:'Bradicardia e hipotensão.',f:'u s6',dr:'u'},
+ propra:{n:'Propranolol',v:['VO'],d:['10 mg','40–80 mg','320 mg'],tox:2,ae:'Bradicardia e broncoespasmo.',f:'s6 s8',dr:'ct'},
+ cefep:{n:'Cefepima',v:['EV'],d:['1 g','2 g','6 g'],tox:2,ae:'Encefalopatia por excesso de dose.',f:'s8 s12',dr:'d7 d10'},
+ vanco:{n:'Vancomicina',v:['EV'],d:['500 mg','15–20 mg/kg','4 g'],tox:2,ae:'Lesão renal aguda e síndrome do homem vermelho.',f:'s12 s8',dr:'d7 d10'},
+ azitro:{n:'Azitromicina',v:['VO','EV'],d:['250 mg','500 mg','1,5 g'],tox:2,ae:'Náuseas intensas e QT prolongado.',f:'s24',dr:'d3 d5'},
+ amoxclav:{n:'Amoxicilina + clavulanato',v:['VO','EV'],d:['500 mg','875 mg VO / 1 g EV','3 g'],tox:2,al:'penic',ae:'Diarreia intensa.',f:'s8 s12',dr:'d7 d5 d10'},
+ metro:{n:'Metronidazol',v:['EV','VO'],d:['250 mg','500 mg','2 g'],tox:2,ae:'Náuseas e neurotoxicidade.',f:'s8',dr:'d7 d10'},
+ cipro:{n:'Ciprofloxacino',v:['VO','EV'],d:['250 mg','400–500 mg','1,5 g'],tox:2,ae:'QT longo e convulsão.',f:'s12',dr:'d7 d10'},
+ smx:{n:'Sulfametoxazol + trimetoprima',v:['VO'],d:['400/80 mg','800/160 mg','4 comprimidos de 800/160 mg'],tox:2,al:'sulfa',ae:'Hipercalemia e farmacodermia.',f:'s12',dr:'d3 d7 d10'},
+ ripe:{n:'RIPE (esquema básico da tuberculose)',v:['VO'],d:['2 comprimidos','dose por peso (3 a 5 comprimidos)','8 comprimidos'],tox:2,ae:'Hepatotoxicidade com icterícia.',f:'s24',dr:'ct'},
+ anfo:{n:'Anfotericina B lipossomal',v:['EV'],d:['1 mg/kg/dia','3 mg/kg/dia','10 mg/kg/dia'],tox:2,ae:'Nefrotoxicidade e hipocalemia.',f:'s24',dr:'d7 ct'},
+ salb:{n:'Salbutamol',v:['Inalatória'],d:['2 jatos','4 a 8 jatos com espaçador (ou nebulização 5 mg)','20 jatos seguidos'],tox:2,ae:'Taquicardia de 150 bpm, tremor e hipocalemia.',f:'u s4 sn',dr:'u h24 ct'},
+ ipra:{n:'Ipratrópio',v:['Inalatória'],d:['0,25 mg','0,5 mg','2 mg'],tox:2,ae:'Boca seca e retenção urinária.',f:'u s4 s6',dr:'u h24'},
+ hidroc:{n:'Hidrocortisona',v:['EV'],d:['50 mg','100 mg','1 g'],tox:2,ae:'Hiperglicemia importante e agitação.',f:'u s6 s8',dr:'u d3 d5'},
+ pred:{n:'Prednisona',v:['VO'],d:['10 mg','40 mg','200 mg'],tox:2,ae:'Hiperglicemia importante e agitação.',f:'s24',dr:'d5 d7'},
+ dexa:{n:'Dexametasona',v:['EV'],d:['4 mg','10 mg','40 mg'],f:'u s6 s24',dr:'u d3 d5'},
+ lactul:{n:'Lactulose',v:['VO/SNG'],d:['10 mL','20–30 mL (2 a 3 evacuações/dia)','200 mL'],tox:2,ae:'Diarreia, desidratação e hipernatremia.',f:'s8 s6',dr:'ct'},
+ carv:{n:'Carvão ativado',v:['VO/SNG'],d:['25 g','1 g/kg (até 50 g)','150 g'],tox:2,ae:'Vômitos com risco de broncoaspiração.',f:'u',dr:'u'},
+ soroesc:{n:'Soro antiescorpiônico',v:['EV'],d:['1 ampola','2–3 ampolas','10 ampolas'],tox:2,ae:'Reação ao soro heterólogo.',f:'u',dr:'u'},
+ ondan:{n:'Ondansetrona',v:['EV'],d:['4 mg','8 mg','32 mg'],tox:2,ae:'QT longo.',f:'s8 sn u',dr:'u d3'},
+ metoc:{n:'Metoclopramida',v:['EV'],d:['5 mg','10 mg','40 mg'],tox:2,ae:'Distonia aguda.',f:'s8 sn u',dr:'u d3'},
+ levot:{n:'Levotiroxina',v:['VO','EV'],d:['25 mcg VO','100 mcg VO','300 mcg EV (ataque no mixedema)'],f:'s24 u',dr:'ct u'},
+ ptu:{n:'Propiltiouracil',v:['VO'],d:['100 mg','500–1.000 mg de ataque','3 g'],tox:2,ae:'Hepatotoxicidade e agranulocitose.',f:'s4 s6 u',dr:'ct'},
+ zole:{n:'Ácido zoledrônico',v:['EV'],d:['2 mg','4 mg em 15 min','12 mg'],tox:2,ae:'Lesão renal e hipocalcemia.',f:'u',dr:'u'}
+});
+Object.assign(EXAMS,{
+ tsh:{n:'TSH e T4 livre',t:60,c:3},calc:{n:'Cálcio, magnésio e fósforo',t:40,c:2},hepat:{n:'Função hepática',t:50,c:3},
+ amil:{n:'Amilase e lipase',t:45,c:2},ck:{n:'CK total',t:45,c:2},sorol:{n:'Testes rápidos e sorologias',t:20,c:2},
+ bacil:{n:'Baciloscopia / TRM-TB',t:90,c:3},lcr:{n:'Punção lombar (líquor)',t:60,c:4}
+});
+const ALERG=['penic','dipi','aine','sulfa'];
+const SLOTS=[0,10,25,45,70,95,120,150,185];
+/* ===== catálogo ampliado (Parte 4): mais medicamentos, doses e exames ===== */
+DRUGS.pip.d.push('9 g em bolus');DRUGS.pip.tox=2;DRUGS.pip.ae='Neurotoxicidade e hipocalemia por excesso de dose.';
+DRUGS.losa.d.push('200 mg');DRUGS.anlo.d.push('20 mg');DRUGS.diclo.d.push('150 mg');DRUGS.diclo.tox=1;DRUGS.diclo.ae='Lesão renal e sangramento digestivo.';
+DRUGS.dipi.d.push('4 g');DRUGS.dipi.tox=3;DRUGS.dipi.ae='Hipotensão e agranulocitose.';DRUGS.para.d.push('2 g');DRUGS.para.tox=3;DRUGS.para.ae='Hepatotoxicidade.';
+Object.assign(DRUGS,{
+ adre:{n:'Adrenalina',v:['IM','EV'],d:['0,1 mg IM','0,5 mg IM na coxa','1 mg EV em bolus (fora de parada)','5 mg IM'],tox:2,ae:'Arritmia ventricular e crise hipertensiva por dose ou via inadequada.',f:'u',dr:'u'},
+ ringer:{n:'Ringer lactato',v:['EV'],d:['250 mL','500 mL','1.000 mL','2.000 mL (30 mL/kg)'],f:'u',dr:'u ct'},
+ sg10:{n:'Soro glicosado 10%',v:['EV'],d:['250 mL em 24 h','500 mL em 12 h (manutenção)','1.000 mL em 1 h'],tox:2,ae:'Hiperglicemia e sobrecarga de volume.',f:'ic',dr:'ct h24'},
+ salhip:{n:'Salina hipertônica 3%',v:['EV'],d:['50 mL','100 mL em 10 min','500 mL em bolus'],tox:2,ae:'Correção rápida do sódio: risco de mielinólise pontina.',f:'u',dr:'u'},
+ albu:{n:'Albumina 20%',v:['EV'],d:['50 mL','100 mL (1 g/kg)','500 mL'],tox:2,ae:'Sobrecarga volêmica e edema pulmonar.',f:'u s24',dr:'u d3'},
+ bromo:{n:'Bromoprida',v:['EV'],d:['5 mg','10 mg','40 mg'],tox:2,ae:'Distonia aguda.',f:'s8 sn u',dr:'u d3'},
+ hiosc:{n:'Escopolamina (hioscina)',v:['EV'],d:['10 mg','20 mg','80 mg'],tox:2,ae:'Taquicardia, retenção urinária e boca seca.',f:'s8 sn u',dr:'u d3'},
+ tram:{n:'Tramadol',v:['EV'],d:['50 mg','100 mg','400 mg'],tox:2,ae:'Convulsão e náuseas intensas.',f:'s8 s6 sn u',dr:'u d3'},
+ ceto:{n:'Cetoprofeno',v:['EV'],d:['50 mg','100 mg','300 mg'],tox:2,al:'aine',ae:'Lesão renal e sangramento digestivo.',f:'s12 u',dr:'u d3'},
+ ibu:{n:'Ibuprofeno',v:['VO'],d:['200 mg','400–600 mg','2.400 mg de uma vez'],tox:2,al:'aine',ae:'Lesão renal e sangramento digestivo.',f:'s8 sn',dr:'d3'},
+ fenta:{n:'Fentanil',v:['EV'],d:['25 mcg','50–100 mcg','500 mcg'],tox:2,ae:'Apneia e rigidez torácica.',f:'u sn',dr:'u'},
+ mida:{n:'Midazolam',v:['EV','IM'],d:['1–2 mg','5 mg','15 mg em bolus'],tox:2,ae:'Depressão respiratória e hipotensão.',f:'u sn',dr:'u'},
+ ceta:{n:'Cetamina',v:['EV'],d:['0,5 mg/kg','1–2 mg/kg (indução)','5 mg/kg'],tox:2,ae:'Agitação, hipertensão e laringoespasmo.',f:'u',dr:'u'},
+ etomi:{n:'Etomidato',v:['EV'],d:['0,1 mg/kg','0,3 mg/kg (indução)','1 mg/kg'],tox:2,ae:'Supressão adrenal e mioclonias.',f:'u',dr:'u'},
+ succi:{n:'Succinilcolina',v:['EV'],d:['0,5 mg/kg','1–1,5 mg/kg (intubação)','4 mg/kg'],tox:2,ae:'Hipercalemia grave e bradicardia.',f:'u',dr:'u'},
+ rocu:{n:'Rocurônio',v:['EV'],d:['0,3 mg/kg','1–1,2 mg/kg (intubação)','3 mg/kg'],tox:2,ae:'Paralisia prolongada.',f:'u',dr:'u'},
+ dobu:{n:'Dobutamina',v:['EV contínua'],d:['2,5 mcg/kg/min','5–10 mcg/kg/min (titular)','40 mcg/kg/min'],tox:2,ae:'Taquiarritmia e isquemia.',f:'ic',dr:'ct'},
+ dopa:{n:'Dopamina',v:['EV contínua'],d:['2 mcg/kg/min','5–10 mcg/kg/min (titular)','30 mcg/kg/min'],tox:2,ae:'Taquiarritmia e isquemia de extremidades.',f:'ic',dr:'ct'},
+ nitrop:{n:'Nitroprussiato',v:['EV contínua'],d:['0,3 mcg/kg/min (titular)','0,5–2 mcg/kg/min','10 mcg/kg/min'],tox:2,ae:'Hipotensão grave e toxicidade por cianeto.',f:'ic',dr:'ct h24'},
+ hidral:{n:'Hidralazina',v:['EV','VO'],d:['5 mg EV','10–20 mg EV','50 mg EV em bolus'],tox:2,ae:'Hipotensão e taquicardia reflexa.',f:'u s6',dr:'u ct'},
+ enal:{n:'Enalapril',v:['VO'],d:['5 mg','10–20 mg','40 mg'],f:'s12 s24',dr:'ct'},
+ clon:{n:'Clonidina',v:['VO'],d:['0,1 mg','0,15–0,2 mg','1 mg'],tox:2,ae:'Hipotensão e bradicardia; rebote se suspensa.',f:'u s8 s12',dr:'u ct'},
+ espiro:{n:'Espironolactona',v:['VO'],d:['25 mg','50–100 mg','400 mg'],tox:2,ae:'Hipercalemia.',f:'s24',dr:'ct'},
+ digo:{n:'Digoxina',v:['VO','EV'],d:['0,125 mg','0,25 mg','1,5 mg'],tox:2,ae:'Intoxicação digitálica: náuseas, visão amarelada e arritmia.',f:'s24 u',dr:'ct u'},
+ diltia:{n:'Diltiazem',v:['EV','VO'],d:['0,1 mg/kg EV','0,25 mg/kg EV em 2 min','1 mg/kg EV'],tox:2,ae:'Hipotensão e bloqueio atrioventricular.',f:'u',dr:'u'},
+ sinva:{n:'Sinvastatina',v:['VO'],d:['20 mg','40 mg','160 mg'],tox:2,ae:'Miopatia.',f:'s24',dr:'ct'},
+ atorva:{n:'Atorvastatina',v:['VO'],d:['10 mg','40–80 mg','200 mg'],tox:2,ae:'Miopatia e elevação de transaminases.',f:'s24',dr:'ct'},
+ varf:{n:'Varfarina',v:['VO'],d:['2,5 mg','5 mg','20 mg'],tox:2,ae:'INR acima de 8 e sangramento.',f:'s24',dr:'ct'},
+ vitk:{n:'Vitamina K',v:['EV','VO'],d:['1–2,5 mg VO','10 mg EV lento','50 mg EV em bolus'],tox:2,ae:'Reação anafilactoide.',f:'u s24',dr:'u d3'},
+ protam:{n:'Protamina',v:['EV'],d:['10 mg','1 mg para cada 100 UI de heparina','100 mg em bolus'],tox:2,ae:'Hipotensão e anafilaxia.',f:'u',dr:'u'},
+ tranex:{n:'Ácido tranexâmico',v:['EV'],d:['500 mg','1 g em 10 min','5 g'],tox:2,ae:'Trombose e convulsão.',f:'u s8',dr:'u h24'},
+ octreo:{n:'Octreotida',v:['EV'],d:['25 mcg','50 mcg em bolus + 50 mcg/h','500 mcg'],tox:2,ae:'Bradicardia e hiperglicemia.',f:'ic',dr:'d3 ct'},
+ nph:{n:'Insulina NPH',v:['SC'],d:['0,1 U/kg','0,2–0,3 U/kg','1 U/kg'],tox:2,ae:'Hipoglicemia grave.',f:'s12 s24',dr:'ct'},
+ metf:{n:'Metformina',v:['VO'],d:['500 mg','850 mg','3 g'],tox:2,ae:'Acidose lática, principalmente com lesão renal.',f:'s12 s8',dr:'ct'},
+ lacto:{n:'Bisacodil / óleo mineral',v:['VO'],d:['5 mg','10 mg','40 mg'],tox:2,ae:'Diarreia e cólica intensa.',f:'s24',dr:'d3'},
+ ampi:{n:'Ampicilina',v:['EV'],d:['1 g','2 g','12 g'],tox:2,al:'penic',ae:'Convulsão por excesso de dose.',f:'s4 s6',dr:'d7 d10'},
+ peni:{n:'Penicilina G cristalina',v:['EV'],d:['1 milhão UI','4 milhões UI','30 milhões UI'],tox:2,al:'penic',ae:'Convulsão e hipercalemia.',f:'s4 s6',dr:'d7 d10'},
+ benza:{n:'Penicilina benzatina',v:['IM'],d:['600 mil UI','1,2 milhão UI','2,4 milhões UI'],al:'penic',f:'u',dr:'u'},
+ oxa:{n:'Oxacilina',v:['EV'],d:['1 g','2 g','12 g'],tox:2,al:'penic',ae:'Nefrite intersticial.',f:'s4 s6',dr:'d7 d10'},
+ clinda:{n:'Clindamicina',v:['EV','VO'],d:['300 mg','600 mg','2,4 g'],tox:2,ae:'Diarreia por Clostridioides difficile.',f:'s8 s6',dr:'d7 d10'},
+ genta:{n:'Gentamicina',v:['EV'],d:['80 mg','5 mg/kg 1x ao dia','15 mg/kg'],tox:2,ae:'Lesão renal e ototoxicidade.',f:'s24 s8',dr:'d5 d7'},
+ doxi:{n:'Doxiciclina',v:['VO'],d:['50 mg','100 mg','400 mg'],tox:2,ae:'Esofagite e náuseas.',f:'s12',dr:'d7 d10'},
+ fluco:{n:'Fluconazol',v:['VO','EV'],d:['100 mg','200–400 mg','1.600 mg'],tox:2,ae:'Hepatotoxicidade e QT longo.',f:'s24',dr:'d7 d10'},
+ aciclo:{n:'Aciclovir',v:['EV','VO'],d:['5 mg/kg','10 mg/kg','30 mg/kg'],tox:2,ae:'Lesão renal por cristalúria.',f:'s8',dr:'d7 d10'},
+ osel:{n:'Oseltamivir',v:['VO'],d:['30 mg','75 mg','300 mg'],tox:2,ae:'Náuseas e vômitos intensos.',f:'s12',dr:'d5'},
+ ivermec:{n:'Ivermectina',v:['VO'],d:['3 mg','200 mcg/kg','2 mg/kg'],tox:2,ae:'Neurotoxicidade.',f:'u',dr:'u'},
+ albend:{n:'Albendazol',v:['VO'],d:['200 mg','400 mg','2 g'],tox:2,ae:'Hepatotoxicidade.',f:'u s24',dr:'u d3'},
+ prazi:{n:'Praziquantel',v:['VO'],d:['20 mg/kg','50–60 mg/kg dose única','200 mg/kg'],tox:2,ae:'Tontura e dor abdominal intensas.',f:'u',dr:'u'},
+ benzni:{n:'Benznidazol',v:['VO'],d:['2,5 mg/kg/dia','5 mg/kg/dia','20 mg/kg/dia'],tox:2,ae:'Farmacodermia e neuropatia.',f:'s12',dr:'ct'},
+ cloroq:{n:'Cloroquina + primaquina',v:['VO'],d:['Metade do esquema','Esquema completo por peso','Dobro do esquema'],tox:2,ae:'Hemólise e QT longo.',f:'s24',dr:'d3 d7'},
+ artem:{n:'Artemeter + lumefantrina',v:['VO'],d:['2 comprimidos','4 comprimidos (esquema por peso)','8 comprimidos de uma vez'],tox:2,ae:'QT longo.',f:'s12',dr:'d3'},
+ clonaz:{n:'Clonazepam',v:['VO'],d:['0,25 mg','0,5–2 mg','8 mg'],tox:2,ae:'Sedação excessiva e queda.',f:'s12 s24 sn',dr:'u ct'},
+ fenob:{n:'Fenobarbital',v:['EV','VO'],d:['5 mg/kg','15–20 mg/kg (ataque)','40 mg/kg'],tox:2,ae:'Depressão respiratória e hipotensão.',f:'u s24',dr:'u ct'},
+ valpro:{n:'Ácido valproico',v:['VO','EV'],d:['10 mg/kg','20–40 mg/kg (ataque)','80 mg/kg'],tox:2,ae:'Hepatotoxicidade e hiperamonemia.',f:'u s12',dr:'u ct'},
+ prome:{n:'Prometazina',v:['IM','EV'],d:['12,5 mg','25 mg','100 mg'],tox:2,ae:'Sedação intensa e hipotensão.',f:'u s8 sn',dr:'u'},
+ hidrox:{n:'Hidroxizina',v:['VO'],d:['10 mg','25 mg','200 mg'],tox:2,ae:'Sedação e QT longo.',f:'s8 sn',dr:'d3'},
+ lorat:{n:'Loratadina',v:['VO'],d:['5 mg','10 mg','40 mg'],f:'s24',dr:'d3 d5'},
+ flumaz:{n:'Flumazenil',v:['EV'],d:['0,1 mg','0,2–0,5 mg','3 mg em bolus'],tox:2,ae:'Convulsão por abstinência aguda de benzodiazepínico.',f:'u',dr:'u'},
+ nac:{n:'N-acetilcisteína',v:['EV'],d:['50 mg/kg','150 mg/kg em 1 h (esquema de 21 h)','600 mg/kg'],tox:2,ae:'Reação anafilactoide.',f:'ic',dr:'h24'},
+ manit:{n:'Manitol 20%',v:['EV'],d:['0,25 g/kg','0,5–1 g/kg','3 g/kg'],tox:2,ae:'Hipovolemia e lesão renal.',f:'u s6',dr:'u'},
+ sne:{n:'Passar sonda nasogástrica',v:['Procedimento'],d:['Sonda nasogástrica aberta em frasco'],f:'u',dr:'u'},
+ svd:{n:'Passar sonda vesical',v:['Procedimento'],d:['Sonda vesical de demora com controle de diurese'],f:'u',dr:'u'},
+ iot:{n:'Intubação orotraqueal',v:['Procedimento'],d:['Intubação em sequência rápida e ventilação mecânica'],f:'u',dr:'u'}
+});
+Object.assign(EXAMS,{
+ pcr:{n:'PCR e VHS',t:45,c:2},dimero:{n:'D-dímero',t:45,c:3},gota:{n:'Gota espessa (malária)',t:40,c:2},
+ tox:{n:'Dosagem toxicológica (etanol, paracetamol)',t:60,c:4},tipag:{n:'Tipagem sanguínea e prova cruzada',t:40,c:2},escarro:{n:'Gram e cultura de escarro',t:60,c:2}
+});
+/* ===== CASOS 1 a 4 (todos com 16 anos ou mais) =====
+ arr: minuto de chegada · key: condutas críticas com prazo (by, minutos desde a chegada) · contra: medicações perigosas neste caso
+ vit: sinais vitais por estágio (0 inicial, 1 melhora, -1 piora, -2 piora grave) · dest: melhor destino e destinos aceitáveis */
+const CASES=[
+{id:'eap',nome:'Raimunda Pereira da Silva',idade:71,sexo:'F',mun:'Casa Nova (BA)',ocup:'Aposentada, lavradora',tri:'LARANJA',arr:0,
+ queixa:'"Tô sem ar, doutor. Faz três noites que durmo sentada na cadeira."',
+ comorb:'Hipertensão, insuficiência cardíaca (ecocardiograma antigo com FE 35%) e diabetes tipo 2.',
+ uso:'Losartana 50 mg, furosemida 40 mg, metformina e AAS. O carvedilol faltou na UBS há dez dias e a furosemida ela toma "quando lembra".',
+ alergia:[],alergiaTxt:'Nenhuma que eu saiba.',
+ perg:[['Desde quando está assim?','Faz três noites que durmo sentada. Hoje à tarde piorou e apareceu uma tosse com catarro rosado, tipo espuma.',1],
+  ['Tem dor no peito?','Só um aperto leve, nada forte.'],['Teve febre ou catarro amarelo?','Não. O catarro é rosado.'],
+  ['Comeu algo diferente nos últimos dias?','Teve festa ontem e comi bastante salgado. Meus pés incharam faz dias.']],
+ ex:{geral:'Sentada, taquidispneica, sudorese fria, cianose labial discreta, fala frases curtas. Agitada.',cab:'Turgência jugular a 45 graus.',cardio:'Ritmo irregular, B3 audível, sopro sistólico mitral 2+/6+.',resp:'Estertores crepitantes até os ápices, sibilos esparsos.',abd:'Fígado palpável a 3 cm do rebordo, sem ascite.',neuro:'Consciente, orientada, ansiosa.',ext:'Edema 3+/4+ em membros inferiores, extremidades quentes, perfusão adequada.'},
+ res:{ecg:'Fibrilação atrial com resposta ventricular de 112 bpm, sobrecarga de VE, sem supra de ST.',rx:'Cardiomegalia, cefalização de trama vascular, derrame pleural bilateral e infiltrado alveolar peri-hilar.',us:'Veia cava dilatada e pouco colapsável, linhas B difusas.',trop:'Discretamente elevada (2 vezes o limite), a acompanhar.',gaso:'pH 7,31 · pCO2 52 · pO2 54 · HCO3 24.',eletr:'Na 133 · K 3,6.',cr:'Ureia 62 · Cr 1,5.',hemo:'Hb 11,4 · leucócitos 9.100.',glic:'158 mg/dL.'},
+ util:['ecg','rx','us','trop','gaso','eletr','cr','hemo','glic'],evid:['rx','us'],hyp:'eap',
+ key:[{ids:['o2'],ok:[1,2],by:10,lb:'Oxigênio de alto fluxo ou VNI'},{ids:['furo'],ok:[1,2],by:25,lb:'Furosemida EV'},{ids:['nitro'],ok:[0,1],by:25,lb:'Nitrato EV'}],
+ allowed:['enox','para','dipi','omep'],
+ contra:{sf:'Soro em paciente congesta: a SatO2 cai para 78% e ela se exaure.',diclo:'AINE em insuficiência cardíaca: retenção hídrica e piora da congestão.',morf:{from:1,t:'Morfina em dose alta sem monitorização: depressão respiratória e hipercapnia.'}},
+ vit:{0:['188/104',112,30,85,36.2],1:['150/88',96,22,94,36.4],'-1':['176/100',124,34,80,36.2],'-2':['100/60',140,38,70,36.0]},
+ reav:{0:'Ainda taquidispneica, sem mudança importante.',1:'Fala frases completas, diurese espontânea de 600 mL, tolera o decúbito a 45 graus.','-1':'Mais cansada, SatO2 caindo, usando musculatura acessória.','-2':'Exausta e sonolenta, SatO2 70%: risco iminente de parada respiratória.'},
+ fatal:1,fatalBy:75,tEff:20,dest:{best:['UTI'],ok:['EMG','TRANS'],alta:0},
+ out:{ok:'Sob VNI, nitrato e diurese, a SatO2 chega a 95% em 40 minutos. Dona Raimunda segue internada com o tratamento da insuficiência cardíaca ajustado.',part:'Melhora parcial. A internação começa com tratamento incompleto e ela volta a piorar de madrugada.',bad:'A paciente vai para um setor sem suporte adequado e retorna à emergência em insuficiência respiratória.',obito:'Dona Raimunda evolui com exaustão respiratória e parada cardiorrespiratória.'},
+ ensina:'EAP hipertensivo: paciente sentada, O2 de alto fluxo ou VNI precoce, nitrato e diurético de alça. Não hidratar.',
+ ex0:'d',sw:1,pale0:0,cy:1,hand:'chest',
+ look:{skin:3,hair:'#cfcfc8',hs:'bun',cloth:'#8a4b5e'}},
+
+{id:'cad',nome:'Jonas Vieira dos Santos',idade:19,sexo:'M',mun:'Sobradinho (BA)',ocup:'Ajudante de pedreiro',tri:'LARANJA',arr:8,
+ queixa:'"Muita sede, urinando demais, vomitando e com dor de barriga há dois dias."',
+ comorb:'Diabetes tipo 1 desde os 11 anos.',
+ uso:'Insulina NPH 20 U e regular. Acabou na UBS e ele não conseguiu comprar.',
+ alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Quando usou insulina pela última vez?','Faz quatro dias. Acabou no posto e não deu pra comprar.',1],
+  ['Teve febre, tosse ou ardência para urinar?','Não, só a dor de barriga e o vômito.'],['O que tem comido?','Quase nada, só líquido doce, refrigerante e suco.'],['Sente falta de ar?','Tô respirando rápido, mas sem dor.']],
+ ex:{geral:'Prostrado, mas orientado. Mucosas secas, hálito cetônico, respiração rápida e profunda (Kussmaul).',cab:'Mucosas secas, língua saburrosa.',cardio:'Taquicardia regular, pulsos finos, sem sopros.',resp:'Murmúrio vesicular universal, sem ruídos adventícios.',abd:'Dor difusa à palpação, sem defesa, ruídos hidroaéreos diminuídos.',neuro:'Glasgow 15, sem déficit focal.',ext:'Perfusão lentificada (3 s), extremidades frias.'},
+ res:{glic:'HI (acima de 500 mg/dL).',gaso:'pH 7,08 · pCO2 18 · HCO3 6 · lactato 2,1.',cet:'Cetonúria 3+ · beta-hidroxibutirato 5,2 mmol/L.',eletr:'Na 129 (corrigido 135) · K 3,1.',cr:'Ureia 58 · Cr 1,4 (pré-renal).',hemo:'Leucócitos 17.800 sem desvio (estresse).',ecg:'Taquicardia sinusal, ondas T achatadas (hipocalemia).',urina:'Glicose 4+ · cetonas 3+ · sem leucocitúria.'},
+ util:['glic','gaso','cet','eletr','cr','hemo','ecg','urina'],evid:['gaso','cet','glic'],hyp:'cad',
+ key:[{ids:['sf'],ok:[2],by:20,lb:'Hidratação com 1 L na primeira hora'},{ids:['kcl'],ok:[0,1],by:45,lb:'Reposição de potássio'},{ids:['insu'],ok:[0],by:70,lb:'Insulina em infusão contínua'}],
+ allowed:['omep','para','dipi'],
+ seq:[{first:'kcl',then:'insu',t:'Insulina sem repor o potássio (K 3,1): hipocalemia grave, QT longo e extrassístoles ventriculares.'}],
+ contra:{bic:'Bicarbonato com pH acima de 6,9: hipocalemia e piora da acidose liquórica.',ceftri:'Antibiótico sem foco infeccioso identificado.'},
+ vit:{0:['98/58',124,28,98,37.0],1:['116/72',96,20,99,36.8],'-1':['86/50',132,32,98,37.0],'-2':['72/40',146,34,96,36.8]},
+ reav:{0:'Ainda desidratado, respirando fundo e rápido.',1:'Mais desperto, diurese presente, pH subindo e glicemia em queda gradual.','-1':'Mais prostrado, hipotenso, respirando mais rápido.','-2':'Choque e rebaixamento: risco de arritmia grave.'},
+ fatal:1,fatalBy:150,tEff:30,dest:{best:['UTI'],ok:['EMG','TRANS'],alta:0},
+ out:{ok:'Hidratação, potássio e insulina em infusão: o pH sobe de forma gradual e Jonas volta a conversar. Segue internado para controle metabólico e orientação sobre o acesso à insulina.',part:'O controle metabólico é lento e o jovem precisa de nova reavaliação.',bad:'A acidose se agrava no setor errado e ele retorna em estado mais grave.',obito:'Jonas evolui com arritmia ventricular por distúrbio hidroeletrolítico e não responde às manobras.'},
+ ensina:'CAD: hidratação, potássio e só depois insulina em infusão (K acima de 3,3). Bicarbonato apenas se pH abaixo de 6,9.',
+ ex0:'a',sw:0,pale0:0,cy:0,hand:null,
+ look:{skin:2,hair:'#1a1410',hs:'short',beard:'stubble',cloth:'#3d5a80'}},
+
+{id:'sepse',nome:'Zenaide Lopes de Andrade',idade:78,sexo:'F',mun:'Remanso (BA)',ocup:'Aposentada, acamada',tri:'VERMELHO',arr:25,
+ queixa:'Filho: "Minha mãe tá muito sonolenta, com febre desde ontem. A urina da sonda tá escura."',
+ comorb:'AVC isquêmico há 2 anos com hemiparesia à direita, hipertensão. Sonda vesical de demora há 3 semanas sem troca.',
+ uso:'AAS, losartana e sinvastatina.',
+ alergia:['penic'],alergiaTxt:'Penicilina. Ela teve inchaço na boca e falta de ar há 20 anos, quase morreu.',
+ perg:[['Há quanto tempo está com febre?','Desde ontem de manhã. Hoje não quis comer nem beber.'],['Quando trocaram a sonda?','Faz umas três semanas. O posto não tinha sonda para trocar.',1],['Teve queda ou engasgo?','Não, mas passou o dia deitada e quase não urinou.']],
+ ex:{geral:'Sonolenta, desidratada, pele fria e pegajosa, enchimento capilar de 4 s. Responde ao chamado.',cab:'Mucosas secas, sem rigidez de nuca.',cardio:'Taquicardia regular, sem sopros.',resp:'Murmúrio vesicular presente, sem ruídos adventícios.',abd:'Sem globo vesical, dor à punho-percussão no flanco esquerdo.',neuro:'Glasgow 13, hemiparesia direita antiga, sem sinais meníngeos.',ext:'Lesão por pressão estágio II no sacro, extremidades frias com livedo discreto.'},
+ res:{lact:'4,8 mmol/L.',hemo:'Leucócitos 22.400 com 14% de bastões · plaquetas 118.000.',cr:'Ureia 92 · Cr 2,4 (basal 0,9).',urina:'Piúria maciça, nitrito positivo e bacteriúria.',hemoc:'Coletadas. Resultado em 48 horas.',gaso:'pH 7,29 · HCO3 16 · lactato 4,8.',eletr:'Na 138 · K 5,0.',ecg:'Taquicardia sinusal.',rx:'Sem consolidações.',glic:'132 mg/dL.'},
+ util:['lact','hemo','cr','urina','hemoc','gaso','eletr','ecg','rx','glic'],evid:['lact','urina','hemo'],hyp:'sepse',
+ key:[{ids:['sf'],ok:[2,3],by:30,lb:'Ressuscitação volêmica'},{ids:['ceftri','mero'],ok:{ceftri:[2],mero:[1]},by:60,lb:'Antibiótico na primeira hora (sem penicilina)'},{ids:['sonda'],ok:[0],by:120,lb:'Troca da sonda vesical'}],
+ allowed:['para','dipi','omep','norad'],
+ contra:{furo:'Diurético em choque séptico: oligúria e PA 70/40.',nitro:'Vasodilatador em choque séptico: hipotensão refratária.',diclo:'AINE com lesão renal aguda: a creatinina sobe para 3,4.'},
+ alergiaMsg:'Anafilaxia: edema de glote e broncoespasmo por antibiótico da classe da penicilina, atendida às pressas pela enfermagem.',
+ vit:{0:['84/46',122,26,93,38.9],1:['108/62',100,20,96,37.6],'-1':['72/38',134,32,88,39.2],'-2':['58/30',148,38,82,39.4]},
+ reav:{0:'Ainda hipotensa e sonolenta.',1:'Mais desperta, PA subindo e diurese de 40 mL/h.','-1':'Piora do nível de consciência, pele mais fria.','-2':'Choque refratário, anúrica, quase sem resposta.'},
+ fatal:1,fatalBy:120,tEff:40,dest:{best:['UTI'],ok:['EMG','TRANS'],alta:0},
+ out:{ok:'Cristaloide e antibiótico em tempo. A PA sobe para 104/62, o lactato cai e a sonda é trocada. Dona Zenaide segue para a UTI.',part:'Resposta parcial: continua hipotensa e precisa de vasopressor.',bad:'A paciente piora em um setor sem suporte e volta em choque séptico refratário.',obito:'Dona Zenaide evolui em choque séptico refratário e falece.'},
+ ensina:'Sepse: lactato, culturas, antibiótico e cristaloide na primeira hora. Perguntar alergia antes de prescrever. Trocar a sonda é controle do foco.',
+ ex0:'s',sw:1,pale0:1,cy:0,hand:null,
+ look:{skin:2,hair:'#e6e4de',hs:'short',glasses:true,cloth:'#9a8f6a'}},
+
+{id:'hda',nome:'Valdemar Rocha Brandão',idade:52,sexo:'M',mun:'Lagoa Grande (PE)',ocup:'Vendedor de frutas',tri:'VERMELHO',arr:50,
+ queixa:'"Vomitei sangue duas vezes e as fezes estão pretas."',
+ comorb:'Cirrose alcoólica diagnosticada há 3 anos, sem acompanhamento. Nunca fez endoscopia.',
+ uso:'Nenhum remédio contínuo. Usa ibuprofeno quase todo dia para dor na coluna.',
+ alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Quanto sangue vomitou?','Uma bacia cheia, vermelho vivo.',1],['Bebe álcool?','Todo dia, uns dez anos. Hoje nem consegui beber.'],['Teve fezes pretas?','Pretas e muito fedidas desde ontem.'],['Tem tontura ou desmaio?','Quase desmaiei levantando da cama.']],
+ ex:{geral:'Pálido, sudoreico, lúcido e orientado, ictérico 1+.',cab:'Mucosas descoradas 3+/4+.',cardio:'Taquicardia, pulsos finos.',resp:'Sem alterações.',abd:'Ascite leve, baço palpável, circulação colateral, sem peritonismo.',neuro:'Orientado, sem asterixis.',ext:'Eritema palmar, aranhas vasculares, extremidades frias com perfusão de 3 s.'},
+ res:{hemo:'Hb 6,9 (Ht 21%) · plaquetas 82.000 · leucócitos 9.800.',coag:'INR 1,9.',cr:'Ureia 74 · Cr 1,1.',eletr:'Na 131 · K 3,8.',gaso:'pH 7,33 · lactato 4,0.',us:'Fígado nodular e reduzido, esplenomegalia, ascite leve sem sinais de peritonite.',ecg:'Taquicardia sinusal.',glic:'112 mg/dL.'},
+ util:['hemo','coag','cr','eletr','gaso','us','ecg','glic'],evid:['hemo','coag','us'],hyp:'hda',
+ key:[{ids:['sf','hemac'],ok:[0,1],by:20,lb:'Reposição volêmica restritiva'},{ids:['terli'],ok:[1],by:35,lb:'Terlipressina'},{ids:['ceftri'],ok:[1,2],by:60,lb:'Antibiótico profilático'},{ids:['omep'],ok:[1,2],by:60,lb:'Inibidor de bomba de prótons'}],
+ allowed:['para','dipi'],
+ contra:{diclo:'AINE em hemorragia digestiva: sangramento volumoso e piora do choque.',aas:'AAS em sangramento ativo: piora da hemorragia.',enox:'Anticoagulante em sangramento ativo: choque hemorrágico.',sf:{from:2,t:'Hiper-hidratação eleva a pressão portal: ressangramento maciço.'}},
+ vit:{0:['92/58',116,22,95,36.1],1:['110/70',98,18,97,36.4],'-1':['80/48',134,26,93,36.0],'-2':['64/36',148,32,88,35.6]},
+ reav:{0:'Pálido, sem novo vômito, ainda taquicárdico.',1:'Sem novo sangramento, PA 110/70, mais corado.','-1':'Novo vômito com sangue, mais pálido e sudoreico.','-2':'Choque hemorrágico: hematêmese volumosa e rebaixamento.'},
+ fatal:1,fatalBy:110,tEff:30,dest:{best:['UTI'],ok:['EMG','TRANS'],alta:0},
+ out:{ok:'Estabilizado, sem ressangramento. A endoscopia digestiva é agendada em até 12 horas na referência.',part:'Estabiliza, mas o tratamento incompleto mantém o risco de ressangramento.',bad:'O sangramento recomeça em um setor sem monitorização e ele precisa voltar à sala de emergência.',obito:'Seu Valdemar evolui com choque hemorrágico e não responde às manobras.'},
+ ensina:'HDA varicosa: dois acessos, reposição volêmica restritiva (Hb alvo 7 a 8), vasoconstritor esplâncnico, antibiótico e IBP até a endoscopia. Evitar AINE.',
+ ex0:'p',sw:1,pale0:1,cy:0,hand:'abd',
+ look:{skin:3,hair:'#2b2018',hs:'short',beard:'full',cloth:'#5b4a3a'}},
+{id:'ofid',nome:'Edvaldo Barbosa Neto',idade:38,sexo:'M',mun:'Curaçá (BA)',ocup:'Lavrador',tri:'LARANJA',arr:80,
+ queixa:'"Uma cobra me picou no pé faz umas três horas. Tá inchando e doendo muito."',
+ comorb:'Nenhuma doença conhecida.',
+ uso:'Nenhum remédio. Amarrou um pano apertado no tornozelo e passou folha macerada.',
+ alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Viu a cobra?','Era marrom, com desenho em V invertido. Acho que jararaca.',1],['Fez algo antes de vir?','Amarrei um pano forte acima do pé e passei cachaça e folha.',1],['Tem algum sangramento?','A gengiva sangrou quando escovei e o furo ainda escorre sangue.',1],['Tomou vacina antitetânica?','Não lembro de ter tomado.'],['A urina está normal?','Normal, amarelinha.']],
+ ex:{geral:'Ansioso, hemodinamicamente estável.',cab:'Sem ptose palpebral, gengivorragia discreta.',cardio:'Sem alterações.',resp:'Sem alterações.',abd:'Sem alterações.',neuro:'Sem déficit, sem sinais de envenenamento neurotóxico.',ext:'Dois pontos de inoculação no tornozelo direito, edema até o joelho, equimose em expansão e sangramento persistente pelos orifícios. Torniquete apertado com pulso pedioso diminuído.'},
+ res:{coag:'Tempo de coagulação incoagulável · INR 3,4 · fibrinogênio baixo.',hemo:'Hb 14,1 · plaquetas 98.000 · leucócitos 13.000.',cr:'Ureia 31 · Cr 0,9.',urina:'Sem hematúria.',eletr:'Na 138 · K 4,0.',ecg:'Ritmo sinusal normal.',glic:'98 mg/dL.'},
+ util:['coag','hemo','cr','urina','eletr','glic'],evid:['coag'],hyp:'ofid',
+ key:[{ids:['torn'],ok:[0],by:20,lb:'Retirar o torniquete'},{ids:['sorobot'],ok:[1,2],by:60,lb:'Soro antibotrópico'},{ids:['sf'],ok:[1,2],by:80,lb:'Hidratação para proteger o rim'}],
+ allowed:['dipi','para'],stock:{sorobot:6},
+ contra:{diclo:'AINE em acidente botrópico: sangramento maior e risco de lesão renal.',aas:'AAS em coagulopatia por veneno: hemorragia.',enox:'Anticoagulante em coagulopatia por veneno: hemorragia grave.'},
+ vit:{0:['128/78',96,18,98,36.8],1:['124/76',84,16,99,36.7],'-1':['118/72',104,20,98,36.9],'-2':['94/58',122,24,96,37.2]},
+ reav:{0:'Edema estável, ainda dolorido.',1:'Sangramento controlado, edema sem progressão, dor menor.','-1':'Edema subindo para a coxa, equimose maior, sangramento persistente.','-2':'Sangramento importante, hipotensão e sinais de síndrome compartimental.'},
+ fatal:0,fatalBy:999,tEff:30,dest:{best:['ENF','OBS'],ok:['EMG','TRANS'],alta:0},
+ out:{ok:'Torniquete removido e soro administrado. A coagulação normaliza em 24 horas na enfermaria, com o membro elevado.',part:'Tratamento incompleto: o edema progride e ele fica mais tempo em observação.',bad:'Sem antiveneno e com torniquete, o membro piora e surgem hemorragia e lesão tecidual.',obito:''},
+ ensina:'Botrópico: nunca torniquete, soro antibotrópico precoce (moderado: 4 a 8 ampolas), hidratação, analgesia sem AINE, controle da coagulação.',
+ ex0:'p',sw:1,pale0:0,cy:0,hand:null,
+ look:{skin:4,hair:'#1b1511',hs:'hat',beard:'mustache',cloth:'#a3834f'}},
+
+{id:'iam',nome:'Antônio Ferraz Menezes',idade:58,sexo:'M',mun:'Lagoa Grande (PE)',ocup:'Comerciante',tri:'VERMELHO',arr:115,
+ queixa:'"Uma dor no peito, tipo peso, desde as 18h. Tô suando frio."',
+ comorb:'Hipertensão sem tratamento, tabagista (30 maços-ano) e colesterol alto.',
+ uso:'Nenhum remédio contínuo. Tomou um comprimido azul para a potência ontem à noite.',
+ alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Como é a dor?','Peso forte no meio do peito, vai pro braço esquerdo e pra mandíbula.'],['Começou quando?','Às 6 da tarde, não passa de jeito nenhum.',1],['Já teve isso antes?','Nunca.'],['Tem falta de ar ou tontura?','Um pouco de falta de ar.']],
+ ex:{geral:'Pálido, sudoreico, ansioso.',cab:'Sem turgência jugular.',cardio:'Bradicárdico regular, sem sopros, sem B3.',resp:'Murmúrio vesicular presente, sem estertores.',abd:'Epigastralgia leve, sem dor à palpação.',neuro:'Orientado, sem déficit.',ext:'Pulsos simétricos, sem edema.'},
+ res:{ecg:'Supra de ST em DII, DIII e aVF, infra em DI e aVL, bradicardia sinusal de 52 bpm e BAV de 1º grau.',trop:'Elevada (8 vezes o limite).',hemo:'Hb 14,6 · plaquetas 244.000.',coag:'INR 1,0.',eletr:'Na 139 · K 4,1.',cr:'Ureia 36 · Cr 1,0.',rx:'Sem congestão pulmonar.',us:'Hipocinesia de parede inferior.',glic:'146 mg/dL.'},
+ util:['ecg','trop','hemo','coag','eletr','cr','rx','us','glic'],evid:['ecg','trop'],hyp:'iam',
+ key:[{ids:['aas'],ok:[1],by:10,lb:'AAS mastigado'},{ids:['clop'],ok:[1],by:20,lb:'Clopidogrel de ataque'},{ids:['strep'],ok:[1],by:40,lb:'Fibrinólise (sem hemodinâmica local)'},{ids:['enox'],ok:[1],by:60,lb:'Anticoagulação'}],
+ allowed:['omep','dipi','para'],
+ contra:{nitro:'Nitrato com sildenafil nas últimas 24 h: PA 62/34 e síncope.',morf:'Morfina em IAM inferior com bradicardia: hipotensão e bradicardia mais intensas.',diclo:'AINE em IAM: risco de sangramento e de eventos cardiovasculares.',furo:'Diurético em IAM sem congestão: hipovolemia e hipotensão.'},
+ vit:{0:['142/88',52,20,94,36.4],1:['126/78',68,16,97,36.4],'-1':['98/60',44,22,92,36.4],'-2':['70/40',38,26,88,36.3]},
+ reav:{0:'Dor persistente, bradicardia mantida.',1:'Dor quase ausente, supra de ST regredindo e arritmias de reperfusão ausentes.','-1':'Dor mais intensa, bradicardia de 44 bpm e PA em queda.','-2':'Hipotensão, bradicardia profunda e risco de parada.'},
+ fatal:1,fatalBy:90,tEff:30,dest:{best:['TRANS'],ok:['UTI','EMG'],alta:0},
+ out:{ok:'Fibrinólise em tempo e transferência regulada para hemodinâmica de referência. O supra de ST regride e a dor cessa.',part:'Reperfusão tardia ou incompleta. A dor melhora pouco e a troponina continua subindo.',bad:'Janela de reperfusão perdida: o paciente evolui com hipotensão e arritmia.',obito:'Seu Antônio evolui com bloqueio atrioventricular total, choque e parada cardiorrespiratória.'},
+ ensina:'IAMCSST sem hemodinâmica em 120 min: AAS, clopidogrel, anticoagulação e fibrinólise em até 30 min, depois transferência. Ver o ECG antes da troponina e perguntar sobre sildenafil antes do nitrato.',
+ ex0:'p',sw:1,pale0:1,cy:0,hand:'chest',
+ look:{skin:2,hair:'#3a3633',hs:'short',beard:'mustache',cloth:'#4f6b43'}},
+
+{id:'has',nome:'Cícera Maria da Conceição',idade:64,sexo:'F',mun:'Juazeiro (BA)',ocup:'Costureira',tri:'AMARELO',arr:150,
+ queixa:'"Medi a pressão no posto e tava alta. Tô com um pouco de dor de cabeça na nuca."',
+ comorb:'Hipertensão há 10 anos.',
+ uso:'Losartana 50 mg. Parou há duas semanas porque acabou.',
+ alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Tem dor no peito, falta de ar ou fraqueza num lado?','Nada disso, só a cabeça pesada.',1],['Tem alteração na visão ou confusão?','Não, enxergo bem.'],['Por que parou a losartana?','Acabou no posto e eu deixei pra lá.',1],['Como é a dor de cabeça?','Leve, tipo peso. Não é a pior da minha vida.']],
+ ex:{geral:'Bem, orientada, sem desconforto.',cab:'Fundo de olho sem papiledema nem hemorragias.',cardio:'Ritmo regular, B4 presente, sem sopros.',resp:'Sem alterações.',abd:'Sem sopros, sem dor.',neuro:'Sem déficit focal, sem sinais meníngeos.',ext:'Sem edema, pulsos simétricos.'},
+ res:{ecg:'Ritmo sinusal, sobrecarga de VE, sem isquemia aguda.',cr:'Ureia 34 · Cr 0,9.',eletr:'Na 139 · K 4,2.',trop:'Normal.',urina:'Sem proteinúria nem hematúria.',glic:'112 mg/dL.',rx:'Sem alterações.',hemo:'Sem alterações.'},
+ util:['ecg','cr','eletr','urina','glic'],evid:[],hyp:'has',
+ key:[{ids:['capto','losa','anlo'],ok:{capto:[0,1],losa:[0],anlo:[0,1]},by:120,lb:'Retomar o anti-hipertensivo por via oral'}],
+ allowed:['dipi','para'],
+ contra:{nitro:'Nitroglicerina EV desnecessária: queda abrupta da PA com tontura e síncope.',furo:'Diurético EV sem congestão: hipovolemia e hipotensão.'},
+ vit:{0:['196/112',86,18,98,36.5],1:['164/96',80,16,98,36.5],'-1':['206/118',92,18,98,36.5],'-2':['220/124',100,20,98,36.5]},
+ reav:{0:'PA ainda elevada, cefaleia leve.',1:'PA 164/96, cefaleia resolvida.','-1':'PA subindo, cefaleia mais forte.','-2':'PA 220/124 e cefaleia intensa: atenção a lesão de órgão-alvo.'},
+ fatal:0,fatalBy:999,tEff:25,dest:{best:['ALTA'],ok:['OBS'],alta:1},
+ out:{ok:'PA de 164/96 após a retomada do tratamento. Alta com orientações e retorno à UBS em 7 dias.',part:'Alta com a PA ainda elevada e sem esquema terapêutico definido.',bad:'A paciente ocupa um leito escasso e consome recursos sem necessidade, enquanto outros aguardam.',obito:''},
+ ensina:'Urgência hipertensiva sem lesão de órgão-alvo: anti-hipertensivo por via oral, queda gradual em 24 a 48 horas e retomada do tratamento. Exames em excesso e leito ocupado têm custo.',
+ ex0:'a',sw:0,pale0:0,cy:0,hand:null,
+ look:{skin:3,hair:'#b5b0a8',hs:'short',glasses:true,cloth:'#8c3f4f'}}
+];
+/* ===== CASOS 8 a 18 (modelos: o nome, a idade, o rosto e o município são sorteados a cada partida; {N} = primeiro nome) ===== */
+DXS.push(['organo','Intoxicação por organofosforado'],['hiperk','Hipercalemia grave'],['tireo','Crise tireotóxica'],['neutro','Neutropenia febril'],['estmal','Estado de mal epiléptico'],['lv','Leishmaniose visceral'],['absti','Síndrome de abstinência alcoólica'],['meningite','Meningite bacteriana'],['malaria','Malária'],['chagas','Cardiopatia chagásica descompensada'],['ira','Lesão renal aguda']);
+CASES.push(
+{id:'organo',sexo:'M',ageR:[22,58],ocups:['Lavrador','Trabalhador da fruticultura irrigada','Aplicador de defensivos'],tri:'VERMELHO',
+ queixa:'Colega: "Ele tava passando veneno na plantação de uva sem máscara e começou a babar e passar mal."',
+ comorb:'Nenhuma doença conhecida.',uso:'Nenhum remédio.',alergia:[],alergiaTxt:'Não sei de nenhuma.',
+ perg:[['Que produto ele usou?','Um veneno de garrafa marrom, de bicho de uva. Ele misturou forte.',1],['Faz quanto tempo?','Umas duas horas. Começou com vista embaçada.'],['Vomitou ou teve diarreia?','Vomitou três vezes e se borrou no caminho.'],['Tomou banho depois?','Não, veio com a mesma roupa.',1]],
+ ex:{geral:'Sudoreico, sialorreia e broncorreia intensas, cheiro forte de produto químico na roupa.',cab:'Miose puntiforme bilateral, lacrimejamento.',cardio:'Bradicardia de 46 bpm, sem sopros.',resp:'Sibilos difusos e roncos de secreção.',abd:'Ruídos hidroaéreos aumentados, dor difusa leve.',neuro:'Fasciculações em panturrilhas, sonolento, Glasgow 13.',ext:'Pele úmida, sem lesões.'},
+ res:{ecg:'Bradicardia sinusal de 46 bpm, QTc 490 ms.',gaso:'pH 7,30 · pCO2 48 · pO2 58.',hemo:'Leucócitos 12.400.',eletr:'Na 137 · K 3,9.',cr:'Ureia 38 · Cr 1,0.',glic:'164 mg/dL.',ck:'Discretamente elevada.'},
+ util:['ecg','gaso','eletr','glic','cr','hemo','ck'],evid:['ecg'],hyp:'organo',
+ key:[{ids:['o2'],ok:[1,2],by:15,lb:'Oxigênio'},{ids:['atrop'],ok:[2],by:20,lb:'Atropina até atropinização'}],
+ allowed:['sf','diaz','carv'],
+ contra:{morf:'Morfina em intoxicação colinérgica: depressão respiratória grave.',meto:'Betabloqueador com bradicardia colinérgica: FC 32 bpm e hipotensão.'},
+ vit:{0:['104/62',46,30,88,36.6],1:['118/74',96,18,95,36.8],'-1':['92/54',40,34,82,36.5],'-2':['70/40',34,38,72,36.3]},
+ reav:{0:'Ainda com secreção abundante e bradicárdico.',1:'Atropinizado: pele seca, secreções reduzidas, FC acima de 80 e pulmões mais limpos.','-1':'Mais secreção, mais sonolento, SatO2 caindo.','-2':'Insuficiência respiratória e rebaixamento.'},
+ fatal:1,fatalBy:70,tEff:25,dest:{best:['UTI'],ok:['EMG'],alta:0},
+ out:{ok:'Atropinizado em tempo e descontaminado. {N} segue para a UTI com secreções controladas.',part:'Atropinização incompleta: precisa de doses repetidas e vigilância intensa.',bad:'Secreções e bradicardia voltam no setor sem monitorização.',obito:'{N} evolui com insuficiência respiratória por intoxicação colinérgica e parada.'},
+ ensina:'Organofosforado: retirar a roupa e lavar a pele, oxigênio e atropina em doses dobradas até secar as secreções. A miose não é o alvo.',
+ ex0:'d',sw:1,pale0:0,cy:1,hand:null,hat:1},
+
+{id:'hiperk',sexo:'*',ageR:[45,78],tri:'VERMELHO',
+ queixa:'"Tô fraco das pernas e o coração tá batendo esquisito. Faltei duas hemodiálises."',
+ comorb:'Doença renal crônica em hemodiálise três vezes por semana, hipertensão e diabetes.',uso:'Losartana, insulina NPH e carbonato de cálcio.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Por que faltou à diálise?','O transporte da prefeitura não passou na quinta nem no sábado.',1],['Comeu muita fruta?','Comi bastante manga e banana, era o que tinha em casa.'],['Urina ainda?','Quase nada.']],
+ ex:{geral:'Fraqueza muscular difusa, edema leve, lúcido.',cab:'Sem alterações.',cardio:'Ritmo irregular e lento, bulhas abafadas.',resp:'Estertores discretos em bases.',abd:'Fístula arteriovenosa com frêmito no braço esquerdo.',neuro:'Força grau 3 em membros inferiores, reflexos diminuídos.',ext:'Edema 1+/4+.'},
+ res:{ecg:'Ondas T apiculadas, QRS alargado (140 ms) e ritmo juncional de 48 bpm.',eletr:'Na 134 · K 7,4.',cr:'Ureia 212 · Cr 9,8.',gaso:'pH 7,22 · HCO3 13.',glic:'148 mg/dL.',hemo:'Hb 8,9.'},
+ util:['ecg','eletr','cr','gaso','glic','hemo'],evid:['eletr','ecg'],hyp:'hiperk',
+ key:[{ids:['cagl'],ok:[0,1],by:10,lb:'Gluconato de cálcio (estabilizar a membrana)'},{ids:['insu'],ok:[1],by:30,lb:'Insulina com glicose'},{ids:['salb'],ok:[1],by:40,lb:'Salbutamol inalatório'}],
+ allowed:['glic50','bic','furo'],
+ seq:[{first:'glic50',then:'insu',t:'Insulina sem glicose: glicemia 32 e convulsão.'}],
+ contra:{kcl:'Potássio em hipercalemia: fibrilação ventricular.',losa:'Bloqueador do receptor de angiotensina eleva ainda mais o potássio.'},
+ vit:{0:['152/88',48,20,94,36.4],1:['146/86',72,18,96,36.4],'-1':['118/70',38,22,92,36.3],'-2':['80/40',28,24,88,36.2]},
+ reav:{0:'Ainda bradicárdico, ECG sem mudança.',1:'QRS estreitando e FC de 72 bpm.','-1':'Mais bradicardia e QRS mais largo.','-2':'Padrão sinusoidal no monitor: parada iminente.'},
+ fatal:1,fatalBy:60,tEff:20,dest:{best:['TRANS','UTI'],ok:['EMG'],alta:0},
+ out:{ok:'Membrana estabilizada e potássio deslocado. {N} sai em transferência para hemodiálise de urgência.',part:'O potássio cai pouco e a diálise atrasa: risco de arritmia persiste.',bad:'Sem diálise e sem monitorização, a arritmia volta.',obito:'{N} evolui com fibrilação ventricular por hipercalemia.'},
+ ensina:'Hipercalemia com alteração no ECG: cálcio primeiro, depois insulina com glicose e beta-2. A remoção definitiva é a diálise.',
+ ex0:'a',sw:0,pale0:1,cy:0,hand:'chest'},
+
+{id:'dpoc',sexo:'*',ageR:[60,84],tri:'LARANJA',
+ queixa:'"Falta de ar pior há três dias, o catarro ficou verde."',
+ comorb:'DPOC grave, fumou 50 anos (parou há 2), usa O2 domiciliar só à noite.',uso:'Formoterol com budesonida e salbutamol de resgate.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['O catarro mudou?','Ficou verde e mais grosso.',1],['Usa oxigênio em casa?','Só de noite, 1 litro.',1],['Teve febre?','Um pouco de calafrio ontem.'],['Tem inchaço nas pernas?','Não.']],
+ ex:{geral:'Tórax em tonel, lábios em bico, uso de musculatura acessória.',cab:'Sem turgência jugular.',cardio:'Bulhas abafadas, taquicardia.',resp:'Murmúrio diminuído difusamente, sibilos expiratórios e roncos.',abd:'Respiração paradoxal leve.',neuro:'Sonolento, mas orientado.',ext:'Baqueteamento digital, sem edema.'},
+ res:{gaso:'pH 7,28 · pCO2 66 · pO2 52 · HCO3 30.',rx:'Hiperinsuflação, sem consolidação nem pneumotórax.',hemo:'Leucócitos 13.900.',ecg:'Taquicardia sinusal, sobrecarga de câmaras direitas.',eletr:'Na 138 · K 4,0.',cr:'Ureia 40 · Cr 1,0.',glic:'130 mg/dL.'},
+ util:['gaso','rx','hemo','ecg','eletr','glic'],evid:['gaso','rx'],hyp:'dpoc',
+ key:[{ids:['o2'],ok:[0,2],by:15,lb:'O2 controlado ou VNI (alvo de 88 a 92%)'},{ids:['salb'],ok:[1],by:20,lb:'Broncodilatador'},{ids:['pred','hidroc'],ok:{pred:[1],hidroc:[1]},by:60,lb:'Corticoide sistêmico'},{ids:['amoxclav','azitro'],ok:{amoxclav:[1],azitro:[1]},by:90,lb:'Antibiótico (escarro purulento)'}],
+ allowed:['ipra','enox','omep'],
+ contra:{diaz:'Benzodiazepínico em hipercapnia: pCO2 sobe para 90 e o paciente entra em coma.',morf:'Opioide em hipercapnia: depressão respiratória.',meto:'Betabloqueador em broncoespasmo: piora da obstrução.'},
+ vit:{0:['148/86',112,28,84,37.6],1:['136/80',94,20,90,37.0],'-1':['154/90',124,32,80,37.8],'-2':['168/96',132,10,74,37.8]},
+ reav:{0:'Ainda taquipneico, sibilando.',1:'Fala frases completas, SatO2 90% e pH melhorando.','-1':'Mais cansado e sonolento.','-2':'Narcose por CO2: respiração lenta e superficial.'},
+ fatal:1,fatalBy:140,tEff:30,dest:{best:['ENF','UTI'],ok:['EMG','OBS'],alta:0},
+ out:{ok:'Broncodilatador, corticoide, antibiótico e O2 controlado: o pH melhora e {N} segue para a enfermaria.',part:'Melhora lenta, ainda com hipercapnia.',bad:'Piora da hipercapnia em setor sem vigilância.',obito:'{N} evolui com narcose por CO2 e parada respiratória.'},
+ ensina:'Exacerbação de DPOC: O2 com alvo de 88 a 92% (ou VNI se pH abaixo de 7,35), broncodilatador, corticoide e antibiótico se escarro purulento. Evitar sedativos.',
+ ex0:'d',sw:1,pale0:0,cy:1,hand:null},
+
+{id:'tireo',sexo:'F',ageR:[24,52],tri:'LARANJA',
+ queixa:'"Coração disparado, calor demais, tô tremendo toda e não consigo ficar parada."',
+ comorb:'Doença de Graves diagnosticada há 1 ano. Parou o tapazol por conta própria.',uso:'Nenhum no momento.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Toma remédio para a tireoide?','Tomava, mas parei faz três meses porque me sentia bem.',1],['Teve febre ou infecção?','Uma dor de garganta forte na semana passada.',1],['Emagreceu?','Uns 6 quilos em dois meses.'],['Teve diarreia?','Toda hora vou ao banheiro.']],
+ ex:{geral:'Agitada, sudoreica, pele quente e úmida, tremor fino.',cab:'Exoftalmia bilateral, bócio difuso com sopro.',cardio:'Taquicardia irregular de 150 bpm.',resp:'Sem alterações.',abd:'Dor abdominal leve difusa.',neuro:'Hiperreflexia, agitação, orientada.',ext:'Tremor fino de extremidades.'},
+ res:{tsh:'TSH indetectável · T4 livre 6,8 ng/dL.',ecg:'Fibrilação atrial de alta resposta (150 bpm).',hemo:'Leucócitos 11.200.',eletr:'Na 139 · K 3,6.',cr:'Ureia 30 · Cr 0,8.',hepat:'TGO 62 · TGP 70 · bilirrubina 1,6.',glic:'142 mg/dL.'},
+ util:['tsh','ecg','hemo','eletr','cr','hepat','glic'],evid:['tsh'],hyp:'tireo',
+ key:[{ids:['propra'],ok:[1],by:30,lb:'Betabloqueador'},{ids:['ptu'],ok:[1],by:60,lb:'Propiltiouracil'},{ids:['hidroc'],ok:[1],by:60,lb:'Hidrocortisona'}],
+ allowed:['para','sf','hepa','enox','dipi'],
+ contra:{aas:'AAS desloca o hormônio tireoidiano da proteína: piora da crise.',strep:'Fibrinolítico sem indicação: hemorragia.'},
+ vit:{0:['152/70',150,26,96,39.2],1:['130/72',100,18,98,37.8],'-1':['146/68',164,30,95,39.8],'-2':['90/50',176,34,92,40.4]},
+ reav:{0:'Ainda taquicárdica e agitada.',1:'FC 100, mais calma, febre cedendo.','-1':'Mais agitada, confusa, febre subindo.','-2':'Choque e insuficiência cardíaca de alto débito.'},
+ fatal:1,fatalBy:150,tEff:40,dest:{best:['UTI'],ok:['EMG'],alta:0},
+ out:{ok:'Betabloqueio, tionamida e corticoide: a FC cai para 100 e {N} vai para a UTI.',part:'Controle parcial da crise, ainda taquicárdica.',bad:'A crise progride sem monitorização.',obito:'{N} evolui com insuficiência cardíaca de alto débito e choque.'},
+ ensina:'Crise tireotóxica: betabloqueador, tionamida (PTU), corticoide e tratar o gatilho. Paracetamol para febre; evitar AAS.',
+ ex0:'a',sw:1,pale0:0,cy:0,hand:'chest'},
+
+{id:'neutro',sexo:'*',ageR:[30,70],tri:'LARANJA',
+ queixa:'"Tô com febre desde a madrugada. Fiz quimioterapia faz dez dias."',
+ comorb:'Linfoma em quimioterapia no centro de oncologia de referência.',uso:'Ondansetrona e omeprazol.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Quando foi a última quimioterapia?','Dez dias atrás.',1],['Tem algum foco, tosse ou ardência para urinar?','Só uma ferida na boca.'],['Tem cateter?','Tenho um cateter no peito.',1]],
+ ex:{geral:'Febril, prostrado, corado.',cab:'Mucosite oral grau 2.',cardio:'Taquicardia regular.',resp:'Sem alterações.',abd:'Sem alterações.',neuro:'Orientado.',ext:'Cateter totalmente implantado sem sinais flogísticos.'},
+ res:{hemo:'Leucócitos 400 · neutrófilos 80 · Hb 9,6 · plaquetas 62.000.',lact:'1,8 mmol/L.',cr:'Ureia 34 · Cr 0,9.',hemoc:'Coletadas (periférica e do cateter). Resultado em 48 h.',urina:'Sem alterações.',rx:'Sem consolidações.',eletr:'Na 136 · K 3,8.'},
+ util:['hemo','lact','cr','hemoc','urina','rx','eletr'],evid:['hemo'],hyp:'neutro',
+ key:[{ids:['cefep'],ok:[1],by:60,lb:'Cefepima em até 1 hora'},{ids:['sf'],ok:[1,2],by:60,lb:'Hidratação'}],
+ allowed:['para','ondan','omep'],
+ contra:{dipi:'Dipirona em neutropênico: risco de agranulocitose e de mascarar a febre.',ceftri:'Ceftriaxona não cobre Pseudomonas: a febre persiste e o paciente evolui para choque.',enox:'Anticoagulação com plaquetopenia: sangramento.'},
+ vit:{0:['104/64',114,22,96,38.8],1:['112/70',92,18,97,37.4],'-1':['88/52',126,26,95,39.2],'-2':['72/40',138,30,92,39.6]},
+ reav:{0:'Ainda febril e taquicárdico.',1:'Febre cedendo, hemodinâmica estável.','-1':'Hipotensão, extremidades frias.','-2':'Choque séptico.'},
+ fatal:1,fatalBy:140,tEff:40,dest:{best:['ENF'],ok:['UTI','EMG'],alta:0},
+ out:{ok:'Cefepima na primeira hora e isolamento: {N} estabiliza na enfermaria.',part:'Antibiótico atrasado ou incompleto: febre persiste.',bad:'O quadro evolui para sepse fora de um setor adequado.',obito:'{N} evolui com choque séptico e falece.'},
+ ensina:'Neutropenia febril é emergência: culturas e betalactâmico antipseudomonas (cefepima) em até 1 hora. Evitar dipirona.',
+ ex0:'s',sw:1,pale0:1,cy:0,hand:null},
+
+{id:'eh',sexo:'*',ageR:[45,72],tri:'AMARELO',
+ queixa:'Filha: "Ele tá confuso desde ontem, trocando o dia pela noite e falando coisa sem sentido."',
+ comorb:'Cirrose por álcool e hepatite B, abstêmio há 1 ano.',uso:'Furosemida, espironolactona e propranolol.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Está evacuando normalmente?','Faz quatro dias que não vai ao banheiro.',1],['Mudou algum remédio?','Aumentaram a furosemida por causa da barriga d\'água.',1],['Teve vômito com sangue ou fezes pretas?','Não.'],['Bebeu álcool?','Não bebe há um ano.']],
+ ex:{geral:'Sonolento, desorientado no tempo, hálito adocicado (fetor hepático).',cab:'Icterícia 2+.',cardio:'Sem alterações.',resp:'Sem alterações.',abd:'Ascite moderada, indolor, sem sinais de peritonite.',neuro:'Asterixis presente, sem déficit focal.',ext:'Eritema palmar, aranhas vasculares.'},
+ res:{eletr:'Na 128 · K 2,9.',cr:'Ureia 64 · Cr 1,4.',hemo:'Hb 11,0 · plaquetas 70.000 · leucócitos 6.200.',coag:'INR 1,8.',glic:'96 mg/dL.',hepat:'Bilirrubina 4,2 · albumina 2,4.',us:'Fígado cirrótico, ascite moderada, sem trombose portal.'},
+ util:['eletr','cr','hemo','coag','glic','hepat','us'],evid:['eletr','glic'],hyp:'eh',
+ key:[{ids:['lactul'],ok:[1],by:60,lb:'Lactulose'},{ids:['kcl'],ok:[0,1],by:90,lb:'Repor potássio'}],
+ allowed:['ceftri','tiam','sf','omep'],
+ contra:{diaz:'Benzodiazepínico em encefalopatia hepática: coma.',furo:'Mais diurético com hipocalemia: piora da encefalopatia.',morf:'Opioide em encefalopatia: coma.'},
+ vit:{0:['108/66',84,18,96,36.8],1:['112/70',80,16,97,36.7],'-1':['100/60',92,16,95,36.8],'-2':['94/56',98,12,93,36.7]},
+ reav:{0:'Ainda confuso.',1:'Evacuou três vezes, mais desperto e orientado.','-1':'Mais sonolento.','-2':'Responde só à dor: coma hepático.'},
+ fatal:0,fatalBy:999,tEff:45,dest:{best:['ENF'],ok:['OBS'],alta:0},
+ out:{ok:'Lactulose e correção do potássio: {N} volta a se orientar em 24 horas.',part:'Melhora lenta, ainda desorientado.',bad:'Evolui para coma por encefalopatia.',obito:''},
+ ensina:'Encefalopatia hepática: procurar o gatilho (constipação, diurético, hipocalemia, infecção, sangramento), lactulose e corrigir eletrólitos. Evitar sedativos.',
+ ex0:'s',sw:0,pale0:0,cy:0,hand:null},
+
+{id:'estmal',sexo:'*',ageR:[18,60],tri:'VERMELHO',
+ queixa:'Acompanhante: "Ele convulsionou três vezes no caminho e não acorda entre uma e outra."',
+ comorb:'Epilepsia desde a adolescência.',uso:'Carbamazepina, mas a família diz que acabou há uma semana.',alergia:[],alergiaTxt:'O acompanhante não sabe.',
+ perg:[['Há quanto tempo está convulsionando?','A primeira foi há uns 30 minutos.',1],['Bebeu ou usou droga?','Bebeu no fim de semana.'],['Bateu a cabeça?','Não que a gente tenha visto.'],['Toma o remédio direitinho?','Acabou a carbamazepina e ele ficou sem.',1]],
+ ex:{geral:'Em crise tônico-clônica generalizada ao chegar, sialorreia, mordedura de língua.',cab:'Sem sinais de trauma.',cardio:'Taquicardia.',resp:'Respiração ruidosa, secreção em orofaringe.',abd:'Sem alterações.',neuro:'Glasgow 6 entre as crises, pupilas isocóricas, sem rigidez de nuca.',ext:'Sem lesões.'},
+ res:{glic:'92 mg/dL.',eletr:'Na 138 · K 3,8.',gaso:'pH 7,18 · lactato 6,4 (pós-ictal).',calc:'Cálcio 9,1 · Mg 2,0.',ck:'Elevada.',cr:'Ureia 30 · Cr 1,0.',hemo:'Leucócitos 14.000.'},
+ util:['glic','eletr','gaso','calc','ck','cr','hemo'],evid:['glic','eletr'],hyp:'estmal',
+ key:[{ids:['diaz'],ok:[1],by:10,lb:'Benzodiazepínico'},{ids:['feni'],ok:[1],by:30,lb:'Fenitoína de ataque'},{ids:['o2'],ok:[1],by:10,lb:'Oxigênio'}],
+ allowed:['tiam','glic50','sf'],
+ contra:{halo:'Haloperidol reduz o limiar convulsivo: nova crise.',morf:'Opioide em paciente rebaixado: apneia.'},
+ vit:{0:['164/94',128,8,86,37.8],1:['132/80',96,16,96,37.4],'-1':['170/98',136,6,80,38.2],'-2':['90/50',148,4,70,38.8]},
+ reav:{0:'Novas crises, sem recuperar a consciência.',1:'Crises cessaram, pós-ictal, respirando bem.','-1':'Crise contínua, hipoxemia.','-2':'Crise refratária com hipoxemia grave.'},
+ fatal:1,fatalBy:80,tEff:20,dest:{best:['UTI'],ok:['EMG'],alta:0},
+ out:{ok:'Crises controladas com benzodiazepínico e fenitoína. {N} segue para a UTI, pós-ictal e estável.',part:'Crises param tarde, com risco de lesão neurológica.',bad:'As crises voltam fora de um setor monitorizado.',obito:'{N} evolui com estado de mal refratário e parada.'},
+ ensina:'Estado de mal: via aérea e O2, glicemia, benzodiazepínico nos primeiros 5 a 10 minutos e fenitoína 20 mg/kg em seguida.',
+ ex0:'s',sw:1,pale0:0,cy:1,hand:null},
+
+{id:'lv',sexo:'*',ageR:[18,55],tri:'AMARELO',ocups:['Lavrador','Morador de povoado rural','Vaqueiro'],
+ queixa:'"Faz mais de um mês que tenho febre todo dia e a barriga tá crescendo do lado esquerdo."',
+ comorb:'Nenhuma doença conhecida.',uso:'Dipirona quando tem febre.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Emagreceu?','Uns 8 quilos. Tô muito fraco.'],['Tem cachorro em casa ou na vizinhança?','Tem vários, e um morreu magro com feridas.',1],['Teve sangramento?','O nariz sangra às vezes.'],['Já fez teste de HIV?','Nunca fiz.',1]],
+ ex:{geral:'Emagrecido, descorado 3+/4+, febril.',cab:'Mucosas descoradas.',cardio:'Sopro sistólico suave (anemia).',resp:'Sem alterações.',abd:'Esplenomegalia volumosa, 12 cm do rebordo; hepatomegalia leve.',neuro:'Orientado.',ext:'Edema leve, petéquias em membros inferiores.'},
+ res:{hemo:'Hb 7,4 · leucócitos 1.900 · plaquetas 64.000.',sorol:'Teste rápido rK39 reagente · HIV não reagente.',hepat:'Albumina 2,6 · globulinas 5,2.',cr:'Ureia 36 · Cr 0,9.',us:'Esplenomegalia volumosa homogênea.',coag:'INR 1,3.'},
+ util:['hemo','sorol','hepat','cr','us','coag'],evid:['sorol'],hyp:'lv',
+ key:[{ids:['anfo'],ok:[1],by:300,lb:'Anfotericina B lipossomal'}],
+ allowed:['para','dipi','ceftri'],
+ contra:{aas:'AAS com plaquetopenia: sangramento.',enox:'Anticoagulante com plaquetopenia: sangramento.',diclo:'AINE com plaquetopenia: sangramento.'},
+ vit:{0:['104/62',104,20,97,38.6],1:['108/66',90,18,98,37.4],'-1':['98/58',112,22,96,39.0],'-2':['86/50',124,24,95,39.4]},
+ reav:{0:'Febril, sem mudança.',1:'Febre em queda após o início do tratamento.','-1':'Febre mais alta e prostração.','-2':'Sinais de infecção bacteriana secundária.'},
+ fatal:0,fatalBy:999,tEff:60,dest:{best:['ENF'],ok:['OBS'],alta:0},
+ out:{ok:'Diagnóstico confirmado com o teste rápido e anfotericina lipossomal iniciada. {N} fica internado e a notificação é feita.',part:'Diagnóstico tardio, tratamento só no dia seguinte.',bad:'Alta ou setor errado: o paciente retorna com infecção grave.',obito:''},
+ ensina:'Leishmaniose visceral: febre prolongada, esplenomegalia e pancitopenia em área endêmica. Teste rápido rK39, testar HIV, anfotericina lipossomal nos casos graves e notificar.',
+ ex0:'n',sw:0,pale0:1,cy:0,hand:'abd',hat:1},
+
+{id:'hiposu',sexo:'*',ageR:[68,90],tri:'LARANJA',
+ queixa:'Neta: "Achei minha vó suada e falando enrolado de manhã. Já tinha acontecido anteontem."',
+ comorb:'Diabetes tipo 2, doença renal crônica e hipertensão.',uso:'Glibenclamida 10 mg duas vezes ao dia, metformina e enalapril.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Está comendo bem?','Quase não come há uns dias, está com dor de dente.',1],['Mudaram algum remédio?','O médico do posto aumentou a glibenclamida mês passado.',1],['Bateu a cabeça?','Não caiu.']],
+ ex:{geral:'Sudoreica, pálida, confusa, fala arrastada.',cab:'Abscesso dentário pequeno.',cardio:'Taquicardia leve.',resp:'Sem alterações.',abd:'Sem alterações.',neuro:'Desorientada, sem déficit focal fixo.',ext:'Pele fria e úmida.'},
+ res:{glic:'34 mg/dL.',cr:'Ureia 88 · Cr 2,3.',eletr:'Na 136 · K 4,8.',hemo:'Hb 11,8 · leucócitos 9.000.',ecg:'Taquicardia sinusal.'},
+ util:['glic','cr','eletr','hemo','ecg'],evid:['glic'],hyp:'hipo',
+ key:[{ids:['glic50'],ok:[1],by:10,lb:'Glicose hipertônica'}],
+ allowed:['sf','amoxclav','para'],
+ contra:{insu:'Insulina em hipoglicemia: glicemia 18 e convulsão.',diaz:'Sedar a confusão sem tratar a glicose: coma hipoglicêmico.'},
+ vit:{0:['146/84',104,18,97,36.0],1:['138/80',86,16,97,36.4],'-1':['150/86',112,18,96,35.8],'-2':['158/90',120,12,94,35.6]},
+ reav:{0:'Ainda confusa.',1:'Lúcida e conversando. Glicemia 140, mas pode voltar a cair.','-1':'Mais sonolenta.','-2':'Coma hipoglicêmico.'},
+ fatal:1,fatalBy:90,tEff:15,dest:{best:['OBS','ENF'],ok:['EMG'],alta:0},
+ out:{ok:'Glicose corrigida e glibenclamida suspensa. {N} fica em observação com glicemias seriadas, pois a sulfonilureia age por horas.',part:'Melhora, mas sem vigilância suficiente há nova hipoglicemia de madrugada.',bad:'Alta precoce: retorna em coma hipoglicêmico.',obito:'{N} evolui com coma hipoglicêmico prolongado.'},
+ ensina:'Hipoglicemia por sulfonilureia em idoso com DRC é prolongada: glicose EV, suspender o remédio e observar por pelo menos 24 horas.',
+ ex0:'s',sw:1,pale0:1,cy:0,hand:null},
+
+{id:'absti',sexo:'M',ageR:[35,62],tri:'LARANJA',
+ queixa:'Esposa: "Ele parou de beber há dois dias e agora tá tremendo, suando e vendo bicho na parede."',
+ comorb:'Etilismo pesado há 20 anos. Teve convulsão na última vez que parou.',uso:'Nenhum.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Quando bebeu pela última vez?','Domingo à noite, uns dois dias.',1],['Já teve convulsão parando de beber?','Teve uma no ano passado.',1],['Tem se alimentado?','Quase nada, só cachaça.'],['Bateu a cabeça?','Não.']],
+ ex:{geral:'Agitado, sudoreico, tremor grosseiro, alucinações visuais.',cab:'Nistagmo horizontal.',cardio:'Taquicardia regular.',resp:'Sem alterações.',abd:'Hepatomegalia leve.',neuro:'Desorientado, marcha atáxica.',ext:'Tremor de extremidades.'},
+ res:{glic:'68 mg/dL.',eletr:'Na 132 · K 3,2.',calc:'Mg 1,3.',hepat:'TGO 180 · TGP 90 · GGT 640.',hemo:'VCM 104 · plaquetas 110.000.',cr:'Ureia 22 · Cr 0,8.'},
+ util:['glic','eletr','calc','hepat','hemo','cr'],evid:['glic','hepat'],hyp:'absti',
+ key:[{ids:['tiam'],ok:[1],by:30,lb:'Tiamina antes da glicose'},{ids:['diaz'],ok:[0,1],by:30,lb:'Benzodiazepínico'}],
+ allowed:['glic50','sf','kcl','mag','omep'],
+ seq:[{first:'tiam',then:'glic50',t:'Glicose antes da tiamina: encefalopatia de Wernicke, confusão e oftalmoplegia piores.'}],
+ contra:{halo:'Haloperidol isolado na abstinência reduz o limiar convulsivo: crise convulsiva.'},
+ vit:{0:['168/98',124,22,97,37.9],1:['138/84',92,18,98,37.2],'-1':['178/104',136,24,96,38.4],'-2':['184/108',146,26,95,39.0]},
+ reav:{0:'Ainda agitado e alucinando.',1:'Calmo, sem alucinações, tremor menor.','-1':'Mais agitado e confuso.','-2':'Delirium tremens: hipertermia e agitação extrema.'},
+ fatal:1,fatalBy:180,tEff:30,dest:{best:['ENF'],ok:['OBS','EMG','UTI'],alta:0},
+ out:{ok:'Tiamina, benzodiazepínico e correção de eletrólitos: {N} se acalma e segue para a enfermaria.',part:'Controle parcial da abstinência, ainda agitado.',bad:'Evolui para delirium tremens.',obito:'{N} evolui com delirium tremens e arritmia.'},
+ ensina:'Abstinência alcoólica: tiamina antes da glicose, benzodiazepínico guiado por sintomas, repor potássio e magnésio. Haloperidol não substitui o benzodiazepínico.',
+ ex0:'a',sw:1,pale0:0,cy:0,hand:null},
+
+{id:'tep',sexo:'*',ageR:[28,70],tri:'LARANJA',
+ queixa:'"Falta de ar de repente e dor do lado do peito quando respiro fundo."',
+ comorb:'Ficou 12 dias de repouso após cirurgia de joelho.',uso:'Dipirona e tramadol desde a cirurgia.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['A falta de ar começou como?','De uma vez, quando levantei para ir ao banheiro.',1],['Tem dor ou inchaço na perna?','A panturrilha direita tá inchada e dolorida.',1],['Teve febre ou catarro?','Não.'],['Tossiu sangue?','Um pouquinho de raia de sangue.']],
+ ex:{geral:'Ansioso, taquipneico.',cab:'Sem turgência jugular.',cardio:'Taquicardia regular, P2 hiperfonética.',resp:'Murmúrio presente, sem estertores.',abd:'Sem alterações.',neuro:'Sem déficit.',ext:'Panturrilha direita empastada, 3 cm maior que a esquerda.'},
+ res:{ecg:'Taquicardia sinusal, padrão S1Q3T3.',us:'Trombose venosa profunda em veia femoral direita e ventrículo direito discretamente dilatado.',gaso:'pH 7,47 · pCO2 30 · pO2 62.',trop:'Normal.',hemo:'Sem alterações.',cr:'Ureia 30 · Cr 0,9.',coag:'INR 1,0.',rx:'Sem alterações significativas.'},
+ util:['ecg','us','gaso','trop','hemo','cr','coag','rx'],evid:['us'],hyp:'tep',
+ key:[{ids:['o2'],ok:[0,1],by:20,lb:'Oxigênio'},{ids:['hepa','enox'],ok:{hepa:[1],enox:[1]},by:50,lb:'Anticoagulação plena'}],
+ allowed:['dipi','para'],
+ contra:{strep:'Fibrinolítico em TEP estável: hemorragia digestiva grave.',furo:'Diurético em TEP: queda da pré-carga e hipotensão.'},
+ vit:{0:['118/74',118,26,90,37.4],1:['122/76',96,20,95,37.0],'-1':['104/66',128,30,86,37.4],'-2':['86/52',138,34,82,37.4]},
+ reav:{0:'Ainda taquicárdico e dispneico.',1:'FC 96, SatO2 95% com cateter.','-1':'Mais dispneico e hipotenso.','-2':'Hipotensão: TEP de alto risco.'},
+ fatal:1,fatalBy:160,tEff:40,dest:{best:['ENF'],ok:['OBS','UTI','EMG'],alta:0},
+ out:{ok:'Anticoagulado sem tomografia, com base na clínica e no ultrassom à beira-leito. {N} estabiliza na enfermaria.',part:'Anticoagulação tardia: ainda dispneico.',bad:'Sem anticoagulação, o quadro progride.',obito:'{N} evolui com TEP maciço e parada.'},
+ ensina:'Com o tomógrafo quebrado, alta probabilidade clínica e TVP no ultrassom justificam anticoagular. Trombólise só se houver instabilidade.',
+ ex0:'d',sw:1,pale0:0,cy:0,hand:'chest'}
+);
+/* ===== PIXEL ART: cada paciente é desenhado em 160x120 e ampliado sem suavização ===== */
+const SKIN=['#f1cfa8','#e2b085','#cb915f','#a9693f','#85502f','#5f3a22'];
+const sh=(h,k)=>{const n=parseInt(h.slice(1),16),f=x=>Math.max(0,Math.min(255,Math.round(x*k)));return'#'+[n>>16,(n>>8)&255,n&255].map(x=>f(x).toString(16).padStart(2,'0')).join('')};
+const mixc=(a,b,t)=>{const x=parseInt(a.slice(1),16),y=parseInt(b.slice(1),16),m=(s)=>Math.round(((x>>s)&255)*(1-t)+((y>>s)&255)*t);return'#'+[16,8,0].map(s=>m(s).toString(16).padStart(2,'0')).join('')};
+function hashS(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function mulb(a){return()=>{a=(a+0x6D2B79F5)|0;let t=Math.imul(a^a>>>15,1|a);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296}}
+/* aparência fixa por paciente: o que o caso define vale; o resto sai do id (permite gerar pacientes novos depois) */
+function mkLook(c){
+  const r=mulb(hashS(c.id)),L=c.look||{},fem=c.sexo==='F',old=c.idade>=62;
+  const hairs=['#1a1410','#2b2018','#47301f','#6a4a2a','#8b6a38'];
+  return{skin:L.skin!=null?L.skin:Math.floor(r()*6),hair:L.hair||(old?'#d8d6d0':hairs[Math.floor(r()*5)]),hs:L.hs||(fem?'long':'short'),
+    beard:L.beard||'none',glasses:!!L.glasses,cloth:L.cloth||'#4a6a8a',age:c.idade,fem};
+}
+function paint(X,L,s){
+  const R=(x,y,w,h,c)=>{X.fillStyle=c;X.fillRect(x,y,w,h)};
+  X.imageSmoothingEnabled=false;
+  /* parede, rodapé azulejado, janela com persiana, luminária e suporte de soro */
+  R(0,0,160,120,'#7f9886');R(0,72,160,48,'#5e776a');R(0,70,160,3,'#a8bcae');
+  for(let x=0;x<160;x+=16)R(x,73,1,47,'#4d6559');for(let y=84;y<120;y+=12)R(0,y,160,1,'#4d6559');
+  R(8,10,42,38,'#2b3a36');R(10,12,38,34,'#a8cfe4');for(let y=14;y<46;y+=4)R(10,y,38,1,'#86b2c8');R(28,12,2,34,'#2b3a36');R(8,48,42,3,'#a8bcae');
+  R(66,0,28,3,'#e8e4c0');R(72,3,16,1,'#c9c59a');
+  R(131,26,2,78,'#b9c2c6');R(124,24,16,2,'#b9c2c6');R(125,27,12,16,'#cfe6f0');R(127,30,8,9,'#8fbfd6');R(131,43,1,24,'#d8e8ee');
+  const dy=s.br?1:0,jit=s.sh&&Math.random()<.5?1:0,ox=jit,hy=s.ex==='d'?dy:0;
+  const sk0=SKIN[L.skin],sk=s.pale?mixc(sk0,'#d3cab8',.5):sk0,sd=sh(sk,.78),sl=sh(sk,1.08);
+  const cl=L.cloth,cd=sh(cl,.72),cc=sh(cl,1.3),hc=L.hair,hd=sh(hc,.72),brow=sh(hc,.62);
+  const lip=s.cy?'#5f4a7a':sh(sk0,.62);
+  /* cabelo de trás */
+  if(L.hs==='long')R(62+ox,28+hy,36,48,hc);
+  if(L.hs==='bun'){R(73+ox,17+hy,14,10,hc);R(75+ox,16+hy,10,2,hd)}
+  /* tronco */
+  for(let y=66;y<110;y++){const w=Math.min(64,30+(y-66)*3);R(80-w/2+ox,y+dy,w,1,cl)}
+  R(100+ox,76+dy,14,34,cd);R(46+ox,76+dy,6,34,cd);
+  R(74+ox,58+hy,12,10,sh(sk,.9));
+  for(let i=0;i<8;i++)R(74+i+ox,66+i+dy,12-2*i,1,sk);
+  R(68+ox,66+dy,6,3,cc);R(86+ox,66+dy,6,3,cc);
+  /* mão sobre o peito ou abdome quando há dor */
+  if(s.hand==='chest'){R(76+ox,82+dy,18,8,sk);R(76+ox,82+dy,18,1,sl);for(let i=0;i<4;i++)R(77+i*4+ox,90+dy,1,3,sd)}
+  if(s.hand==='abd'){R(72+ox,98+dy,18,8,sk);R(72+ox,98+dy,18,1,sl)}
+  /* cabeça */
+  R(65+ox,42+hy,2,8,sk);R(93+ox,42+hy,2,8,sk);R(65+ox,45+hy,1,3,sd);R(94+ox,45+hy,1,3,sd);
+  R(68+ox,30+hy,24,30,sk);R(67+ox,33+hy,26,24,sk);R(70+ox,60+hy,20,2,sk);R(73+ox,62+hy,14,1,sd);R(86+ox,36+hy,6,22,sh(sk,.93));
+  /* cabelo da frente */
+  const hs=L.hs;
+  if(hs==='short'||hs==='bun'){R(67+ox,27+hy,26,8,hc);R(66+ox,31+hy,3,10,hc);R(91+ox,31+hy,3,10,hc);R(69+ox,34+hy,22,2,hc);R(68+ox,27+hy,24,1,hd)}
+  if(hs==='long'){R(67+ox,27+hy,26,8,hc);R(66+ox,31+hy,3,18,hc);R(91+ox,31+hy,3,18,hc);R(69+ox,34+hy,10,3,hc);R(79+ox,34+hy,12,2,hc)}
+  if(hs==='buzz'){R(67+ox,28+hy,26,5,hd);R(66+ox,31+hy,2,6,hd);R(92+ox,31+hy,2,6,hd)}
+  if(hs==='curly'){for(let x=64;x<96;x+=4){R(x+ox,24+hy+((x/4)%2)*2,4,6,hc)}R(65+ox,30+hy,30,5,hc);R(65+ox,34+hy,3,8,hc);R(92+ox,34+hy,3,8,hc)}
+  if(hs==='bald'){R(72+ox,31+hy,16,2,sl);R(66+ox,37+hy,2,8,hc);R(92+ox,37+hy,2,8,hc)}
+  if(hs==='hat'){R(66+ox,31+hy,3,10,hd);R(91+ox,31+hy,3,10,hd);R(56+ox,29+hy,48,4,'#b99a5a');R(56+ox,32+hy,48,1,'#7a5f32');R(64+ox,17+hy,32,13,'#cdb070');R(64+ox,26+hy,32,3,'#6b4a2c');for(let x=66;x<94;x+=4)R(x+ox,19+hy,1,6,'#b99a5a')}
+  /* rugas */
+  if(L.age>=45){R(72+ox,37+hy,16,1,sd);R(73+ox,39+hy,14,1,sh(sk,.86))}
+  if(L.age>=60){R(72+ox,50+hy,1,6,sd);R(87+ox,50+hy,1,6,sd);R(70+ox,44+hy,2,1,sd);R(88+ox,44+hy,2,1,sd)}
+  /* olhos */
+  const closed=s.bl,half=s.ex==='s';
+  R(72+ox,44+hy,6,3,'#f3f0e6');R(82+ox,44+hy,6,3,'#f3f0e6');R(74+ox,44+hy,2,3,'#241a14');R(84+ox,44+hy,2,3,'#241a14');
+  if(closed){R(72+ox,43+hy,6,4,sk);R(82+ox,43+hy,6,4,sk);R(72+ox,46+hy,6,1,sd);R(82+ox,46+hy,6,1,sd)}
+  else if(half){R(72+ox,43+hy,6,2,sk);R(82+ox,43+hy,6,2,sk);R(72+ox,45+hy,6,1,sd);R(82+ox,45+hy,6,1,sd)}
+  R(72+ox,47+hy,6,1,sh(sk,.88));R(82+ox,47+hy,6,1,sh(sk,.88));
+  /* sobrancelhas por expressão */
+  if(s.ex==='p'||s.ex==='d'){R(72+ox,40+hy,2,1,brow);R(74+ox,41+hy,2,1,brow);R(76+ox,42+hy,2,1,brow);R(86+ox,40+hy,2,1,brow);R(84+ox,41+hy,2,1,brow);R(82+ox,42+hy,2,1,brow)}
+  else if(s.ex==='a'){R(72+ox,42+hy,2,1,brow);R(74+ox,41+hy,2,1,brow);R(76+ox,40+hy,2,1,brow);R(86+ox,42+hy,2,1,brow);R(84+ox,41+hy,2,1,brow);R(82+ox,40+hy,2,1,brow)}
+  else{R(72+ox,41+hy,6,1,brow);R(82+ox,41+hy,6,1,brow)}
+  /* óculos */
+  if(L.glasses){const g='#20242a';R(70+ox,42+hy,10,1,g);R(70+ox,49+hy,10,1,g);R(70+ox,42+hy,1,8,g);R(79+ox,42+hy,1,8,g);R(80+ox,45+hy,2,1,g);R(82+ox,42+hy,10,1,g);R(82+ox,49+hy,10,1,g);R(82+ox,42+hy,1,8,g);R(91+ox,42+hy,1,8,g);R(71+ox,43+hy,2,1,'rgba(255,255,255,.35)');R(83+ox,43+hy,2,1,'rgba(255,255,255,.35)')}
+  /* nariz */
+  R(79+ox,46+hy,2,6,sd);R(77+ox,52+hy,6,1,sd);if(s.ex==='d'){R(76+ox,51+hy,1,1,sd);R(83+ox,51+hy,1,1,sd)}
+  /* barba, bigode, boca */
+  if(L.beard==='full'){R(68+ox,50+hy,24,10,hc);R(70+ox,60+hy,20,2,hc);R(68+ox,50+hy,24,1,hd)}
+  if(L.beard==='stubble'){R(69+ox,51+hy,22,9,'rgba(20,12,8,.22)')}
+  if(L.beard==='mustache')R(73+ox,53+hy,14,2,hc);
+  const my=L.beard==='full'?56:55;
+  if(s.ex==='p'){R(75+ox,my-1+hy,10,3,'#4a1c1c');R(76+ox,my-1+hy,8,1,'#eee')}
+  else if(s.ex==='d'){R(76+ox,my-1+hy,8,5,'#3c1616');R(77+ox,my-1+hy,6,1,'#eee')}
+  else if(s.ex==='s'){R(76+ox,my+1+hy,8,1,lip)}
+  else if(s.ex==='a'){R(75+ox,my+hy,10,1,lip);R(76+ox,my+1+hy,8,1,sh(lip,1.2))}
+  else{R(75+ox,my+hy,10,1,lip)}
+  if(s.cy&&L.beard!=='full'){R(75+ox,my+hy,10,1,'#5f4a7a')}
+  /* brinco */
+  if(L.fem&&L.age<70)R(65+ox,50+hy,2,2,'#e6c75a');
+  /* suor */
+  if(s.sweat){const t=(s.t||0)/300|0;R(70+ox,34+hy+(t%3),1,2,'#d6ecf4');R(89+ox,33+hy+((t+1)%3),1,2,'#d6ecf4');R(77+ox,29+hy+((t+2)%3),1,2,'#d6ecf4');R(90+ox,46+hy,1,2,'#d6ecf4')}
+  /* mesa do médico em primeiro plano */
+  R(0,108,160,12,'#5a4430');R(0,108,160,2,'#7a6040');R(0,118,160,2,'#3a2c1e');
+  R(12,98,26,18,'#8a6b45');R(14,100,22,14,'#ddd5b6');R(20,97,10,4,'#9a9a98');for(let y=103;y<113;y+=3)R(16,y,18,1,'#a29a7a');
+  /* linhas de varredura */
+  for(let y=0;y<120;y+=2)R(0,y,160,1,'rgba(0,0,0,.07)');
+}
+/* estado visual do paciente (vem da condição real, não só dos sinais vitais já medidos) */
+function animState(P,ts){
+  const c=P.c,stg=P.stage,fr=(c.vit[stg]||c.vit[0])[2],per=60000/Math.max(8,fr);
+  const worse=stg<0;
+  return{br:Math.sin(ts/per*2*Math.PI)>0,bl:(ts%3600)<140,
+    ex:stg>0?'n':worse?(c.ex0==='d'?'d':c.ex0==='n'?'s':(stg<=-2?'s':c.ex0)):c.ex0,
+    pale:worse||(c.pale0&&stg<1),sweat:(c.sw&&stg<1)||stg<=-1,cy:c.cy&&stg<=-1,sh:stg<=-1&&(c.ex0==='d'||c.ex0==='p'),
+    hand:stg<1?c.hand:null,t:ts};
+}
+function sprite(P){
+  const off=document.createElement('canvas');off.width=160;off.height=120;
+  const X=off.getContext('2d');if(X)paint(X,P.look,animState(P,0));
+  return off;
+}
+/* ===== MOTOR: tempo, evolução clínica, prescrição, destino, relatório (sem tocar na interface) ===== */
+const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
+const fmt=t=>{const m=Math.floor(T0+t)%1440;return pad(Math.floor(m/60))+':'+pad(m%60)};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const clamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,n));
+let G=null;
+const ACTIVE=['queue','care','emg','reg'];
+function mkPt(c){const P={id:c.id,c,look:mkLook(c),st:'wait',stage:0,worst:0,ks:[],adv:[],ord:{},rx:[],log:[],asked:new Set(),examined:new Set(),pen:[],good:[],hyp:'',note:'',orient:new Set(),lv:{t:c.arr,v:c.vit[0]},seen:null,dest:null,res:null,reg:null,newRes:0};P.off=null;P.mov={};return P}
+function admit(c,slot){
+  c.arr=Math.max(G.slots[slot]!=null?G.slots[slot]:c.arr,G.t);
+  const P=mkPt(c);P.no=++G.no;P.off=sprite(P);G.pts.push(P);G.filled++;
+  if(c.arr<=G.t){P.st='queue';alert_(fmt(G.t)+' Chegou '+c.nome.split(' ')[0]+' ('+c.tri.toLowerCase()+').',c.tri==='VERMELHO')}
+}
+const pt=id=>G.pts.find(p=>p.id===id);
+const cur=()=>G&&G.act?pt(G.act):null;
+const active=()=>G.pts.filter(p=>ACTIVE.includes(p.st));
+function alert_(txt,hot){G.al.unshift({t:G.t,txt,hot:!!hot});G.al.length=Math.min(G.al.length,30);if(window.sfx)sfx(hot?'alarm':'blip')}
+function bedFree(k){const b=G.beds[k];return b.cap-(k==='emg'?b.bg+active().length:b.used)}
+function newShift(n,mode){
+  G={n,t:0,end:SHIFT,act:null,ins:100,rep:50,eq:50,al:[],over:false,modal:null,chefia:0,unsafe:0,news:[],sched:[],unread:0,
+    pts:[],mode:mode||'local',slots:mode==='local'?CASES.map(c=>c.arr):SLOTS.slice(),filled:0,no:0,stock:{sorobot:6,hemac:3},off:{tc:{until:9999,why:'Tomógrafo em manutenção. Só por regulação.'}},
+    beds:{emg:{cap:4,bg:2},obs:{cap:6,used:5},enf:{cap:10,used:9},uti:{cap:3,used:2}},
+    evs:[{at:18,run:()=>{G.off.trop={until:G.t+120,why:'Reagente de troponina em falta. Previsão em 2 h.'};alert_(fmt(G.t)+' Laboratório: troponina indisponível por 2 horas.',true)}},
+         {at:75,run:()=>{G.modal={k:'dil'};if(window.sfx)sfx('alarm')}},
+         {at:130,run:()=>{if(G.beds.uti.used>0)G.beds.uti.used--;alert_(fmt(G.t)+' UTI: um leito foi liberado.')}}]};
+  if(G.mode==='local')CASES.forEach((c,i)=>admit(JSON.parse(JSON.stringify(c)),i));else procStart();
+  tickMin();
+}
+function setStage(P,ns){
+  if(ns<P.stage&&ns<0)alert_(fmt(G.t)+' Enfermagem: '+P.c.nome.split(' ')[0]+' piorou.',true);
+  else if(ns===1&&P.stage<1)alert_(fmt(G.t)+' Enfermagem: '+P.c.nome.split(' ')[0]+' está melhor.');
+  P.stage=ns;P.worst=Math.min(P.worst,ns);
+}
+function evolve(P){
+  const c=P.c,t=G.t;let lag=0;
+  c.key.forEach((k,i)=>{if(P.ks[i]==null&&t-c.arr>k.by)lag++});
+  lag+=P.adv.filter(x=>t-x<45).length;
+  let ns=lag>=2?-2:lag===1?-1:0;
+  const done=c.key.every((k,i)=>P.ks[i]!=null),lastK=Math.max(0,...P.ks.filter(x=>x!=null));
+  if(lag===0&&done&&t-lastK>=c.tEff)ns=1;
+  if(ns!==P.stage)setStage(P,ns);
+  if(P.stage<=-2&&c.fatal&&t-c.arr>c.fatalBy&&!done)die(P);
+}
+function die(P){
+  P.st='dead';P.res={cls:'obito',score:0,txt:P.c.out.obito,errs:['Paciente evoluiu a óbito.'],goods:[]};
+  G.rep=clamp(G.rep-10);G.eq=clamp(G.eq-6);alert_(fmt(G.t)+' '+P.c.nome+' evoluiu a óbito.',true);
+  if(G.act===P.id)G.act=null;if(window.sfx)sfx('flat');
+}
+function tickMin(){
+  const t=G.t;
+  G.pts.forEach(P=>{
+    if(P.st==='wait'&&P.c.arr<=t){P.st='queue';alert_(fmt(t)+' Chegou '+P.c.nome.split(' ')[0]+' ('+P.c.tri.toLowerCase()+').',P.c.tri==='VERMELHO')}
+    if(!ACTIVE.includes(P.st))return;
+    Object.entries(P.ord).forEach(([k,o])=>{if(!o.done&&t>=o.due){o.done=true;P.newRes++;alert_(fmt(t)+' Resultado pronto: '+EXAMS[k].n+' de '+P.c.nome.split(' ')[0]+'.')}});
+    evolve(P);if(P.st==='emg')emgCheck(P);
+    if(P.st==='reg'&&t>=P.reg.at)depart(P);
+  });
+  G.evs.forEach(e=>{if(!e.done&&t>=e.at){e.done=true;e.run()}});
+  G.sched=G.sched.filter(it=>{if(t>=it.at){deliver(it);return false}return true});
+}
+function adv(m){
+  const target=Math.round((G.t+m)*100)/100;
+  while(!G.over&&Math.floor(G.t)+1<=target){G.t=Math.floor(G.t)+1;tickMin();if(G.t>=G.end){endShift();return}}
+  if(!G.over)G.t=target;
+  if(!G.over&&G.filled>=G.slots.length&&!G.sched.some(x=>x.kind==='ret')&&G.pts.every(p=>['done','dead'].includes(p.st)))endShift();
+}
+/* ===== ações do jogador ===== */
+function pick(id){const P=pt(id);if(!P||!ACTIVE.includes(P.st))return;G.act=id;if(P.st==='queue'){P.st='care';P.seen=G.t}}
+function askQ(P,key){ /* key: 'g:comorb' | 'p:3' */
+  if(P.asked.has(key))return;P.asked.add(key);
+  let q,a;
+  if(key[0]==='g'){const g=key.slice(2);q=GEN_Q.find(x=>x[0]===g)[1];a=g==='comorb'?P.c.comorb:g==='uso'?P.c.uso:g==='alerg'?P.c.alergiaTxt:genAns(P,g)}
+  else{const x=P.c.perg[+key.slice(2)];q=x[0];a=x[1]}
+  P.log.push({t:G.t,k:'q',q,a,fresh:1});adv(.25);
+}
+function exam(P,s){if(P.examined.has(s))return;P.examined.add(s);P.log.push({t:G.t,k:'x',q:SYS.find(x=>x[0]===s)[1],a:P.c.ex[s]||'Sem alterações dignas de nota.',fresh:1});adv(1)}
+function vitals(P){adv(1);P.lv={t:G.t,v:P.c.vit[P.stage]}}
+function reassess(P){adv(3);P.lv={t:G.t,v:P.c.vit[P.stage]};P.log.push({t:G.t,k:'r',q:'Reavaliação',a:P.c.reav[P.stage]||'Sem mudanças.',fresh:1})}
+function order(P,id,free){
+  const E=EXAMS[id];if(P.ord[id])return'Já solicitado.';
+  const off=G.off[id];if(off&&G.t<off.until)return off.why;
+  if(G.ins<E.c)return'Insumos insuficientes para este exame.';
+  G.ins-=E.c;P.ord[id]={t0:G.t,due:G.t+E.t,done:E.t<=1};
+  if(!P.c.util.includes(id)&&id!=='glic'&&id!=='ecg'){P.pen.push([2,'Exame sem indicação: '+E.n+'.'])}
+  if(E.t<=1)P.newRes++;
+  adv(free?0:.5);return null;
+}
+function addAE(P,txt,pen,why){P.adv.push(G.t);P.pen.push([pen,why||txt]);P.log.push({t:G.t,k:'ae',q:'Evento adverso',a:txt,fresh:1});alert_(fmt(G.t)+' Evento adverso em '+P.c.nome.split(' ')[0]+'.',true)}
+function rxAdd(P,f,free){
+  const id=f.drug,D=DRUGS[id],c=P.c,i=f.dose;
+  if(!D)return'Escolha um medicamento.';
+  if(id==='o2')P.rx=P.rx.filter(r=>r.id!=='o2');else if(P.rx.some(r=>r.id===id))return'Já prescrito para este paciente.';
+  if(c.stock&&c.stock[id]!=null||G.stock[id]!=null){
+    const need=id==='sorobot'?[2,4,8,12][i]:id==='hemac'?[1,2,4][i]:0;
+    if(G.stock[id]!=null&&need>G.stock[id])return'Estoque insuficiente: restam '+G.stock[id]+' unidades. Escolha uma dose menor ou solicite reposição pela regulação.';
+    if(G.stock[id]!=null)G.stock[id]-=need;
+  }
+  const rx={id,i,via:f.via,freq:f.freq,dur:f.dur,t:G.t};
+  /* alergia */
+  if(D.al&&c.alergia.includes(D.al))addAE(P,c.alergiaMsg||'Reação alérgica grave.',40,'Medicação da classe a que o paciente tem alergia grave: '+D.n+'.'),P.adv.push(G.t);
+  let handled=false;const ct=c.contra[id];
+  if(ct){const from=typeof ct==='string'?0:ct.from,t=typeof ct==='string'?ct:ct.t;if(i>=from){addAE(P,t,20,'Medicação contraindicada ou perigosa neste caso: '+D.n+'.');handled=true}}
+  (c.seq||[]).forEach(s=>{if(id===s.then&&!P.rx.some(r=>r.id===s.first)){addAE(P,s.t,20,'Ordem errada de condutas: '+D.n+' antes de '+DRUGS[s.first].n+'.');handled=true}});
+  let isKey=false;
+  c.key.forEach((k,ki)=>{
+    if(!k.ids.includes(id))return;isKey=true;
+    const ok=okIdx(k,id);
+    if(ok.includes(i)){if(P.ks[ki]==null&&!handled)P.ks[ki]=G.t}
+    else if(i>Math.max(...ok)){if(!handled){addAE(P,D.ae||'Dose acima da recomendada.',12,'Dose acima da recomendada: '+D.n+'.');handled=true}}
+    else if(id!=='o2')P.pen.push([6,'Dose insuficiente: '+D.n+'.']);
+  });
+  if(!isKey&&!handled){
+    if(c.allowed.includes(id)||id==='o2'){if(D.tox!=null&&i>=D.tox)addAE(P,D.ae,12,'Dose acima da recomendada: '+D.n+'.')}
+    else{P.pen.push([6,'Prescrição sem indicação: '+D.n+'.']);G.ins=Math.max(0,G.ins-1)}
+  }
+  if(!D.f.split(' ').includes(f.freq)||!D.dr.split(' ').includes(f.dur))P.pen.push([3,'Frequência ou duração inadequada: '+D.n+'.']);
+  P.rx.push(rx);
+  if(/EV/.test(D.v[f.via||0])&&P.mov.ace==null){P.mov.ace=G.t;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Acesso venoso puncionado para a medicação EV.',fresh:1})}
+  adv(free?0:1);return null;
+}
+function setHyp(P,h){P.hyp=h}
+/* ===== destino ===== */
+function canGo(d){
+  if(d==='UTI')return bedFree('uti')>0?null:'Sem leito de UTI. Mantenha na sala de emergência ou solicite transferência regulada.';
+  if(d==='ENF')return bedFree('enf')>0?null:'Enfermaria lotada.';
+  if(d==='OBS')return bedFree('obs')>0?null:'Observação lotada.';
+  return null;
+}
+function commit(P,d){
+  const e=canGo(d);if(e)return e;
+  if(d==='ALTA'&&P.orient.size===0)P.pen.push([6,'Alta sem orientações registradas.']);
+  if(d==='EMG'){P.st='emg';P.emgT=G.t;P.emgChk=0;P.log.push({t:G.t,k:'d',q:'Destino',a:'Mantido na sala de emergência, monitorizado.',fresh:1});adv(2);return null}
+  if(d==='TRANS'){P.st='reg';P.reg={at:G.t+rnd(60,100)};P.log.push({t:G.t,k:'d',q:'Destino',a:'Regulação acionada. Aguardando vaga e transporte.',fresh:1});adv(2);return null}
+  finalize(P,d);if(G.act===P.id)G.act=null;adv(2);return null;
+}
+function depart(P){P.depT=G.t;finalize(P,'TRANS',true);alert_(fmt(G.t)+' '+P.c.nome.split(' ')[0]+' saiu em transferência regulada.');if(G.act===P.id)G.act=null}
+function finalize(P,d,fromReg){
+  const c=P.c;
+  if(!fromReg){ if(d==='UTI')G.beds.uti.used++;if(d==='ENF')G.beds.enf.used++;if(d==='OBS')G.beds.obs.used++ }
+  const pen=P.pen.slice(),good=P.good.slice(),goods=[];
+  const best=c.dest.best.includes(d),okd=c.dest.ok.includes(d);
+  if(best)goods.push('Destino adequado: '+DESTS.find(x=>x[0]===d)[1]+'.');else if(okd)pen.push([8,'Destino aceitável, mas não o melhor: '+DESTS.find(x=>x[0]===d)[1]+'.']);
+  else pen.push([35,'Destino inadequado: '+DESTS.find(x=>x[0]===d)[1]+'.']);
+  if(d==='ALTA'&&!c.dest.alta){pen.push([60,'Alta insegura de paciente que exigia internação.']);G.unsafe++}
+  if(d==='ALTA'&&c.dest.alta&&P.orient.size>=2)goods.push('Alta com orientações registradas.');
+  c.key.forEach((k,i)=>{if(P.ks[i]==null)pen.push([15,'Faltou: '+k.lb+'.']);else goods.push('Feito: '+k.lb+'.')});
+  if(!P.hyp)pen.push([15,'Hipótese diagnóstica não registrada.']);
+  else if(P.hyp!==c.hyp)pen.push([15,'Diagnóstico perdido: a hipótese registrada foi "'+DXS.find(x=>x[0]===P.hyp)[1]+'".']);
+  else if(c.evid.length&&!c.evid.some(e=>P.ord[e]&&P.ord[e].done))pen.push([5,'Diagnóstico correto, mas empírico, sem exame que o confirmasse.']);
+  else goods.push('Diagnóstico correto: '+DXS.find(x=>x[0]===c.hyp)[1]+'.');
+  if(P.asked.size>=4)goods.push('Anamnese dirigida.');
+  if(P.seen!=null){const w=Math.round(P.seen-c.arr);if(c.tri==='VERMELHO'&&w>12)pen.push([10,'Atendimento tardio de paciente vermelho (espera de '+w+' min).']);else if(c.tri==='LARANJA'&&w>25)pen.push([5,'Atendimento tardio de paciente laranja (espera de '+w+' min).'])}
+  if(c.tri==='VERMELHO'||c.tri==='LARANJA'){if(P.mov.mon==null)pen.push([8,'Paciente grave sem monitorização.']);else goods.push('Paciente grave monitorizado.');if(P.mov.ace==null)pen.push([6,'Paciente grave sem acesso venoso.'])}
+  if(P.worst<=-2)pen.push([20,'Deterioração clínica importante durante o atendimento.']);else if(P.worst===-1)pen.push([8,'Piora clínica durante o atendimento.']);
+  if(d==='TRANS'&&P.stage<0)pen.push([25,'Transferido ainda instável.']);
+  let sc=100;const errs=[];pen.forEach(([p,t])=>{sc-=p;errs.push(t)});sc=clamp(sc);
+  const cls=sc>=85?'otimo':sc>=65?'bom':sc>=40?'parcial':'ruim';
+  const txt=cls==='otimo'||cls==='bom'?c.out.ok:cls==='parcial'?c.out.part:c.out.bad;
+  P.dest=d;P.st='done';P.res={cls,score:sc,txt,errs,goods};scheduleFate(P,d);
+  G.rep=clamp(G.rep+(sc-60)/8);G.eq=clamp(G.eq+(sc-60)/12);
+  if(window.sfx)sfx(cls==='otimo'||cls==='bom'?'good':cls==='parcial'?'mid':'bad');
+}
+/* dilema ético da chefia */
+function resolveDil(n){
+  if(n===1){G.beds.obs.used=Math.max(0,G.beds.obs.used-1);G.eq=clamp(G.eq+4);G.chefia=1;alert_(fmt(G.t)+' Alta planejada no leito 4 liberou uma vaga na observação.')}
+  if(n===2){G.beds.obs.used=Math.max(0,G.beds.obs.used-1);G.eq=clamp(G.eq+6);G.rep=clamp(G.rep-6);G.unsafe++;G.chefia=2;alert_(fmt(G.t)+' Leito 6 liberado. Paciente saiu com PA 170/100 e sem seguimento.',true)}
+  if(n===3){G.eq=clamp(G.eq-6);G.rep=clamp(G.rep+2);G.chefia=3;alert_(fmt(G.t)+' Justificativa registrada. A direção ficou insatisfeita.')}
+  G.modal=null;
+}
+/* ===== fim do plantão e relatório ===== */
+function endShift(){
+  if(G.over)return;G.over=true;G.sched.forEach(it=>deliver(it,true));G.sched=[];
+  G.pts.forEach(P=>{
+    if(ACTIVE.includes(P.st)||P.st==='wait'){
+      if(P.st==='wait'){P.st='skip';P.res={cls:'pend',score:0,txt:'Não chegou antes do fim do plantão.',errs:[],goods:[]};return}
+      let sc=100;const errs=['Passagem de plantão sem desfecho definido.'];sc-=25;
+      P.pen.forEach(([p,t])=>{sc-=p;errs.push(t)});
+      P.c.key.forEach((k,i)=>{if(P.ks[i]==null){sc-=15;errs.push('Faltou: '+k.lb+'.')}});
+      if(P.stage<0){sc-=15;errs.push('Passou o plantão em piora clínica.')}
+      P.res={cls:'pend',score:clamp(sc),txt:'Paciente entregue ao plantão seguinte sem desfecho.',errs,goods:[]};P.st='handoff';
+    }
+  });
+  const list=G.pts.filter(p=>p.st!=='skip'),avg=list.length?Math.round(list.reduce((a,p)=>a+p.res.score,0)/list.length):0;
+  const score=clamp(Math.round(avg*.8+G.rep*.1+G.eq*.1-G.unsafe*3));
+  G.final={avg,score,dead:G.pts.filter(p=>p.st==='dead').length,unsafe:G.unsafe,exams:G.pts.reduce((a,p)=>a+p.pen.filter(x=>/^Exame sem/.test(x[1])).length,0),
+    rx:G.pts.reduce((a,p)=>a+p.pen.filter(x=>/Prescrição sem|Dose|Medicação|Frequência|Ordem errada/.test(x[1])).length,0),
+    missed:G.pts.reduce((a,p)=>a+(p.res&&p.res.errs.some(e=>/Diagnóstico perdido|Hipótese diagnóstica não/.test(e))?1:0),0),
+    missing:G.slots.length-G.filled,right:G.pts.reduce((a,p)=>a+(p.res?p.res.goods.length:0),0)};
+  try{const s=JSON.parse(localStorage.getItem('pr_save')||'{"shifts":[]}');s.shifts.push({n:G.n,score,rep:Math.round(G.rep)});localStorage.setItem('pr_save',JSON.stringify(s))}catch(e){}
+  if(window.sfx)sfx('bell');
+}
+/* ===== ANAMNESE AMPLIADA: respostas às perguntas gerais (15 s cada) ===== */
+const SPEAK={sepse:'Filho',estmal:'Acompanhante',eh:'Filha',hiposu:'Neta',organo:'Colega',absti:'Esposa'};
+const DROGAS={eap:'Nunca fumei nem bebo.',cad:'Fumo maconha às vezes no fim de semana.',sepse:'Ela nunca bebeu nem fumou.',hda:'Bebo cachaça todo dia faz uns dez anos.',ofid:'Bebo no fim de semana e fumo cigarro de palha.',iam:'Fumo um maço por dia há 30 anos.',has:'Não bebo nem fumo.',organo:'Ele bebe no fim de semana, droga não.',hiperk:'Parei de fumar quando comecei a diálise.',dpoc:'Fumei 50 anos, parei há dois.',tireo:'Não uso nada.',neutro:'Nada. Parei de beber quando descobri o linfoma.',eh:'Bebia muito, parou há um ano.',estmal:'Bebeu no fim de semana. Droga não.',lv:'Bebo pouco, só em festa.',hiposu:'Ela não bebe nem fuma.',absti:'Bebe cachaça todo dia, quase uma garrafa.',tep:'Fumo uns dez cigarros por dia.'};
+const GA_CASE={organo:{trabalho:'Aplica veneno na uva toda semana e quase nunca usa máscara.'},tep:{cirurgias:'Operei o joelho faz 12 dias.',viagem:'Fiquei deitado em casa desde a cirurgia.'},
+ lv:{trabalho:'Trabalho na roça e tem muito cachorro solto no povoado.',viagem:'Moro na zona rural, perto da mata.'},ofid:{vacinas:'Não lembro de ter tomado antitetânica.',trabalho:'Trabalho na roça de sandália.'},
+ hda:{familia:'Meu pai morreu de cirrose.'},iam:{familia:'Meu pai morreu do coração com 52 anos.'},eap:{ultima:'Comi muito salgado na festa de ontem.'},cad:{ultima:'Só refrigerante desde ontem.'},
+ neutro:{cirurgias:'Coloquei um cateter no peito para a quimioterapia.'},hiperk:{ultima:'Comi manga e banana ontem.'},sepse:{cirurgias:'Ficou internada no ano passado pelo AVC.'},
+ hiposu:{ultima:'Quase não come há dias, por causa do dente.'},eh:{ultima:'Comeu bastante carne de bode no domingo.'},absti:{ultima:'Não come direito há dias.'},
+ tireo:{familia:'Minha mãe tem problema de tireoide.'},dpoc:{trabalho:'Trabalhei a vida toda em carvoaria.',vacinas:'Não tomei a vacina da gripe este ano.'}};
+const GA1={cirurgias:['Nunca operei.','Tirei a vesícula há uns anos.','Só operei uma hérnia, faz tempo.','Nunca fiquei internado.'],
+ familia:['Minha mãe tem pressão alta.','Meu pai era diabético.','Ninguém que eu saiba.','Tem caso de derrame na família.'],
+ vacinas:['Acho que estão em dia.','Não lembro da última antitetânica.','Tomei as da campanha.'],
+ ultima:['Almocei normal hoje.','Comi um pouco no almoço.','Só tomei café de manhã.'],
+ viagem:['Não saí da cidade.','Fui para a roça no fim de semana.','Não tive contato com ninguém doente.'],
+ trabalho:['Nada diferente no trabalho.','Pego muito sol no serviço.','Trabalho em casa.']};
+const GA3={cirurgias:['Nunca operou.','Já ficou internado uma vez.','Não sei de cirurgia.'],familia:['Não sei dizer.','A mãe tinha pressão alta.'],vacinas:['Não sei se estão em dia.'],
+ ultima:['Comeu pouco hoje.','Não comeu desde ontem.'],viagem:['Não saiu da cidade.'],trabalho:['Nada diferente.']};
+function genAns(P,g){
+  const c=P.c,b=c.base||c.id,who=SPEAK[b],pre=who?who+': "':'"',end='"';
+  if(g==='drogas')return pre+(DROGAS[b]||'Não uso nada.')+end;
+  if(g==='dor'){const t=c.ex0==='p'||c.hand?(rr(7,9)+' de 10. Está forte.'):c.ex0==='d'?'Dor não, o problema é a falta de ar.':'Uns '+rr(2,3)+' de 10, é mais um mal-estar.';return pre+t+end}
+  const ov=GA_CASE[b]&&GA_CASE[b][g];if(ov)return pre+ov+end;
+  const L=(who?GA3:GA1)[g]||['Nada a acrescentar.'];return pre+L[hashS(c.id+g)%L.length]+end;
+}
+/* ===== NOTÍCIAS DOS SETORES E DEVOLUÇÕES ===== */
+const SECDOC={UTI:'Dra. Helena Marques, plantonista da UTI',ENF:'Dr. Rogério Sampaio, plantonista da enfermaria de Clínica Médica',OBS:'Dra. Patrícia Leal, médica da sala de observação',EMG:'Dr. Ícaro Freire, plantonista da sala vermelha',TRANS:'Dr. Fábio Moura, médico do hospital de referência'};
+const SECN={UTI:'UTI',ENF:'Enfermaria',OBS:'Observação',EMG:'Sala vermelha',TRANS:'Hospital de referência'};
+function addNews(title,txt,hot){G.news.unshift({t:G.t,title,txt,hot:!!hot});G.unread++;alert_(fmt(G.t)+' Recado: '+title+'.',hot)}
+function scheduleFate(P,d){
+  const c=P.c,first=c.nome.split(' ')[0],inOK=c.dest.best.includes(d)||c.dest.ok.includes(d);
+  const miss=c.key.filter((k,i)=>P.ks[i]==null).map(k=>k.lb.toLowerCase());
+  P.missAtDest=miss;P.stageAtDest=P.stage;
+  if(d==='ALTA')return;
+  if(d==='UTI'&&!inOK){G.sched.push({at:G.t+rnd(25,45),P,kind:'ret',sec:'UTI',msg:'Avaliei '+first+': sem critério de UTI no momento. Leito de UTI é escasso e tem paciente esperando. Estou devolvendo para a emergência definir outro destino.'});return}
+  if((d==='ENF'||d==='OBS')&&(!inOK||(c.fatal&&miss.length&&P.stage<0))){G.sched.push({at:G.t+rnd(20,40),P,kind:'ret',sec:d,msg:first+' piorou aqui'+(miss.length?' e chegou sem '+miss.join(', '):'')+'. Não temos monitorização para esse quadro. Estou devolvendo para a sala vermelha.'});return}
+  if(d==='TRANS'&&!inOK){G.sched.push({at:G.t+rnd(80,120),P,kind:'ret',sec:'TRANS',msg:'Recebemos '+first+' e fizemos contrarreferência: o caso não tinha indicação de transferência e poderia ser resolvido no hospital regional. Ele está voltando na ambulância.'});return}
+  G.sched.push({at:G.t+(d==='TRANS'?rnd(45,90):rnd(40,100)),P,kind:'news',sec:d});
+}
+function deliver(it,final){
+  const P=it.P,c=P.c,first=c.nome.split(' ')[0],dx=(DXS.find(x=>x[0]===c.hyp)||[0,''])[1];
+  if(it.kind==='ret'){
+    if(final||!P.res){addNews(SECN[it.sec]+' · '+first,SECDOC[it.sec]+': "'+it.msg+'" (recado recebido na passagem de plantão)',true);if(P.res){P.res.errs.push('Encaminhamento inadequado: seria devolvido pelo setor ('+SECN[it.sec]+').');P.res.score=clamp(P.res.score-15)}return}
+    const k={UTI:'uti',ENF:'enf',OBS:'obs'}[P.dest];if(k)G.beds[k].used=Math.max(0,G.beds[k].used-1);
+    P.returned=(P.returned||0)+1;P.st='queue';P.dest=null;P.res=null;P.pen.push([15,'Devolvido pelo setor ('+SECN[it.sec]+'): encaminhamento inadequado.']);
+    if(it.sec!=='UTI'){P.adv.push(G.t);evolve(P)}
+    G.rep=clamp(G.rep-3);
+    P.log.push({t:G.t,k:'d',q:'Devolução · '+SECN[it.sec],a:SECDOC[it.sec]+': "'+it.msg+'"',fresh:1});
+    addNews('Devolução · '+first,SECDOC[it.sec]+': "'+it.msg+'"',true);return;
+  }
+  const r=P.res;if(!r)return;let txt;
+  if(it.sec==='TRANS'){
+    const dep=P.depT!=null?P.depT:G.t,arr=dep+rnd(40,80);
+    if(P.stageAtDest<=-1&&P.missAtDest.length&&c.fatal){r.cls='obito';r.score=0;r.txt=c.out.obito+' Isso aconteceu durante o transporte.';r.errs.push('Transferido instável e sem as condutas críticas.');
+      txt=SECDOC.TRANS+': "'+first+' intercorreu na ambulância e chegou em parada. Não conseguimos reverter. Chegou sem '+P.missAtDest.join(', ')+'."'}
+    else txt=SECDOC.TRANS+': "'+first+' chegou às '+fmt(arr)+(P.stageAtDest>=0?', estável':', ainda instável')+'. '+r.txt+(P.missAtDest.length?' Completamos aqui: '+P.missAtDest.join(', ')+'.':' Chegou bem conduzido.')+' Diagnóstico confirmado: '+dx+'."';
+  }else{
+    const remark=r.cls==='otimo'||r.cls==='bom'?'Chegou bem conduzido da emergência.':r.cls==='parcial'?'Completamos aqui'+(P.missAtDest.length?': '+P.missAtDest.join(', '):' alguns ajustes de prescrição')+'.':'Chegou com condução incompleta e deu trabalho para estabilizar.';
+    txt=SECDOC[it.sec]+': "'+r.txt+' '+remark+' Diagnóstico confirmado no setor: '+dx+'."';
+  }
+  addNews(SECN[it.sec]+' · '+first,txt,r.cls==='obito');
+}
+function emgCheck(P){
+  const c=P.c;if(P.emgChk||P.emgT==null||G.t-P.emgT<30)return;
+  if(c.dest.best.includes('EMG')||c.dest.ok.includes('EMG')||P.stage<0)return;
+  P.emgChk=1;P.st='queue';P.pen.push([10,'Maca da sala vermelha ocupada sem indicação.']);
+  const msg=c.nome.split(' ')[0]+' está estável e ocupando uma maca da sala vermelha. Liberei a maca; defina outro destino.';
+  P.log.push({t:G.t,k:'d',q:'Devolução · Sala vermelha',a:SECDOC.EMG+': "'+msg+'"',fresh:1});addNews('Sala vermelha · '+c.nome.split(' ')[0],SECDOC.EMG+': "'+msg+'"',true);
+}
+/* ===== MEDIDAS INICIAIS (MOV e cuidados básicos) ===== */
+const MOV=[['pac','Pacote MOV',0],['mon','Monitorizar',0],['ace','Acesso venoso',0],['o2c','O2 cateter',0],['o2m','O2 máscara',0],['vni','VNI / CPAP',0],['cab','Cabeceira 45°',0],['jej','Jejum',0],['glic','Glicemia capilar',0],['ecg','ECG',0]];
+/* medidas básicas: a enfermagem executa em paralelo, sem custo de tempo e sem penalidade por excesso */
+function doMov(P,k){
+  P.mov=P.mov||{};
+  if(k==='pac'){['mon','ace'].forEach(x=>doMov(P,x));['glic','ecg'].forEach(x=>{if(!P.ord[x])order(P,x,true)});return null}
+  if(k==='glic'||k==='ecg')return P.ord[k]?null:order(P,k,true);
+  if(k==='o2c'||k==='o2m'||k==='vni')return rxAdd(P,{drug:'o2',dose:{o2c:0,o2m:1,vni:2}[k],via:0,freq:'ic',dur:'ct'},true);
+  if(P.mov[k]!=null)return null;const it=MOV.find(x=>x[0]===k);P.mov[k]=G.t;
+  P.log.push({t:G.t,k:'m',q:'Enfermagem',a:it[1]+': feito.',fresh:1});return null;
+}
+function movHtml(P){
+  const m=P.mov||{},o2r=P.rx.find(r=>r.id==='o2'),o2=o2r?o2r.i:-1;
+  const on=k=>k==='pac'?(m.mon!=null&&m.ace!=null&&!!P.ord.glic&&!!P.ord.ecg):k==='glic'||k==='ecg'?!!P.ord[k]:k==='o2c'?o2===0:k==='o2m'?o2===1:k==='vni'?o2===2:m[k]!=null;
+  return'<div class="doc px"><h3>Medidas iniciais <span>enfermagem executa, sem custo de tempo</span></h3><div class="grid mov">'+MOV.map(([k,n,t])=>{const d=on(k);
+    return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d?' disabled':'')+'>'+n+'<small>'+(d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG':'imediato')+'</small></button>'}).join('')+'</div></div>';
+}
+/* ===== GERADOR LOCAL DE PACIENTES (roda só no navegador, sem IA) =====
+ Cada plantão sorteia 9 modelos de caso (prioriza os que você ainda não viu) e cria uma pessoa nova para cada um:
+ nome inédito, idade, sexo, município, ocupação, rosto, sinais vitais levemente diferentes e, às vezes, uma alergia. */
+const pickOf=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const rr=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const NF=['Maria','Josefa','Antônia','Francisca','Raimunda','Cícera','Luzia','Damiana','Rosângela','Ivonete','Edileuza','Marinalva','Aparecida','Socorro','Conceição','Joana','Valdirene','Lucineide','Gilvanete','Rita','Severina','Terezinha','Jailma','Andreia','Patrícia','Juliana','Camila','Daiane','Tainá','Larissa','Kelly','Vitória','Bruna','Elaine','Rosilda','Zuleide','Neide','Iracema','Edinalva','Benedita','Quitéria','Lindalva','Geane','Mirian','Tatiane','Natália','Jaqueline','Gleice'];
+const NM=['José','João','Antônio','Francisco','Manoel','Raimundo','Sebastião','Cícero','Luiz','Paulo','Edvaldo','Gilberto','Valdemir','Josivaldo','Genival','Damião','Severino','Expedito','Reginaldo','Adailton','Erivaldo','Joelson','Wellington','Cleiton','Rafael','Lucas','Mateus','Diego','Jefferson','Anderson','Alisson','Ítalo','Wesley','Gabriel','Davi','Ronaldo','Valmir','Zé Carlos','Natanael','Josué','Ademir','Edinaldo','Gerson','Moisés','Benedito','Osvaldo','Juvenal','Elias'];
+const SOB=['Silva','Santos','Oliveira','Souza','Pereira','Lima','Ferreira','Alves','Rodrigues','Gomes','Ribeiro','Carvalho','Araújo','Barbosa','Nascimento','Cavalcanti','Rocha','Dias','Moura','Menezes','Brandão','Coelho','Amorim','Bezerra','Torres','Nunes','Freitas','Andrade','Campos','Gonçalves','Macedo','Feitosa','Sampaio','Teixeira','Bispo','Conceição','Jesus','Matos','Leite','Aragão','Batista','Nogueira','Pinheiro','Sá','Viana','Xavier','Lacerda','Damasceno','Calixto','Brito'];
+const MUNS=['Juazeiro (BA)','Petrolina (PE)','Casa Nova (BA)','Sobradinho (BA)','Remanso (BA)','Sento Sé (BA)','Curaçá (BA)','Uauá (BA)','Campo Formoso (BA)','Senhor do Bonfim (BA)','Jaguarari (BA)','Pilão Arcado (BA)','Lagoa Grande (PE)','Santa Maria da Boa Vista (PE)','Afrânio (PE)','Dormentes (PE)','Cabrobó (PE)','Orocó (PE)','Ouricuri (PE)','Araripina (PE)','Salgueiro (PE)','Canudos (BA)','Pindobaçu (BA)'];
+const OCUP={jovem:[['Estudante','Estudante'],['Ajudante de pedreiro','Atendente de loja'],['Entregador','Manicure'],['Estudante de curso técnico','Estudante de curso técnico']],
+  adulto:[['Agricultor','Agricultora'],['Vendedor de frutas','Feirante'],['Motorista de aplicativo','Professora'],['Pescador','Merendeira'],['Pedreiro','Agente comunitária de saúde'],['Mototaxista','Cozinheira'],['Vigilante','Trabalhadora da fruticultura'],['Caminhoneiro','Doméstica'],['Comerciante','Costureira'],['Vaqueiro','Cabeleireira']],
+  idoso:[['Aposentado','Aposentada'],['Lavrador aposentado','Lavradora aposentada'],['Aposentado, ex-pescador','Aposentada, ex-costureira']]};
+const CLOTH=['#3d5a80','#8a4b5e','#4f6b43','#9a8f6a','#5b4a3a','#8c3f4f','#46586a','#6b4a4a','#7a6a46','#58506b','#a3834f','#2f6670','#7d8286','#a0522d'];
+const ALTXT={penic:['Penicilina. Fiquei todo empolado e com falta de ar.','Anafilaxia por antibiótico da classe da penicilina: edema de glote e broncoespasmo.'],
+  dipi:['Dipirona. Minha boca inchou da última vez.','Angioedema e hipotensão por dipirona.'],
+  aine:['Anti-inflamatório. O diclofenaco me deu crise de falta de ar.','Broncoespasmo grave por anti-inflamatório.'],
+  sulfa:['Sulfa. Deu bolha na pele toda.','Farmacodermia grave por sulfa.']};
+/* troca de gênero nos textos quando o modelo aceita os dois sexos */
+const GW=[['Ele','Ela'],['ele','ela'],['prostrado','prostrada'],['Prostrado','Prostrada'],['orientado','orientada'],['Orientado','Orientada'],['desorientado','desorientada'],['Desorientado','Desorientada'],['lúcido','lúcida'],['Lúcido','Lúcida'],['sonolento','sonolenta'],['Sonolento','Sonolenta'],['ansioso','ansiosa'],['Ansioso','Ansiosa'],['agitado','agitada'],['Agitado','Agitada'],['corado','corada'],['descorado','descorada'],['Emagrecido','Emagrecida'],['taquicárdico','taquicárdica'],['bradicárdico','bradicárdica'],['dispneico','dispneica'],['taquipneico','taquipneica'],['hipotenso','hipotensa'],['cansado','cansada'],['fraco','fraca'],['desperto','desperta'],['confuso','confusa'],['Calmo','Calma'],['internado','internada'],['Anticoagulado','Anticoagulada'],['conversando','conversando'],['Atropinizado','Atropinizada'],['descontaminado','descontaminada'],['estável','estável']];
+const GRX=GW.map(([m,f])=>[new RegExp('(?<![\\p{L}])'+m+'(?![\\p{L}])','gu'),f]);
+function genderSwap(s){if(typeof s!=='string')return s;GRX.forEach(([r,f])=>{s=s.replace(r,f)});return s}
+function loadH(){try{const h=JSON.parse(localStorage.getItem('pr_hist')||'{}');return{n:h.n||[],t:h.t||[]}}catch(e){return{n:[],t:[]}}}
+function saveH(h){try{localStorage.setItem('pr_hist',JSON.stringify({n:h.n.slice(-3000),t:h.t.slice(-80)}))}catch(e){}}
+function newName(sx,H,taken){
+  for(let i=0;i<400;i++){
+    const f=pickOf(sx==='F'?NF:NM);if(taken.has(f))continue;
+    const a=pickOf(SOB),b=pickOf(SOB);if(a===b)continue;
+    const n=f+' '+a+' '+b;if(!H.n.includes(n)){taken.add(f);return n}
+  }
+  return pickOf(sx==='F'?NF:NM)+' '+pickOf(SOB)+' '+pickOf(SOB)+' '+pickOf(SOB);
+}
+function jit(v){const[s,d]=String(v[0]).split('/').map(Number);const j=rr(-6,6),k=rr(-4,4);
+  return[(s+j)+'/'+Math.max(30,d+k),Math.max(25,v[1]+rr(-4,4)),Math.max(4,v[2]+rr(-1,1)),Math.min(100,Math.max(50,v[3]+rr(-1,1))),Math.round((v[4]+rr(-2,2)/10)*10)/10]}
+function vary(tpl,i,H,taken){
+  const c=JSON.parse(JSON.stringify(tpl));c.base=tpl.id;c.id=tpl.id+'_'+Date.now().toString(36)+i;
+  const sx=!tpl.sexo||tpl.sexo==='*'?(Math.random()<.5?'F':'M'):tpl.sexo;c.sexo=sx;
+  const ar=tpl.ageR||[Math.max(16,tpl.idade-8),tpl.idade+8];c.idade=Math.max(16,rr(ar[0],ar[1]));
+  const oldFirst=tpl.nome?tpl.nome.split(' ')[0]:null;c.nome=newName(sx,H,taken);const first=c.nome.split(' ')[0];
+  c.mun=pickOf(MUNS);
+  const band=c.idade<=22?'jovem':c.idade>=66?'idoso':'adulto';c.ocup=tpl.ocups?pickOf(tpl.ocups):pickOf(OCUP[band])[sx==='F'?1:0];
+  const fix=s=>{if(typeof s!=='string')return s;s=s.split('{N}').join(first);if(oldFirst)s=s.split(oldFirst).join(first);if(sx==='F'&&tpl.sexo==='*')s=genderSwap(s);return s};
+  ['ok','part','bad','obito'].forEach(k=>{c.out[k]=fix(c.out[k])});c.queixa=fix(c.queixa);c.ensina=fix(c.ensina);
+  if(sx==='F'&&tpl.sexo==='*'){Object.keys(c.ex).forEach(k=>c.ex[k]=fix(c.ex[k]));Object.keys(c.reav).forEach(k=>c.reav[k]=fix(c.reav[k]));c.perg=c.perg.map(p=>[fix(p[0]),fix(p[1]),p[2]]);c.comorb=fix(c.comorb)}
+  Object.keys(c.vit).forEach(k=>{c.vit[k]=jit(c.vit[k])});
+  /* alergia sorteada: nunca à classe de uma conduta crítica, para o caso continuar tratável */
+  if(!c.alergia.length&&Math.random()<.3){
+    const keyAl=new Set(c.key.flatMap(k=>k.ids).map(id=>DRUGS[id].al).filter(Boolean));
+    const opts=ALERG.filter(a=>!keyAl.has(a));
+    if(opts.length){const a=pickOf(opts);c.alergia=[a];c.alergiaTxt=ALTXT[a][0];c.alergiaMsg=ALTXT[a][1]}
+  }
+  const old=c.idade>=62,mid=c.idade>=45;
+  const hairs=['#1a1410','#2b2018','#47301f','#6a4a2a','#8b6a38','#1a1410','#2b2018'];
+  const rural=/Lavrador|Vaqueiro|Agricultor|Agricultora|Pescador|povoado/i.test(c.ocup)||tpl.hat;
+  c.look={skin:rr(0,5),hair:old?pickOf(['#d8d6d0','#b5b0a8','#e6e4de','#9a958e']):mid&&Math.random()<.4?'#77726c':pickOf(hairs),
+    hs:sx==='F'?pickOf(['long','bun','short','curly','long']):rural&&Math.random()<.7?'hat':pickOf(mid?['short','buzz','bald','curly','short']:['short','buzz','curly','short']),
+    beard:sx==='M'?pickOf(['none','none','stubble','full','mustache']):'none',glasses:mid&&Math.random()<.4,cloth:pickOf(CLOTH)};
+  return c;
+}
+function procStart(){
+  const H=loadH(),last={};H.t.forEach((t,i)=>{last[t]=i});
+  const order=shuffle(CASES.slice()).sort((a,b)=>(last[a.id]==null?-1:last[a.id])-(last[b.id]==null?-1:last[b.id]));
+  const pick=shuffle(order.slice(0,G.slots.length));
+  const g=pick.findIndex(c=>c.tri==='VERMELHO'||c.tri==='LARANJA');if(g>0)[pick[0],pick[g]]=[pick[g],pick[0]];
+  const taken=new Set();
+  pick.forEach((tpl,i)=>{const c=vary(tpl,i,H,taken);H.n.push(c.nome);H.t.push(tpl.id);admit(c,i)});
+  saveH(H);
+}
+/* ===== INTERFACE: estação de trabalho do médico ===== */
+const UI={tab:'anam',F:{drug:'',dose:0,via:0,freq:'',dur:''},destSel:null,msg:'',snd:true};
+/* som sintetizado (começa depois do primeiro clique) */
+let AC=null;
+function tn(f,d,ty,v,w,sl){if(!UI.snd||!AC)return;try{const t=AC.currentTime+(w||0),o=AC.createOscillator(),g=AC.createGain();o.type=ty||'square';o.frequency.setValueAtTime(f,t);if(sl)o.frequency.exponentialRampToValueAtTime(sl,t+d);g.gain.setValueAtTime(v||.04,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
+window.sfx=k=>{if(!UI.snd||!AC)return;
+  if(k==='click')tn(1300,.03,'square',.02);
+  if(k==='blip')tn(700,.07,'square',.03);
+  if(k==='alarm'){[0,.18,.36].forEach(w=>tn(980,.1,'square',.04,w))}
+  if(k==='stamp'){tn(120,.18,'sine',.25,0,50)}
+  if(k==='good'){tn(660,.12,'triangle',.06);tn(990,.2,'triangle',.06,.12)}
+  if(k==='mid')tn(520,.25,'triangle',.06);
+  if(k==='bad'){tn(330,.25,'sawtooth',.04,0,200);tn(200,.4,'sawtooth',.04,.2,120)}
+  if(k==='flat')tn(900,1.4,'sine',.05);
+  if(k==='bell'){[0,.5,1].forEach(w=>tn(880,1,'sine',.06,w))}};
+const trLbl=t=>({VERMELHO:'Vermelho',LARANJA:'Laranja',AMARELO:'Amarelo',VERDE:'Verde',AZUL:'Azul'})[t];
+const vAbn=(i,x)=>i===0?(+String(x).split('/')[0]>=180||+String(x).split('/')[0]<=95):i===1?(x>=110||x<=55):i===2?(x>=24||x<=10):i===3?x<=92:(x>=38||x<=35.5);
+
+function renderTop(){
+  const b=G.beds,u=k=>k==='emg'?b.emg.bg+active().length:b[k].used,ch=(n,k)=>{const x=u(k),c=b[k].cap;return'<span class="chip'+(x>=c?' full':'')+'">'+n+' <b>'+x+'/'+c+'</b></span>'};
+  const m=(n,v)=>'<span class="meter">'+n+'<i><b style="width:'+Math.round(clamp(v))+'%"></b></i></span>';
+  $('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL<small>Hospital Regional · Plantão '+G.n+' · Rotina normal</small></div>'
+   +'<div class="lcd" aria-label="Horário">'+fmt(Math.min(G.t,G.end))+'</div>'
+   +'<div class="mini">'+ch('Emerg.','emg')+ch('Obs.','obs')+ch('Enf.','enf')+ch('UTI','uti')+'<span class="chip">Insumos <b>'+G.ins+'</b></span><span class="chip">Pacientes <b>'+G.pts.filter(p=>p.st!=='wait').length+'/'+G.slots.length+'</b></span></div>'
+   +'<div class="mini">'+m('Equipe',G.eq)+m('Reputação',G.rep)+'</div>'
+   +'<div class="alerts" aria-live="polite">'+G.al.slice(0,3).map(a=>'<div class="'+(a.hot?'hot':'')+'">'+esc(a.txt)+'</div>').join('')+'</div>'
+   +'<div class="mini"><button class="btn'+(G.unread?' amber':'')+'" data-a="news">Recados'+(G.unread?' ('+G.unread+')':'')+'</button><button class="btn" data-a="snd" aria-pressed="'+UI.snd+'">Som: '+(UI.snd?'on':'off')+'</button><button class="btn" data-a="mus" aria-pressed="'+MUS.on+'">Música: '+(MUS.on?'on':'off')+'</button></div>';
+}
+function renderQueue(){
+  const q=$('#queue'),L=active();
+  const busy=G.filled<G.slots.length&&!G.pts.some(p=>p.st==='wait'),more=G.slots.length-G.filled;
+  if(!L.length){q.innerHTML='<div class="qempty">'+(busy?'A recepção está fichando o próximo paciente…':'Fila vazia. <button class="btn amber" data-a="wait:5">Aguardar 5 min</button>')+(!busy&&more===0&&!G.pts.some(p=>p.st==='wait')?'<button class="btn red" data-a="finish">Encerrar plantão</button>':'')+'</div>';return}
+  q.innerHTML=L.map(P=>{
+    const w=(P.st==='queue'?Math.max(0,Math.floor(G.t-P.c.arr)):0),tags=[];if(P.returned)tags.push('<u>VOLTOU</u>');
+    if(P.newRes>0)tags.push('<u>EX</u>');if(P.st==='reg')tags.push('<u>REG</u>');if(P.st==='emg')tags.push('<u>EMG</u>');
+    return'<button class="qc" style="--tc:var(--tc-'+P.c.tri+')" data-a="pick:'+P.id+'" aria-pressed="'+(G.act===P.id)+'"><canvas class="qt" data-id="'+P.id+'" width="48" height="48"></canvas><span>'+esc(P.c.nome.split(' ')[0])+'<br>'+P.c.idade+' anos</span><em>'+trLbl(P.c.tri)+(P.st==='queue'?' · espera '+w+' min':'')+' '+tags.join('')+'</em></button>'}).join('')+(more>0?'<div class="qempty" style="font-size:17px;padding:0 8px">+'+more+' a caminho</div>':'');
+  q.querySelectorAll('canvas.qt').forEach(cv=>{const P=pt(cv.dataset.id),X=cv.getContext('2d');if(X&&P&&P.off){X.imageSmoothingEnabled=false;X.drawImage(P.off,52,18,56,56,0,0,48,48)}});
+}
+function dlRow(k,v,unk){return'<div><dt>'+k+'</dt><dd'+(unk?' class="unk"':'')+'>'+(unk?'não investigado':esc(v))+'</dd></div>'}
+function renderWork(){
+  const P=cur(),w=$('#work');
+  if(!P){w.innerHTML='<div class="doc px hint" style="color:var(--ink)">'+(active().length?'Chame um paciente da fila clicando no rosto. Pacientes vermelhos e laranjas pioram se esperarem.':'Nenhum paciente na fila no momento.')+'</div>';$('#decide').hidden=true;return}
+  const c=P.c,mon=P.mov&&P.mov.mon!=null,v=mon?c.vit[P.stage]:P.lv.v,vs=[['PA','mmHg'],['FC','bpm'],['FR','irpm'],['SatO2','%'],['Temp','°C']];
+  const g=k=>P.asked.has('g:'+k);
+  const left='<div class="left"><div class="scene px"><canvas id="scene" width="160" height="120" aria-label="Retrato em pixel art de '+esc(c.nome)+'"></canvas></div>'
+   +'<div class="doc px"><div class="stamp" style="color:var(--tc-'+c.tri+')">TRIAGEM<br>'+c.tri+'</div><h3>Ficha de admissão <span>Atend. '+(4200+P.no)+'</span></h3>'
+   +'<div class="idn">'+esc(c.nome)+'</div><dl class="dl">'+dlRow('Idade',c.idade+' anos · '+(c.sexo==='F'?'feminino':'masculino'))+dlRow('Origem',c.mun)+dlRow('Ocupação',c.ocup)+dlRow('Queixa',c.queixa)
+   +dlRow('Doenças',c.comorb,!g('comorb'))+dlRow('Em uso',c.uso,!g('uso'))+dlRow('Alergias',c.alergiaTxt,!g('alerg'))+'</dl></div>'
+   +'<div class="doc px"><h3>Sinais vitais <span>'+(mon?'monitor contínuo':'aferidos às '+fmt(P.lv.t))+'</span></h3><div class="vit">'
+   +vs.map((x,i)=>'<div class="v'+(vAbn(i,v[i])?' abn':'')+'"><label>'+x[0]+'</label><b>'+v[i]+'</b> <small>'+x[1]+'</small></div>').join('')+'</div>'
+   +'<div class="row"><button class="btn paper" data-a="vit">Aferir de novo (1 min)</button><button class="btn paper" data-a="reav">Reavaliar (3 min)</button></div></div>'+movHtml(P)+'</div>';
+  w.innerHTML=left+'<div class="right"><div class="tabs" role="tablist">'
+   +[['anam','Anamnese'],['fis','Exame físico'],['ex','Exames'],['rx','Prescrição'],['pront','Prontuário']].map(([k,n])=>'<button class="tab" role="tab" data-a="tab:'+k+'" aria-selected="'+(UI.tab===k)+'">'+n+(k==='ex'&&P.newRes>0?' *':'')+'</button>').join('')
+   +'</div><div class="doc sheet px" id="sheet">'+tabHtml(P)+'</div></div>';
+  renderDecide(P);
+}
+function logList(P,kind){
+  const L=P.log.filter(x=>kind.includes(x.k));
+  return L.length?'<ul class="qa">'+L.map(x=>'<li class="'+(x.fresh?'new':'')+'"><b>'+fmt(x.t)+' · '+esc(x.q)+'</b><br>'+esc(x.a)+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nada registrado ainda.</p>';
+}
+function tabHtml(P){
+  const c=P.c;
+  if(UI.tab==='anam'){
+    const qs=[...GEN_Q.map(([k,t])=>['g:'+k,t]),...c.perg.map((p,i)=>['p:'+i,p[0]])];
+    return'<h3>Anamnese dirigida <span>15 s por pergunta</span></h3><div class="grid">'+qs.map(([k,t])=>'<button class="btn paper opt'+(P.asked.has(k)?' on':'')+'" data-a="ask:'+k+'"'+(P.asked.has(k)?' disabled':'')+'>'+esc(t)+'</button>').join('')+'</div><p class="sub">Respostas</p>'+logList(P,['q']);
+  }
+  if(UI.tab==='fis')return'<h3>Exame físico por sistemas <span>1 min por sistema</span></h3><div class="grid">'+SYS.map(([k,t])=>'<button class="btn paper opt'+(P.examined.has(k)?' on':'')+'" data-a="sys:'+k+'"'+(P.examined.has(k)?' disabled':'')+'>'+t+'</button>').join('')+'</div><p class="sub">Achados</p>'+logList(P,['x','r']);
+  if(UI.tab==='ex'){
+    const ids=Object.keys(EXAMS);
+    const res=ids.filter(k=>P.ord[k]&&P.ord[k].done);
+    return'<h3>Exames e imagem <span>insumos: '+G.ins+'</span></h3><div class="grid">'+ids.map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
+      const st=o?(o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível':E.t+' min · custo '+E.c;
+      return'<button class="btn paper opt'+(o?' on':'')+'" data-a="ord:'+k+'"'+(o?' disabled':'')+'>'+E.n+'<small>'+st+'</small></button>'}).join('')
+     +'</div><p class="sub">Resultados</p>'+(res.length?'<ul class="qa">'+res.map(k=>'<li><b>'+EXAMS[k].n+'</b><br>'+esc(P.c.res[k]||'Sem alterações relevantes.')+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhum resultado disponível.</p>');
+  }
+  if(UI.tab==='rx'){
+    const F=UI.F,D=DRUGS[F.drug],keys=Object.keys(DRUGS).sort((a,b)=>DRUGS[a].n.localeCompare(DRUGS[b].n));
+    let h='<h3>Prescrição <span>RENAME / protocolos do SUS</span></h3><div class="form"><label>Medicamento<select data-s="drug"><option value="">Selecione</option>'+keys.map(k=>'<option value="'+k+'"'+(F.drug===k?' selected':'')+(P.rx.some(r=>r.id===k)?' disabled':'')+'>'+DRUGS[k].n+'</option>').join('')+'</select></label>';
+    if(D){
+      const fs=Object.keys(FREQ),dr=Object.keys(DUR);
+      h+='<label>Dose<select data-s="dose">'+D.d.map((d,i)=>'<option value="'+i+'"'+(F.dose===i?' selected':'')+'>'+esc(d)+'</option>').join('')+'</select></label>'
+       +'<label>Via<select data-s="via">'+D.v.map((d,i)=>'<option value="'+i+'"'+(F.via===i?' selected':'')+'>'+d+'</option>').join('')+'</select></label>'
+       +'<label>Frequência<select data-s="freq">'+fs.map(k=>'<option value="'+k+'"'+(F.freq===k?' selected':'')+'>'+FREQ[k]+'</option>').join('')+'</select></label>'
+       +'<label>Duração<select data-s="dur">'+dr.map(k=>'<option value="'+k+'"'+(F.dur===k?' selected':'')+'>'+DUR[k]+'</option>').join('')+'</select></label>';
+    }
+    h+='</div>'+(UI.msg?'<p class="warn">'+esc(UI.msg)+'</p>':'')+'<div class="row"><button class="btn paper" data-a="rxgo"'+(D?'':' disabled')+'>Prescrever (2 min)</button></div>';
+    h+='<p class="sub">Prescrições ativas</p>'+(P.rx.length?'<ul class="rxl">'+P.rx.map(r=>{const d=DRUGS[r.id];return'<li><b>'+d.n+'</b> · '+esc(d.d[r.i])+' · '+d.v[r.via||0]+' · '+FREQ[r.freq]+' · '+DUR[r.dur]+' <small>('+fmt(r.t)+')</small></li>'}).join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhuma prescrição.</p>');
+    return h;
+  }
+  const log=P.log.slice().reverse();
+  return'<h3>Prontuário <span>hipótese e evolução</span></h3><div class="form"><label>Hipótese principal<select data-s="hyp"><option value="">Ainda sem hipótese</option>'+DXS.slice().sort((a,b)=>a[1].localeCompare(b[1],'pt')).map(([k,n])=>'<option value="'+k+'"'+(P.hyp===k?' selected':'')+'>'+n+'</option>').join('')+'</select></label></div>'
+   +'<p class="sub">Nota de evolução</p><textarea id="note" data-s="note" placeholder="Registre sua evolução e raciocínio clínico.">'+esc(P.note)+'</textarea>'
+   +'<p class="sub">Linha do tempo</p>'+(log.length?'<ul class="qa">'+log.map(x=>'<li><b>'+fmt(x.t)+' · '+esc(x.q)+'</b><br>'+esc(x.a)+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Sem registros.</p>');
+}
+function renderDecide(P){
+  const d=$('#decide');if(!P){d.hidden=true;return}d.hidden=false;
+  const info=k=>k==='UTI'?bedFree('uti')+' livres':k==='ENF'?bedFree('enf')+' livres':k==='OBS'?bedFree('obs')+' livres':k==='ALTA'?'liberar o paciente':k==='EMG'?'manter monitorizado':'regulação ~60-100 min';
+  d.innerHTML='<h4>CARIMBO DE DESTINO</h4><div class="dests">'+DESTS.map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0);
+    return'<button class="dest" data-a="dest:'+k+'" aria-pressed="'+(UI.destSel===k)+'"'+(dis?' disabled':'')+'>'+n+'<small>'+(dis?'lotado':info(k))+'</small></button>'}).join('')+'</div>'
+   +(UI.destSel==='ALTA'?'<div class="orient">'+ORIENT.map(([k,n])=>'<label><input type="checkbox" data-s="or" value="'+k+'"'+(P.orient.has(k)?' checked':'')+'> '+n+'</label>').join('')+'</div>':'')
+   +(UI.msg2?'<p class="warn" style="color:#f0a79b;margin:0">'+esc(UI.msg2)+'</p>':'')
+   +'<div class="row" style="margin:0"><button class="btn red" data-a="commit"'+(UI.destSel?'':' disabled')+'>Carimbar e despachar</button><button class="btn amber" data-a="wait:5">Aguardar 5 min</button></div>';
+}
+function renderVeil(){
+  const v=$('#veil');
+  if(G&&UI.news&&!G.over){v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Recados dos setores <span>'+fmt(G.t)+'</span></h3>'+(G.news.length?'<ul class="qa">'+G.news.map(n=>'<li class="'+(n.hot?'new':'')+'"><b>'+fmt(n.t)+' · '+esc(n.title)+'</b><br>'+esc(n.txt)+'</li>').join('')+'</ul>':'<p>Nenhum recado ainda. Pacientes que recebem alta não geram retorno de informação.</p>')+'<div class="row"><button class="btn red" data-a="closenews">Voltar ao plantão</button></div></article>';return}
+  if(G&&G.modal&&G.modal.k==='dil'){
+    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Ofício da direção <span>'+fmt(G.t)+'</span></h3><div class="big">Produtividade</div>'
+     +'<p>A direção pede que você libere um leito da observação até as 21:00 para reduzir a fila. Como você responde?</p><div class="row" style="flex-direction:column;align-items:stretch">'
+     +'<button class="btn paper" data-a="dil:1">Dar alta ao paciente do leito 4, estável e com alta já planejada para amanhã.</button>'
+     +'<button class="btn paper" data-a="dil:2">Liberar o leito 6, com PA ainda 170/100 e sem acompanhamento definido, para atender à direção.</button>'
+     +'<button class="btn paper" data-a="dil:3">Recusar e justificar por escrito que não há paciente apto à alta segura.</button></div></article>';return;
+  }
+  if(G&&G.over&&G.final){
+    const F=G.final;
+    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Passagem de plantão <span>relatório</span></h3><div class="big">Nota '+F.score+'/100</div>'
+     +'<p>Média dos atendimentos: <b>'+F.avg+'</b>. Óbitos: <b>'+F.dead+'</b>. Altas inseguras: <b>'+F.unsafe+'</b>. Exames desnecessários: <b>'+F.exams+'</b>. Prescrições inadequadas: <b>'+F.rx+'</b>. Diagnósticos perdidos: <b>'+F.missed+'</b>. Decisões corretas: <b>'+F.right+'</b>.</p>'
+     +'<p>Reputação '+Math.round(G.rep)+' · Confiança da equipe '+Math.round(G.eq)+' · Insumos restantes '+G.ins+'. A nota prioriza segurança e raciocínio clínico, não a rapidez.</p>'
+     +(G.news.length?'<p class="sub">Recados dos setores</p><ul class="qa">'+G.news.slice().reverse().map(n=>'<li><b>'+fmt(n.t)+' · '+esc(n.title)+'</b><br>'+esc(n.txt)+'</li>').join('')+'</ul>':'')
+     +'<div class="rep">'+G.pts.map(P=>{const r=P.res;return'<div class="rp"><h4><span>'+esc(P.c.nome)+', '+P.c.idade+'</span><span class="tag t-'+r.cls+'">'+({otimo:'ÓTIMO',bom:'BOM',parcial:'PARCIAL',ruim:'RUIM',obito:'ÓBITO',pend:'PENDENTE'})[r.cls]+' · '+r.score+'</span></h4>'
+      +'<div>'+esc(r.txt)+'</div>'+(r.errs.length?'<ul class="warn">'+r.errs.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')+(r.goods.length?'<ul class="good">'+r.goods.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')
+      +'<div style="color:var(--ink2);font-size:18px">'+esc(P.c.ensina)+'</div></div>'}).join('')+'</div>'
+     +'<div class="row"><button class="btn red" data-a="start:'+G.mode+'">Novo plantão</button></div></article>';return;
+  }
+  if(!G){
+    let hist='';try{const s=JSON.parse(localStorage.getItem('pr_save')||'{"shifts":[]}');if(s.shifts.length){const l=s.shifts[s.shifts.length-1];hist='<p>Último plantão salvo: nota <b>'+l.score+'</b>, reputação '+l.rep+'.</p>'}}catch(e){}
+    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Hospital Regional <span>Parte 3 do protótipo</span></h3><div class="big">PLANTÃO<br>REGIONAL</div>'
+     +'<p>Você é o médico de Clínica Médica de um hospital regional do SUS no Vale do São Francisco. A noite é de superlotação, poucos leitos e decisões rápidas. Todos os pacientes têm 16 anos ou mais.</p>'
+     +'<ul><li>Clique no rosto na fila para chamar um paciente. Vermelhos e laranjas pioram se esperarem.</li><li>Pergunte, examine, peça exames, prescreva com dose, via, frequência e duração, e defina o destino.</li><li>Cada ação consome minutos. O diagnóstico nunca é revelado: você escolhe a hipótese.</li><li>No fim, o relatório mostra acertos, erros evitáveis e o que ficou pendente.</li></ul>'+hist
+     +'<p>A cada plantão chegam 9 pacientes novos, sorteados de '+CASES.length+' quadros clínicos: nome, rosto, idade, cidade, sinais vitais e alergias mudam sempre, e os quadros que você já viu ficam para depois. Tudo roda no seu navegador, sem usar o Claude.</p>'
+     +'<div class="row"><button class="btn red" data-a="start:proc">Iniciar plantão</button></div></article>';return;
+  }
+  v.hidden=true;
+}
+function render(){
+  if(!G){$('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL</div>';$('#queue').innerHTML='';$('#work').innerHTML='';$('#decide').hidden=true;renderVeil();return}
+  renderTop();renderQueue();renderWork();renderVeil();
+}
+/* ===== eventos ===== */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b||b.disabled)return;
+  if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(x){}}
+  if(AC&&AC.state==='suspended')AC.resume();
+  const a=b.dataset.a,i=a.indexOf(':'),k=i<0?a:a.slice(0,i),v=i<0?'':a.slice(i+1);
+  if(k==='snd'){UI.snd=!UI.snd;render();return}
+  if(k==='mus'){MUS.on=!MUS.on;render();return}
+  if(k==='news'){UI.news=true;if(G)G.unread=0;render();return}
+  if(k==='closenews'){UI.news=false;render();return}
+  sfx('click');
+  if(k==='start'){UI.news=false;newShift(1,v||'local');UI.tab='anam';UI.destSel=null;UI.msg='';UI.msg2='';render();return}
+  if(!G||G.over)return;
+  const P=cur();
+  if(k==='dil'){resolveDil(+v);render();return}
+  if(G.modal)return;
+  UI.msg='';UI.msg2='';
+  if(k==='pick'){pick(v);UI.destSel=null;UI.tab='anam'}
+  else if(k==='tab'){UI.tab=v;if(P&&v==='ex')P.newRes=0}
+  else if(k==='wait')adv(+v);
+  else if(k==='finish')endShift();
+  else if(!P)return;
+  else if(k==='ask')askQ(P,v);
+  else if(k==='mov'){UI.msg2=doMov(P,v)||''}
+  else if(k==='sys')exam(P,v);
+  else if(k==='vit')vitals(P);
+  else if(k==='reav')reassess(P);
+  else if(k==='ord'){UI.msg=order(P,v)||'';if(UI.msg){UI.msg2=UI.msg;UI.msg=''}}
+  else if(k==='rxgo'){const F=UI.F;UI.msg=rxAdd(P,{drug:F.drug,dose:F.dose,via:F.via,freq:F.freq,dur:F.dur})||'';if(!UI.msg){UI.F={drug:'',dose:0,via:0,freq:'',dur:''}}}
+  else if(k==='dest')UI.destSel=v;
+  else if(k==='commit'){const r=commit(P,UI.destSel);if(r)UI.msg2=r;else{UI.destSel=null;sfx('stamp')}}
+  if(G&&G.over){render();return}
+  render();
+});
+document.addEventListener('change',e=>{
+  const s=e.target.closest('[data-s]');if(!s||!G)return;const P=cur(),n=s.dataset.s,F=UI.F;
+  if(n==='drug'){F.drug=s.value;F.dose=0;F.via=0;const D=DRUGS[F.drug];if(D){F.freq=D.f.split(' ')[0];F.dur=D.dr.split(' ')[0]}}
+  else if(n==='dose')F.dose=+s.value;else if(n==='via')F.via=+s.value;else if(n==='freq')F.freq=s.value;else if(n==='dur')F.dur=s.value;
+  else if(n==='hyp'&&P)setHyp(P,s.value);
+  else if(n==='or'&&P){s.checked?P.orient.add(s.value):P.orient.delete(s.value);return}
+  if(n!=='hyp')renderWork();
+});
+document.addEventListener('input',e=>{const s=e.target.closest('[data-s=note]');if(s&&G&&cur())cur().note=s.value});
+/* animação do paciente na mesa: piscar, respirar, desconforto */
+setInterval(()=>{
+  if(!G||G.over)return;const P=cur(),cv=$('#scene');if(!P||!cv)return;
+  const X=cv.getContext('2d');if(X)paint(X,P.look,animState(P,performance.now()));
+},90);
+render();
+/* ===== TRILHA SONORA ADAPTATIVA (chiptune em Web Audio, sem arquivos) =====
+ idle: ninguém em atendimento, ambiente quase parado (pad longo, zumbido de ar-condicionado, sino esparso)
+ calm: neutra, com qualquer paciente na mesa · tense: paciente na sala vermelha · end: passagem de plantão */
+const MUS={on:true,step:0,next:0,mood:'idle',bus:null,noise:null,tr:{},bars:0};
+function trk(){const m=MOODS[MUS.mood];return Array.isArray(m)?m[(MUS.tr[MUS.mood]||0)%m.length]:m}
+const hz=n=>440*Math.pow(2,(n-69)/12);
+/* acordes em semitons a partir de Lá (A) */
+const CH={Am:[0,3,7],F:[-4,0,3],C:[3,7,10],G:[-2,2,5],E:[-5,-1,2],Dm:[5,8,12],Bb:[1,5,8],Eb:[6,10,13],Fm7:[-4,-1,3],Em:[-5,-2,2]};
+const _=null;
+const MOODS={
+ idle:{bpm:58,prog:['Am','Fm7','Am','F'],pad:.022,padType:'sine',bass:[0,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],bl:16,bassVol:.05,bassType:'sine',
+   arp:[],bell:.18,hum:.018},
+ calm:[
+  {bpm:76,prog:['Am','Am','F','F'],pad:.014,padType:'sine',bass:[0,_,_,_,_,_,_,_,0,_,_,_,_,_,_,_],bl:6,bassVol:.05,bassType:'sine',arp:[0,_,_,_,2,_,_,_,1,_,_,_,2,_,_,_],arpOct:24,arpType:'triangle',arpVol:.018},
+  {bpm:70,prog:['Dm','C','Bb','Am'],pad:.01,padType:'triangle',bass:[0,_,_,_,_,_,_,_,0,_,_,_,12,_,_,_],bl:4,bassVol:.04,bassType:'square',arp:[0,_,1,_,2,_,1,_,0,_,1,_,2,_,1,_],arpOct:24,arpType:'sine',arpVol:.02,hat:[4,12]},
+  {bpm:88,prog:['G','F','G','C'],bass:[0,_,_,_,_,_,0,_,_,_,0,_,_,_,_,_],bl:2,bassVol:.05,bassType:'triangle',arp:[0,_,_,1,_,_,2,_,0,_,_,1,_,2,_,_],arpOct:24,arpType:'triangle',arpVol:.02,hat:[2,6,10,14],kick:[0,10],kickVol:.1},
+  {bpm:64,prog:['C','Em','Am','F'],pad:.016,padType:'sine',bass:[0,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],bl:12,bassVol:.05,bassType:'sine',arp:[2,_,_,_,_,_,1,_,_,_,_,_,0,_,_,_],arpOct:36,arpType:'sine',arpVol:.016,bell:.12}],
+ tense:{bpm:112,prog:['Am','Am','F','E'],bass:[0,_,0,_,0,_,12,_,0,_,0,_,0,_,12,_],bl:1.5,bassVol:.07,bassType:'square',
+   arp:[0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1],arpOct:24,arpType:'square',arpVol:.014,hat:[2,6,10,14],kick:[0,8],kickVol:.25},
+ crit:{bpm:138,prog:['Am','Bb','Am','Eb'],bass:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],bl:.8,bassVol:.06,bassType:'sawtooth',
+   arp:[2,_,1,_,0,_,1,_,2,_,1,_,0,_,1,_],arpOct:36,arpType:'square',arpVol:.016,hat:[1,3,5,7,9,11,13,15],kick:[0,2,8,10],kickVol:.3,alarm:1},
+ end:{bpm:68,prog:['C','G','Am','F'],pad:.02,padType:'sine',bass:[0,_,_,_,_,_,_,_,0,_,_,_,_,_,_,_],bl:7,bassVol:.06,bassType:'sine',
+   arp:[0,_,_,1,_,_,2,_,_,1,_,_,0,_,_,_],arpOct:24,arpType:'triangle',arpVol:.025,bell:.1}
+};
+/* a trilha não revela a gravidade escondida: neutra com qualquer paciente na mesa;
+   tensa só quando o médico coloca o paciente na sala vermelha (decisão já visível para o jogador) */
+function moodNow(){
+  if(!G)return'idle';if(G.over)return'end';
+  const P=cur();if(!P)return'idle';
+  return P.st==='emg'?'tense':'calm';
+}
+function mv(f,t,d,type,vol,att){
+  try{const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);
+    g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol,t+(att||.008));g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g);g.connect(MUS.bus);o.start(t);o.stop(t+d+.05)}catch(e){}
+}
+function mnoise(t,d,vol,freq,type){
+  try{if(!MUS.noise){const n=AC.sampleRate,b=AC.createBuffer(1,n,n),c=b.getChannelData(0);for(let i=0;i<n;i++)c[i]=Math.random()*2-1;MUS.noise=b}
+    const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=MUS.noise;s.loop=d>1;f.type=type||'highpass';f.frequency.value=freq;
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f);f.connect(g);g.connect(MUS.bus);s.start(t);s.stop(t+d+.05)}catch(e){}
+}
+function playStep(step,t){
+  const s=step%16;
+  /* troca de clima no início do compasso; piora grave entra já na próxima batida */
+  const want=moodNow();
+  if(s===0){MUS.bars++;if(want!==MUS.mood){MUS.mood=want;MUS.bars=0;MUS.tr[want]=(MUS.tr[want]||0)+1}else if(Array.isArray(MOODS[want])&&MUS.bars>=16){MUS.bars=0;MUS.tr[want]=(MUS.tr[want]||0)+1}}
+  const M=trk(),sp=60/M.bpm/4,bar=Math.floor(step/16),ch=CH[M.prog[bar%M.prog.length]],root=45;
+  if(s===0&&M.pad)ch.forEach(n=>mv(hz(root+12+n),t,sp*16*1.05,M.padType,M.pad,sp*4));
+  if(s===0&&M.hum)mnoise(t,sp*16,M.hum,320,'lowpass');
+  const b=M.bass[s];if(b!=null)mv(hz(root+ch[0]+b),t,sp*M.bl,M.bassType,M.bassVol);
+  const a=M.arp[s];if(a!=null&&a!==undefined)mv(hz(root+M.arpOct+ch[a]),t,sp*1.6,M.arpType,M.arpVol);
+  if(M.hat&&M.hat.includes(s))mnoise(t,.04,.035,7000);
+  if(M.kick&&M.kick.includes(s)){try{const o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(40,t+.12);g.gain.setValueAtTime(M.kickVol,t);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g);g.connect(MUS.bus);o.start(t);o.stop(t+.2)}catch(e){}}
+  if(M.bell&&s===8&&Math.random()<M.bell*4)mv(hz(root+36+ch[Math.floor(Math.random()*3)]),t,2.4,'sine',.03,.005);
+  if(M.alarm&&s===0&&bar%2===0)mv(hz(root+48+6),t,sp*2,'square',.012);
+}
+function musTick(){
+  if(!AC||!UI.snd||!MUS.on||AC.state!=='running')return;
+  if(!MUS.bus){MUS.bus=AC.createGain();MUS.bus.gain.value=.55;MUS.bus.connect(AC.destination)}
+  const now=AC.currentTime;if(MUS.next<now-.25)MUS.next=now+.05;
+  while(MUS.next<now+.15){playStep(MUS.step,MUS.next);MUS.next+=60/trk().bpm/4;MUS.step++}
+}
+setInterval(musTick,30);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&MUS.bus){MUS.next=0}});
+</script>
+</body>
+</html>
