@@ -49,6 +49,15 @@ function vary(tpl,i,H,taken){
     const opts=ALERG.filter(a=>!keyAl.has(a));
     if(opts.length){const a=pickOf(opts);c.alergia=[a];c.alergiaTxt=ALTXT[a][0];c.alergiaMsg=ALTXT[a][1]}
   }
+  /* fator surpresa: ~2,5% omitem na triagem uma alergia (nunca à classe de uma conduta crítica) */
+  c.alOmit=false;
+  if(Math.random()<.025){
+    if(!c.alergia.length){const keyAl=new Set(c.key.flatMap(k=>k.ids).map(id=>DRUGS[id].al).filter(Boolean));const opts=ALERG.filter(a=>!keyAl.has(a));
+      if(opts.length){const a=pickOf(opts);c.alergia=[a];c.alergiaTxt=ALTXT[a][0];c.alergiaMsg=ALTXT[a][1]}}
+    if(c.alergia.length){c.alOmit=true;c.alergiaTxt='Ah, doutor, esqueci de falar na triagem. '+c.alergiaTxt}
+  }
+  const ALN={penic:'penicilinas',dipi:'dipirona',aine:'anti-inflamatórios',sulfa:'sulfa'};
+  c.alTri=c.alergia.length&&!c.alOmit?'Triagem: alergia a '+ALN[c.alergia[0]]+' (reconfirmar)':'Triagem: nega alergia a medicamentos (reconfirmar)';
   const old=c.idade>=62,mid=c.idade>=45;
   const hairs=['#1a1410','#2b2018','#47301f','#6a4a2a','#8b6a38','#1a1410','#2b2018'];
   const rural=/Lavrador|Vaqueiro|Agricultor|Agricultora|Pescador|povoado/i.test(c.ocup)||tpl.hat;

@@ -96,7 +96,7 @@ function rxAdd(P,f,free){
   }
   const rx={id,i,via:f.via,freq:f.freq,dur:f.dur,t:G.t};
   /* alergia */
-  if(D.al&&c.alergia.includes(D.al))addAE(P,c.alergiaMsg||'Reação alérgica grave.',40,'Medicação da classe a que o paciente tem alergia grave: '+D.n+'.'),P.adv.push(G.t);
+  if(D.al&&c.alergia.includes(D.al))addAE(P,c.alergiaMsg||'Reação alérgica grave.',40,(c.alOmit&&!P.asked.has('g:alerg')?'Alergia omitida na triagem e não reconfirmada na anamnese: ':'Medicação da classe a que o paciente tem alergia grave: ')+D.n+'.'),P.adv.push(G.t);
   let handled=false;const ct=c.contra[id];
   if(ct){const from=typeof ct==='string'?0:ct.from,t=typeof ct==='string'?ct:ct.t;if(i>=from){addAE(P,t,20,'Medicação contraindicada ou perigosa neste caso: '+D.n+'.');handled=true}}
   (c.seq||[]).forEach(s=>{if(id===s.then&&!P.rx.some(r=>r.id===s.first)){addAE(P,s.t,20,'Ordem errada de condutas: '+D.n+' antes de '+DRUGS[s.first].n+'.');handled=true}});

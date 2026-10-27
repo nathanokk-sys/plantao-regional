@@ -45,7 +45,7 @@ function renderWork(){
   const left='<div class="left"><div class="scene px"><canvas id="scene" width="160" height="120" aria-label="Retrato em pixel art de '+esc(c.nome)+'"></canvas></div>'
    +'<div class="doc px"><div class="stamp" style="color:var(--tc-'+c.tri+')">TRIAGEM<br>'+c.tri+'</div><h3>Ficha de admissão <span>Atend. '+(4200+P.no)+'</span></h3>'
    +'<div class="idn">'+esc(c.nome)+'</div><dl class="dl">'+dlRow('Idade',c.idade+' anos · '+(c.sexo==='F'?'feminino':'masculino'))+dlRow('Origem',c.mun)+dlRow('Ocupação',c.ocup)+dlRow('Queixa',c.queixa)
-   +dlRow('Doenças',c.comorb,!g('comorb'))+dlRow('Em uso',c.uso,!g('uso'))+dlRow('Alergias',c.alergiaTxt,!g('alerg'))+'</dl></div>'
+   +dlRow('Doenças',c.comorb,!g('comorb'))+dlRow('Em uso',c.uso,!g('uso'))+(g('alerg')?dlRow('Alergias',c.alergiaTxt):dlRow('Alergias',c.alTri||'Triagem: não informado (reconfirmar)'))+'</dl></div>'
    +'<div class="doc px"><h3>Sinais vitais <span>'+(mon?'monitor contínuo':'aferidos às '+fmt(P.lv.t))+'</span></h3><div class="vit">'
    +vs.map((x,i)=>'<div class="v'+(vAbn(i,v[i])?' abn':'')+'"><label>'+x[0]+'</label><b>'+v[i]+'</b> <small>'+x[1]+'</small></div>').join('')+'</div>'
    +'<div class="row"><button class="btn paper" data-a="vit">Aferir de novo (1 min)</button><button class="btn paper" data-a="reav">Reavaliar (3 min)</button></div></div>'+movHtml(P)+'</div>';

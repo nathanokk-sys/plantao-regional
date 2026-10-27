@@ -984,7 +984,7 @@ function rxAdd(P,f,free){
   }
   const rx={id,i,via:f.via,freq:f.freq,dur:f.dur,t:G.t};
   /* alergia */
-  if(D.al&&c.alergia.includes(D.al))addAE(P,c.alergiaMsg||'Reação alérgica grave.',40,'Medicação da classe a que o paciente tem alergia grave: '+D.n+'.'),P.adv.push(G.t);
+  if(D.al&&c.alergia.includes(D.al))addAE(P,c.alergiaMsg||'Reação alérgica grave.',40,(c.alOmit&&!P.asked.has('g:alerg')?'Alergia omitida na triagem e não reconfirmada na anamnese: ':'Medicação da classe a que o paciente tem alergia grave: ')+D.n+'.'),P.adv.push(G.t);
   let handled=false;const ct=c.contra[id];
   if(ct){const from=typeof ct==='string'?0:ct.from,t=typeof ct==='string'?ct:ct.t;if(i>=from){addAE(P,t,20,'Medicação contraindicada ou perigosa neste caso: '+D.n+'.');handled=true}}
   (c.seq||[]).forEach(s=>{if(id===s.then&&!P.rx.some(r=>r.id===s.first)){addAE(P,s.t,20,'Ordem errada de condutas: '+D.n+' antes de '+DRUGS[s.first].n+'.');handled=true}});
@@ -1244,6 +1244,15 @@ function vary(tpl,i,H,taken){
     const opts=ALERG.filter(a=>!keyAl.has(a));
     if(opts.length){const a=pickOf(opts);c.alergia=[a];c.alergiaTxt=ALTXT[a][0];c.alergiaMsg=ALTXT[a][1]}
   }
+  /* fator surpresa: ~2,5% omitem na triagem uma alergia (nunca à classe de uma conduta crítica) */
+  c.alOmit=false;
+  if(Math.random()<.025){
+    if(!c.alergia.length){const keyAl=new Set(c.key.flatMap(k=>k.ids).map(id=>DRUGS[id].al).filter(Boolean));const opts=ALERG.filter(a=>!keyAl.has(a));
+      if(opts.length){const a=pickOf(opts);c.alergia=[a];c.alergiaTxt=ALTXT[a][0];c.alergiaMsg=ALTXT[a][1]}}
+    if(c.alergia.length){c.alOmit=true;c.alergiaTxt='Ah, doutor, esqueci de falar na triagem. '+c.alergiaTxt}
+  }
+  const ALN={penic:'penicilinas',dipi:'dipirona',aine:'anti-inflamatórios',sulfa:'sulfa'};
+  c.alTri=c.alergia.length&&!c.alOmit?'Triagem: alergia a '+ALN[c.alergia[0]]+' (reconfirmar)':'Triagem: nega alergia a medicamentos (reconfirmar)';
   const old=c.idade>=62,mid=c.idade>=45;
   const hairs=['#1a1410','#2b2018','#47301f','#6a4a2a','#8b6a38','#1a1410','#2b2018'];
   const rural=/Lavrador|Vaqueiro|Agricultor|Agricultora|Pescador|povoado/i.test(c.ocup)||tpl.hat;
@@ -1360,7 +1369,7 @@ function renderWork(){
   const left='<div class="left"><div class="scene px"><canvas id="scene" width="160" height="120" aria-label="Retrato em pixel art de '+esc(c.nome)+'"></canvas></div>'
    +'<div class="doc px"><div class="stamp" style="color:var(--tc-'+c.tri+')">TRIAGEM<br>'+c.tri+'</div><h3>Ficha de admissão <span>Atend. '+(4200+P.no)+'</span></h3>'
    +'<div class="idn">'+esc(c.nome)+'</div><dl class="dl">'+dlRow('Idade',c.idade+' anos · '+(c.sexo==='F'?'feminino':'masculino'))+dlRow('Origem',c.mun)+dlRow('Ocupação',c.ocup)+dlRow('Queixa',c.queixa)
-   +dlRow('Doenças',c.comorb,!g('comorb'))+dlRow('Em uso',c.uso,!g('uso'))+dlRow('Alergias',c.alergiaTxt,!g('alerg'))+'</dl></div>'
+   +dlRow('Doenças',c.comorb,!g('comorb'))+dlRow('Em uso',c.uso,!g('uso'))+(g('alerg')?dlRow('Alergias',c.alergiaTxt):dlRow('Alergias',c.alTri||'Triagem: não informado (reconfirmar)'))+'</dl></div>'
    +'<div class="doc px"><h3>Sinais vitais <span>'+(mon?'monitor contínuo':'aferidos às '+fmt(P.lv.t))+'</span></h3><div class="vit">'
    +vs.map((x,i)=>'<div class="v'+(vAbn(i,v[i])?' abn':'')+'"><label>'+x[0]+'</label><b>'+v[i]+'</b> <small>'+x[1]+'</small></div>').join('')+'</div>'
    +'<div class="row"><button class="btn paper" data-a="vit">Aferir de novo (1 min)</button><button class="btn paper" data-a="reav">Reavaliar (3 min)</button></div></div>'+movHtml(P)+'</div>';
