@@ -14,4 +14,4 @@ Simulação educacional com casos fictícios. Doses e condutas simplificadas a p
 
 ## Estrutura
 
-`index.html` é o jogo completo em um arquivo. A pasta `src/` guarda as partes separadas: dados clínicos (`c_data*.js`), casos (`d_cases1.js`, `e_cases2.js`, `l_cases3.js`), pixel art (`f_sprite.js`), motor (`g_engine.js`, `m_extra.js`, `k_proc.js`), interface (`h_ui.js`) e música (`j_music.js`).
+`index.html` é o jogo completo em um arquivo. A pasta `src/` guarda as partes separadas: dados clínicos (`c_data*.js`), casos (`d_cases1.js`, `e_cases2.js`, `l_cases3.js`), pixel art (`f_sprite.js`), motor (`g_engine.js`, `m_extra.js`, `k_proc.js`), salvamento (`n_save.js`), interface (`h_ui.js`) e música (`j_music.js`).

@@ -21,9 +21,7 @@ function newShift(n,mode){
   G={n,t:0,end:SHIFT,act:null,ins:100,rep:50,eq:50,al:[],over:false,modal:null,chefia:0,unsafe:0,news:[],sched:[],unread:0,
     pts:[],mode:mode||'local',slots:mode==='local'?CASES.map(c=>c.arr):SLOTS.slice(),filled:0,no:0,stock:{sorobot:6,hemac:3},off:{tc:{until:9999,why:'Tomógrafo em manutenção. Só por regulação.'}},
     beds:{emg:{cap:4,bg:2},obs:{cap:6,used:5},enf:{cap:10,used:9},uti:{cap:3,used:2}},
-    evs:[{at:18,run:()=>{G.off.trop={until:G.t+120,why:'Reagente de troponina em falta. Previsão em 2 h.'};alert_(fmt(G.t)+' Laboratório: troponina indisponível por 2 horas.',true)}},
-         {at:75,run:()=>{G.modal={k:'dil'};if(window.sfx)sfx('alarm')}},
-         {at:130,run:()=>{if(G.beds.uti.used>0)G.beds.uti.used--;alert_(fmt(G.t)+' UTI: um leito foi liberado.')}}]};
+    evs:mkEvs()};
   if(G.mode==='local')CASES.forEach((c,i)=>admit(JSON.parse(JSON.stringify(c)),i));else procStart();
   tickMin();
 }
@@ -187,6 +185,6 @@ function endShift(){
     rx:G.pts.reduce((a,p)=>a+p.pen.filter(x=>/Prescrição sem|Dose|Medicação|Frequência|Ordem errada/.test(x[1])).length,0),
     missed:G.pts.reduce((a,p)=>a+(p.res&&p.res.errs.some(e=>/Diagnóstico perdido|Hipótese diagnóstica não/.test(e))?1:0),0),
     missing:G.slots.length-G.filled,right:G.pts.reduce((a,p)=>a+(p.res?p.res.goods.length:0),0)};
-  try{const s=JSON.parse(localStorage.getItem('pr_save')||'{"shifts":[]}');s.shifts.push({n:G.n,score,rep:Math.round(G.rep)});localStorage.setItem('pr_save',JSON.stringify(s))}catch(e){}
+  try{const s=JSON.parse(localStorage.getItem('pr_save')||'{"shifts":[]}');s.shifts.push({n:G.n,score,rep:Math.round(G.rep)});localStorage.setItem('pr_save',JSON.stringify(s));localStorage.removeItem('pr_cur')}catch(e){}
   if(window.sfx)sfx('bell');
 }

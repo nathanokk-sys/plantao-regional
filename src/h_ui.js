@@ -24,7 +24,7 @@ function renderTop(){
    +'<div class="mini">'+ch('Emerg.','emg')+ch('Obs.','obs')+ch('Enf.','enf')+ch('UTI','uti')+'<span class="chip">Insumos <b>'+G.ins+'</b></span><span class="chip">Pacientes <b>'+G.pts.filter(p=>p.st!=='wait').length+'/'+G.slots.length+'</b></span></div>'
    +'<div class="mini">'+m('Equipe',G.eq)+m('Reputação',G.rep)+'</div>'
    +'<div class="alerts" aria-live="polite">'+G.al.slice(0,3).map(a=>'<div class="'+(a.hot?'hot':'')+'">'+esc(a.txt)+'</div>').join('')+'</div>'
-   +'<div class="mini"><button class="btn'+(G.unread?' amber':'')+'" data-a="news">Recados'+(G.unread?' ('+G.unread+')':'')+'</button><button class="btn" data-a="snd" aria-pressed="'+UI.snd+'">Som: '+(UI.snd?'on':'off')+'</button></div><div class="musbox"><label for="trk">Trilha sonora</label><select id="trk" data-s="trk">'+trackSelectHtml()+'</select><div class="np" id="np">'+esc(npText())+'</div><button class="btn" data-a="mus" aria-pressed="'+MUS.on+'">'+(MUS.on?'Pausar música':'Tocar música')+'</button></div>';
+   +'<div class="mini"><button class="btn" data-a="menu">Menu</button><button class="btn'+(G.unread?' amber':'')+'" data-a="news">Recados'+(G.unread?' ('+G.unread+')':'')+'</button><button class="btn" data-a="snd" aria-pressed="'+UI.snd+'">Som: '+(UI.snd?'on':'off')+'</button></div><div class="musbox"><label for="trk">Trilha sonora</label><select id="trk" data-s="trk">'+trackSelectHtml()+'</select><div class="np" id="np">'+esc(npText())+'</div><button class="btn" data-a="mus" aria-pressed="'+MUS.on+'">'+(MUS.on?'Pausar música':'Tocar música')+'</button></div>';
 }
 function renderQueue(){
   const q=$('#queue'),L=active();
@@ -103,6 +103,7 @@ function renderDecide(P){
 }
 function renderVeil(){
   const v=$('#veil');
+  if(UI.menu){v.hidden=false;v.innerHTML=introHtml();return}
   if(G&&UI.news&&!G.over){v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Recados dos setores <span>'+fmt(G.t)+'</span></h3>'+(G.news.length?'<ul class="qa">'+G.news.map(n=>'<li class="'+(n.hot?'new':'')+'"><b>'+fmt(n.t)+' · '+esc(n.title)+'</b><br>'+esc(n.txt)+'</li>').join('')+'</ul>':'<p>Nenhum recado ainda. Pacientes que recebem alta não geram retorno de informação.</p>')+'<div class="row"><button class="btn red" data-a="closenews">Voltar ao plantão</button></div></article>';return}
   if(G&&G.modal&&G.modal.k==='dil'){
     v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Ofício da direção <span>'+fmt(G.t)+'</span></h3><div class="big">Produtividade</div>'
@@ -122,19 +123,12 @@ function renderVeil(){
       +'<div style="color:var(--ink2);font-size:18px">'+esc(P.c.ensina)+'</div></div>'}).join('')+'</div>'
      +'<div class="row"><button class="btn red" data-a="start:'+G.mode+'">Novo plantão</button></div></article>';return;
   }
-  if(!G){
-    let hist='';try{const s=JSON.parse(localStorage.getItem('pr_save')||'{"shifts":[]}');if(s.shifts.length){const l=s.shifts[s.shifts.length-1];hist='<p>Último plantão salvo: nota <b>'+l.score+'</b>, reputação '+l.rep+'.</p>'}}catch(e){}
-    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Hospital Regional <span>Parte 3 do protótipo</span></h3><div class="big">PLANTÃO<br>REGIONAL</div>'
-     +'<p>Você é o médico de Clínica Médica de um hospital regional do SUS no Vale do São Francisco. A noite é de superlotação, poucos leitos e decisões rápidas. Todos os pacientes têm 16 anos ou mais.</p>'
-     +'<ul><li>Clique no rosto na fila para chamar um paciente. Vermelhos e laranjas pioram se esperarem.</li><li>Pergunte, examine, peça exames, prescreva com dose, via, frequência e duração, e defina o destino.</li><li>Cada ação consome minutos. O diagnóstico nunca é revelado: você escolhe a hipótese.</li><li>No fim, o relatório mostra acertos, erros evitáveis e o que ficou pendente.</li></ul>'+hist
-     +'<p>A cada plantão chegam 9 pacientes novos, sorteados de '+CASES.length+' quadros clínicos: nome, rosto, idade, cidade, sinais vitais e alergias mudam sempre, e os quadros que você já viu ficam para depois. Tudo roda no seu navegador, sem usar o Claude.</p>'
-     +'<div class="row"><button class="btn red" data-a="start:proc">Iniciar plantão</button></div></article>';return;
-  }
+  if(!G){v.hidden=false;v.innerHTML=introHtml();return}
   v.hidden=true;
 }
 function render(){
   if(!G){$('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL</div>';$('#queue').innerHTML='';$('#work').innerHTML='';$('#decide').hidden=true;renderVeil();return}
-  renderTop();renderQueue();renderWork();renderVeil();
+  renderTop();renderQueue();renderWork();renderVeil();saveGame();
 }
 /* ===== eventos ===== */
 document.addEventListener('click',e=>{
@@ -147,7 +141,13 @@ document.addEventListener('click',e=>{
   if(k==='news'){UI.news=true;if(G)G.unread=0;render();return}
   if(k==='closenews'){UI.news=false;render();return}
   sfx('click');
-  if(k==='start'){UI.news=false;newShift(1,v||'local');UI.tab='anam';UI.destSel=null;UI.msg='';UI.msg2='';render();return}
+  if(k==='menu'){UI.menu=true;UI.confirmReset=false;render();return}
+  if(k==='closemenu'){UI.menu=false;UI.confirmReset=false;render();return}
+  if(k==='cont'){if(!loadGame())UI.msg2='Não foi possível carregar o plantão salvo.';render();return}
+  if(k==='reset'){UI.confirmReset=true;render();return}
+  if(k==='resetno'){UI.confirmReset=false;render();return}
+  if(k==='resetok'){resetAll();render();return}
+  if(k==='start'){UI.news=false;UI.menu=false;UI.confirmReset=false;newShift(nextN(),v||'local');UI.tab='anam';UI.destSel=null;UI.msg='';UI.msg2='';render();return}
   if(!G||G.over)return;
   const P=cur();
   if(k==='dil'){resolveDil(+v);render();return}
@@ -179,7 +179,7 @@ document.addEventListener('change',e=>{
   else if(n==='or'&&P){s.checked?P.orient.add(s.value):P.orient.delete(s.value);return}
   if(n!=='hyp')renderWork();
 });
-document.addEventListener('input',e=>{const s=e.target.closest('[data-s=note]');if(s&&G&&cur())cur().note=s.value});
+document.addEventListener('input',e=>{const s=e.target.closest('[data-s=note]');if(s&&G&&cur()){cur().note=s.value;saveGame()}});
 /* animação do paciente na mesa: piscar, respirar, desconforto */
 setInterval(()=>{
   if(!G||G.over)return;const P=cur(),cv=$('#scene');if(!P||!cv)return;
