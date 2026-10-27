@@ -651,6 +651,130 @@ CASES.push(
  ensina:'Com o tomógrafo quebrado, alta probabilidade clínica e TVP no ultrassom justificam anticoagular. Trombólise só se houver instabilidade.',
  ex0:'d',sw:1,pale0:0,cy:0,hand:'chest'}
 );
+/* ===== Parte 6: oxigênio específico, diluições, mais medicamentos, procedimentos, exames agrupados ===== */
+/* oxigênio: dispositivos em ordem crescente de suporte */
+DRUGS.o2={n:'Oxigênio',v:['Inalatória'],d:['Cateter nasal 1–5 L/min (FiO2 ~24–40%)','Máscara de Venturi 24–50% (FiO2 fixa)','Máscara não reinalante com reservatório 10–15 L/min','VNI / CPAP 8–10 cmH2O'],f:'ic',dr:'ct',ae:'Excesso de oxigênio: hiperóxia e, no retentor de CO2, piora da hipercapnia.'};
+CASES.forEach(c=>c.key.forEach(k=>{
+  if(!k.ids.includes('o2'))return;const m=x=>[0,2,3][x];
+  const fill=a=>{const b=a.map(m);const lo=Math.min(...b),hi=Math.max(...b),r=[];for(let i=lo;i<=hi;i++)r.push(i);return r};
+  if(Array.isArray(k.ok))k.ok=fill(k.ok);else if(k.ok.o2)k.ok.o2=fill(k.ok.o2);
+  if(c.id==='dpoc'){k.ok=[0,1,3];k.lb='O2 controlado (cateter ou Venturi, alvo 88–92%) ou VNI'}
+}));
+/* tomografia útil em alguns quadros */
+(()=>{const f=id=>CASES.find(c=>c.id===id);
+  const tep=f('tep');tep.res.tc='Angiotomografia: falhas de enchimento em artérias pulmonares lobares inferiores bilaterais, sem sinais de sobrecarga grave de VD.';tep.util.push('tc','dimero');tep.evid=['tc','us'];tep.res.dimero='Elevado (2.800 ng/mL).';
+  tep.out.ok='Anticoagulado em tempo, com o diagnóstico confirmado pela imagem. {N} estabiliza na enfermaria.';
+  tep.ensina='TEP estável: com alta probabilidade clínica, anticoagular enquanto confirma (angiotomografia, ou ultrassom com TVP se a TC não estiver disponível). Trombólise só se houver instabilidade.';
+  f('estmal').res.tc='TC de crânio sem lesões agudas.';f('estmal').util.push('tc');
+  f('hiposu').res.tc='TC de crânio sem lesões agudas.';f('hiposu').util.push('tc');
+  f('absti').res.tc='TC de crânio sem sangramento; atrofia cortical leve.';f('absti').util.push('tc');
+  f('eh').res.tc='TC de crânio sem lesões agudas.';f('eh').util.push('tc');
+  f('hda').util.push('tipag');f('hda').res.tipag='O positivo. Prova cruzada liberada para 2 concentrados.';
+  ['estmal','eap','organo','dpoc','hda'].forEach(id=>f(id).allowed.push('iot'));
+  ['eap','sepse','dpoc','hiperk','tireo','estmal','organo','hda','cad','iam'].forEach(id=>f(id).allowed.push('cvc','svd'));
+  f('hda').allowed.push('sne','octreo','tranex');f('cad').allowed.push('svd');f('sepse').allowed.push('hemoc');
+  f('iam').allowed.push('tnk','atorva','meto');f('eap').allowed.push('isso','morf');
+})();
+/* novos medicamentos */
+Object.assign(DRUGS,{
+ isso:{n:'Dinitrato de isossorbida SL',v:['SL'],d:['2,5 mg','5 mg','20 mg'],tox:2,ae:'Hipotensão e cefaleia intensa.',f:'u sn',dr:'u'},
+ tnk:{n:'Tenecteplase',v:['EV'],d:['Metade da dose por peso','Dose por peso em bolus único (30–50 mg)','Dose dobrada'],tox:2,ae:'Hemorragia intracraniana.',f:'u',dr:'u'},
+ lido:{n:'Lidocaína',v:['EV'],d:['0,5 mg/kg','1–1,5 mg/kg','5 mg/kg'],tox:2,ae:'Convulsão e bradicardia.',f:'u',dr:'u'},
+ propo:{n:'Propofol',v:['EV'],d:['0,5 mg/kg','1–2 mg/kg (indução)','5 mg/kg'],tox:2,ae:'Hipotensão grave e apneia.',f:'u ic',dr:'u ct'},
+ metilp:{n:'Metilprednisolona',v:['EV'],d:['40 mg','125 mg','1 g'],tox:2,ae:'Hiperglicemia e agitação.',f:'u s6 s12',dr:'u d3 d5'},
+ codeina:{n:'Codeína + paracetamol',v:['VO'],d:['30/500 mg','60/1000 mg','120/2000 mg'],tox:2,ae:'Sonolência, constipação e hepatotoxicidade.',f:'s6 s8 sn',dr:'d3'},
+ simet:{n:'Simeticona',v:['VO'],d:['40 mg','80–120 mg','500 mg'],f:'s8 sn',dr:'d3'},
+ hioscomp:{n:'Escopolamina + dipirona',v:['EV'],d:['Meia ampola','1 ampola (20 mg + 2,5 g)','3 ampolas'],tox:2,al:'dipi',ae:'Hipotensão e taquicardia.',f:'u s8 sn',dr:'u d3'},
+ panto:{n:'Pantoprazol',v:['EV','VO'],d:['20 mg','40 mg','80 mg em bolus'],f:'s24 s12 u',dr:'d3 d5 ct'},
+ clorp:{n:'Clorpromazina',v:['IM','EV'],d:['12,5 mg','25 mg','100 mg'],tox:2,ae:'Hipotensão e sedação intensa.',f:'u sn',dr:'u'},
+ levet:{n:'Levetiracetam',v:['EV','VO'],d:['10 mg/kg','40–60 mg/kg (ataque)','120 mg/kg'],tox:2,ae:'Sonolência e agitação.',f:'u s12',dr:'u ct'},
+ sorcal:{n:'Poliestirenossulfonato de cálcio',v:['VO'],d:['15 g','30 g','90 g'],tox:2,ae:'Constipação grave e necrose intestinal.',f:'u s8',dr:'u d3'},
+ pfc:{n:'Plasma fresco congelado',v:['EV'],d:['1 unidade','10–15 mL/kg','40 mL/kg'],tox:2,ae:'Sobrecarga volêmica.',f:'u',dr:'u',fluid:1},
+ plaq:{n:'Concentrado de plaquetas',v:['EV'],d:['1 unidade','1 unidade a cada 10 kg (ou aférese)','4 aféreses'],tox:2,ae:'Sobrecarga e reação transfusional.',f:'u',dr:'u',fluid:1},
+ crio:{n:'Crioprecipitado',v:['EV'],d:['2 unidades','1 unidade a cada 10 kg','30 unidades'],tox:2,ae:'Trombose.',f:'u',dr:'u',fluid:1},
+ ccp:{n:'Complexo protrombínico',v:['EV'],d:['10 UI/kg','25–50 UI/kg (conforme INR)','100 UI/kg'],tox:2,ae:'Trombose.',f:'u',dr:'u'},
+ soroc:{n:'Soro anticrotálico',v:['EV'],d:['5 ampolas','10 ampolas','20 ampolas','40 ampolas'],tox:3,ae:'Reação ao soro heterólogo.',f:'u',dr:'u'},
+ amox:{n:'Amoxicilina',v:['VO'],d:['250 mg','500 mg','3 g'],tox:2,al:'penic',ae:'Diarreia e farmacodermia.',f:'s8',dr:'d7 d5 d10'},
+ cefal:{n:'Cefalexina',v:['VO'],d:['250 mg','500 mg','4 g'],tox:2,ae:'Diarreia.',f:'s6',dr:'d7 d10'},
+ levo:{n:'Levofloxacino',v:['VO','EV'],d:['250 mg','500–750 mg','2 g'],tox:2,ae:'QT longo e tendinite.',f:'s24',dr:'d5 d7'},
+ ceftaz:{n:'Ceftazidima',v:['EV'],d:['1 g','2 g','8 g'],tox:2,ae:'Neurotoxicidade.',f:'s8',dr:'d7 d10'},
+ amica:{n:'Amicacina',v:['EV'],d:['5 mg/kg','15 mg/kg 1x ao dia','40 mg/kg'],tox:2,ae:'Lesão renal e ototoxicidade.',f:'s24',dr:'d5 d7'},
+ nist:{n:'Nistatina suspensão oral',v:['VO'],d:['100 mil UI','500 mil UI (bochecho)','5 milhões UI'],f:'s6',dr:'d7'},
+ carved:{n:'Carvedilol',v:['VO'],d:['3,125 mg','6,25–25 mg','100 mg'],tox:2,ae:'Bradicardia e hipotensão.',f:'s12',dr:'ct'},
+ hctz:{n:'Hidroclorotiazida',v:['VO'],d:['12,5 mg','25 mg','200 mg'],tox:2,ae:'Hiponatremia e hipocalemia.',f:'s24',dr:'ct'},
+ /* procedimentos */
+ cardiov:{n:'Cardioversão elétrica sincronizada',v:['Procedimento'],d:['Cardioversão sincronizada sob sedação'],f:'u',dr:'u'},
+ desfib:{n:'Desfibrilação',v:['Procedimento'],d:['Choque não sincronizado'],f:'u',dr:'u'},
+ cvc:{n:'Acesso venoso central',v:['Procedimento'],d:['Cateter venoso central guiado por ultrassom'],f:'u',dr:'u'},
+ parac:{n:'Paracentese diagnóstica',v:['Procedimento'],d:['Paracentese com análise do líquido ascítico'],f:'u',dr:'u'},
+ dreno:{n:'Drenagem torácica',v:['Procedimento'],d:['Drenagem em selo d\'água'],f:'u',dr:'u'}
+});
+/* classes para organizar a lista de medicamentos */
+const CATS=[
+ ['Analgesia, sedação e intubação',['dipi','para','tram','morf','fenta','codeina','ceto','ibu','diclo','hioscomp','hiosc','mida','diaz','ceta','etomi','propo','succi','rocu','lido']],
+ ['Antimicrobianos',['ceftri','cefep','ceftaz','mero','pip','amoxclav','amox','cefal','ampi','peni','benza','oxa','vanco','clinda','genta','amica','azitro','doxi','cipro','levo','metro','smx','fluco','nist','aciclo','osel','ripe','anfo','cloroq','artem','ivermec','albend','prazi','benzni']],
+ ['Cardiovascular e vasoativos',['aas','clop','strep','tnk','alte','nitro','isso','nitrop','hidral','capto','enal','losa','anlo','clon','meto','propra','carved','amio','aden','diltia','digo','furo','hctz','espiro','norad','dobu','dopa','adre','atrop','sinva','atorva']],
+ ['Anticoagulação e hemostasia',['enox','hepa','varf','vitk','protam','tranex','ccp']],
+ ['Soluções e hemoderivados',['sf','ringer','sg10','salhip','albu','hemac','pfc','plaq','crio']],
+ ['Respiratório',['o2','salb','ipra','hidroc','metilp','pred','dexa','mag']],
+ ['Endócrino e eletrólitos',['insu','nph','metf','glic50','kcl','cagl','bic','sorcal','levot','ptu','zole']],
+ ['Gastrointestinal',['omep','panto','ondan','bromo','metoc','terli','octreo','lactul','lacto','simet']],
+ ['Neurologia e psiquiatria',['feni','fenob','valpro','levet','clonaz','halo','clorp','prome','hidrox','lorat','tiam','manit']],
+ ['Antídotos e soros',['nalox','flumaz','nac','carv','sorobot','soroesc','soroc']]
+];
+const PROCS=[['iot','Intubação orotraqueal (sequência rápida)',10],['cardiov','Cardioversão elétrica sincronizada',5],['desfib','Desfibrilação',1],['cvc','Acesso venoso central',15],['sne','Sonda nasogástrica',3],['svd','Sonda vesical de demora',3],['sonda','Trocar sonda vesical',4],['torn','Retirar torniquete e elevar o membro',1],['parac','Paracentese diagnóstica',15],['dreno','Drenagem torácica',20]];
+DRUGS.iot.n='Intubação orotraqueal';DRUGS.sne.n='Sonda nasogástrica';DRUGS.svd.n='Sonda vesical de demora';
+/* diluição e tempo de infusão (vias endovenosas) */
+const DIL={dir:'Sem diluição (EV direto)',ad10:'Água destilada 10 mL',sf100:'SF 0,9% 100 mL',sf250:'SF 0,9% 250 mL',sf500:'SF 0,9% 500 mL',sg100:'SG 5% 100 mL',sg250:'SG 5% 250 mL',sg500:'SG 5% 500 mL',pronta:'Solução pronta (frasco ou bolsa)',bic:'Solução padrão em bomba de infusão'};
+const INF={rap:'Bolus rápido (< 1 min)',lento:'Bolus lento (2 a 5 min)',m15:'Em 15 a 30 min',h1:'Em 1 hora',h2:'Em 2 horas ou mais',cont:'Infusão contínua em bomba'};
+const SG=['sg100','sg250','sg500'],SFs=['sf100','sf250','sf500'];
+const bad=(L,t)=>Object.fromEntries(L.map(k=>[k,t]));
+const DL={
+ kcl:{ok:SFs,bad:{dir:'KCl sem diluição: hipercalemia aguda e parada cardíaca.',ad10:'KCl sem diluição adequada: hipercalemia aguda e parada cardíaca.'},iok:['h1','h2','cont'],ibad:bad(['rap','lento'],'KCl em bolus: fibrilação ventricular.')},
+ vanco:{ok:['sf250','sg250','sf500'],iok:['h1','h2'],ibad:bad(['rap','lento','m15'],'Vancomicina rápida: síndrome do homem vermelho e hipotensão.')},
+ feni:{ok:['sf100','sf250','dir'],bad:bad(SG,'Fenitoína em soro glicosado: precipita no equipo e a dose não chega.'),iok:['m15'],ibad:bad(['rap'],'Fenitoína rápida: hipotensão e arritmia.')},
+ anfo:{ok:['sg250','sg500'],bad:bad(SFs,'Anfotericina em soro fisiológico: precipita.'),iok:['h2']},
+ amio:{ok:['sg100','sg250'],iok:['m15','h1','cont'],ibad:bad(['rap'],'Amiodarona em bolus rápido fora da parada: hipotensão grave.')},
+ nitro:{ok:['sg250','sf250','bic'],iok:['cont'],ibad:bad(['rap','lento'],'Nitroglicerina em bolus: hipotensão grave.')},
+ nitrop:{ok:['sg250','bic'],iok:['cont'],ibad:bad(['rap','lento'],'Nitroprussiato em bolus: hipotensão grave.')},
+ norad:{ok:['sg250','sf250','bic'],iok:['cont'],ibad:bad(['rap','lento'],'Noradrenalina em bolus: crise hipertensiva e arritmia.')},
+ dobu:{ok:['sg250','sf250','bic'],iok:['cont'],ibad:bad(['rap','lento'],'Dobutamina em bolus: taquiarritmia.')},
+ dopa:{ok:['sg250','sf250','bic'],iok:['cont'],ibad:bad(['rap','lento'],'Dopamina em bolus: taquiarritmia.')},
+ aden:{ok:['dir'],iok:['rap'],ineff:['lento','m15','h1','h2','cont'],ineffT:'Adenosina lenta não faz efeito (meia-vida de segundos).'},
+ strep:{ok:['sf100','sf250'],iok:['h1'],ibad:bad(['rap','lento'],'Estreptoquinase rápida: hipotensão grave.')},
+ clinda:{ok:['sf100','sg100'],iok:['m15','h1'],ibad:bad(['rap','lento'],'Clindamicina em bolus: arritmia e parada.')},
+ mag:{ok:['sf100','sg100'],iok:['m15','h1'],ibad:bad(['rap'],'Magnésio rápido: hipotensão e bradicardia.')},
+ cagl:{ok:['sf100','sg100','dir'],iok:['lento','m15'],ibad:bad(['rap'],'Cálcio rápido: bradicardia e arritmia.')},
+ dipi:{ok:['ad10','sf100'],iok:['lento','m15'],ibad:bad(['rap'],'Dipirona EV rápida: hipotensão.')},
+ tram:{ok:['sf100'],iok:['m15'],ibad:bad(['rap'],'Tramadol rápido: náuseas e vômitos intensos.')},
+ morf:{ok:['ad10'],iok:['lento']},furo:{ok:['dir','ad10'],iok:['lento','m15']},
+ ceftri:{ok:['sf100','ad10'],iok:['lento','m15','h1']},cefep:{ok:['sf100','sf250'],iok:['m15','h1','h2']},ceftaz:{ok:['sf100','sf250'],iok:['m15','h1']},
+ mero:{ok:['sf100','sf250'],iok:['m15','h1','h2']},pip:{ok:['sf100','sf250'],iok:['m15','h1','h2']},
+ metro:{ok:['pronta'],iok:['m15','h1']},cipro:{ok:['pronta'],iok:['h1']},levo:{ok:['pronta'],iok:['h1']},
+ genta:{ok:['sf100'],iok:['m15','h1']},amica:{ok:['sf100','sf250'],iok:['m15','h1']},aciclo:{ok:['sf100','sf250'],iok:['h1']},
+ oxa:{ok:['sf100'],iok:['m15']},ampi:{ok:['sf100'],iok:['m15']},peni:{ok:['sf100'],iok:['m15']},
+ omep:{ok:['sf100','ad10'],iok:['lento','m15']},panto:{ok:['sf100','ad10'],iok:['lento','m15']},
+ ondan:{ok:['sf100','ad10'],iok:['lento','m15']},bromo:{ok:['ad10','sf100'],iok:['lento','m15']},metoc:{ok:['ad10','sf100'],iok:['lento','m15']},
+ hidroc:{ok:['ad10','sf100'],iok:['lento','m15']},metilp:{ok:['sf100'],iok:['m15','h1']},dexa:{ok:['dir','ad10'],iok:['lento']},
+ glic50:{ok:['dir'],iok:['lento']},tiam:{ok:['sf100'],iok:['m15']},nac:{ok:['sg250'],iok:['h1']},
+ terli:{ok:['dir','ad10'],iok:['lento']},octreo:{ok:['bic'],iok:['cont']},insu:{ok:['sf100','sf250','bic'],iok:['cont','rap','lento']},
+ hepa:{ok:['bic','dir'],iok:['cont','lento']},tranex:{ok:['sf100'],iok:['m15']},ccp:{ok:['dir'],iok:['lento','m15']},
+ hioscomp:{ok:['sf100'],iok:['m15'],ibad:bad(['rap'],'Escopolamina com dipirona rápida: hipotensão.')},
+ halo:{ok:['dir'],iok:['lento']},diaz:{ok:['dir'],iok:['lento']},mida:{ok:['dir'],iok:['lento']},fenta:{ok:['dir'],iok:['lento']},
+ ceta:{ok:['dir'],iok:['lento']},etomi:{ok:['dir'],iok:['lento']},propo:{ok:['dir','bic'],iok:['lento','cont']},succi:{ok:['dir'],iok:['rap']},rocu:{ok:['dir'],iok:['rap']},
+ lido:{ok:['dir'],iok:['lento']},meto:{ok:['dir'],iok:['lento']},diltia:{ok:['dir'],iok:['lento']},hidral:{ok:['dir','ad10'],iok:['lento']},
+ adre:{ok:['dir'],iok:['rap','lento']},atrop:{ok:['dir'],iok:['rap']},nalox:{ok:['dir','ad10'],iok:['lento']},flumaz:{ok:['dir'],iok:['lento']},
+ sorobot:{ok:['sf250','sf500'],iok:['m15','h1']},soroesc:{ok:['sf250'],iok:['m15','h1']},soroc:{ok:['sf250','sf500'],iok:['m15','h1']},
+ tnk:{ok:['dir'],iok:['rap','lento']},alte:{ok:['dir'],iok:['h1']},levet:{ok:['sf100'],iok:['m15']},valpro:{ok:['sf100'],iok:['m15']},fenob:{ok:['sf100'],iok:['m15']},
+ anfo2:null
+};
+const dlDefault=id=>{const R=DL[id];return{dil:R&&R.ok?R.ok[0]:'ad10',inf:R&&R.iok?R.iok[0]:'lento'}};
+const isEVrx=(D,via)=>D&&D.v[0]!=='Procedimento'&&!D.fluid&&!['sf','ringer','sg10','salhip','albu','hemac'].includes(Object.keys(DRUGS).find(k=>DRUGS[k]===D))&&/EV/.test(D.v[via||0]);
+EXAMS.glic.g='Beira-leito';EXAMS.ecg.g='Beira-leito';EXAMS.cet.g='Beira-leito';EXAMS.gaso.g='Beira-leito';EXAMS.lact.g='Beira-leito';
+const EXGROUPS=[['Beira-leito',['glic','ecg','cet','gaso','lact']],['Laboratório',['hemo','eletr','cr','calc','coag','hepat','amil','pcr','dimero','trop','ck','tsh','tipag']],['Urina e culturas',['urina','hemoc','escarro']],['Infecção e toxicologia',['sorol','gota','bacil','tox','lcr']],['Imagem',['rx','us','tc']]];
+/* sala amarela: destino entre observação e sala vermelha */
+DESTS.splice(2,0,['AMA','Sala amarela']);
+CASES.forEach(c=>{const d=c.dest;if(d.best.includes('OBS'))d.best.push('AMA');else if(d.ok.includes('OBS'))d.ok.push('AMA');if(d.best.includes('ENF')&&!d.best.includes('AMA')&&!d.ok.includes('AMA'))d.ok.push('AMA')});
 /* ===== PIXEL ART: cada paciente é desenhado em 160x120 e ampliado sem suavização ===== */
 const SKIN=['#f1cfa8','#e2b085','#cb915f','#a9693f','#85502f','#5f3a22'];
 const sh=(h,k)=>{const n=parseInt(h.slice(1),16),f=x=>Math.max(0,Math.min(255,Math.round(x*k)));return'#'+[n>>16,(n>>8)&255,n&255].map(x=>f(x).toString(16).padStart(2,'0')).join('')};
@@ -773,8 +897,8 @@ function alert_(txt,hot){G.al.unshift({t:G.t,txt,hot:!!hot});G.al.length=Math.mi
 function bedFree(k){const b=G.beds[k];return b.cap-(k==='emg'?b.bg+active().length:b.used)}
 function newShift(n,mode){
   G={n,t:0,end:SHIFT,act:null,ins:100,rep:50,eq:50,al:[],over:false,modal:null,chefia:0,unsafe:0,news:[],sched:[],unread:0,
-    pts:[],mode:mode||'local',slots:mode==='local'?CASES.map(c=>c.arr):SLOTS.slice(),filled:0,no:0,stock:{sorobot:6,hemac:3},off:{tc:{until:9999,why:'Tomógrafo em manutenção. Só por regulação.'}},
-    beds:{emg:{cap:4,bg:2},obs:{cap:6,used:5},enf:{cap:10,used:9},uti:{cap:3,used:2}},
+    pts:[],mode:mode||'local',slots:mode==='local'?CASES.map(c=>c.arr):SLOTS.slice(),filled:0,no:0,stock:{sorobot:6,hemac:3},off:Math.random()<.3?{tc:{until:9999,why:'Tomógrafo em manutenção neste plantão. Só por regulação.'}}:{},
+    beds:{emg:{cap:6,bg:2},obs:{cap:10,used:6},ama:{cap:8,used:5},enf:{cap:20,used:14},uti:{cap:5,used:4}},
     evs:mkEvs()};
   if(G.mode==='local')CASES.forEach((c,i)=>admit(JSON.parse(JSON.stringify(c)),i));else procStart();
   tickMin();
@@ -854,6 +978,14 @@ function rxAdd(P,f,free){
   let handled=false;const ct=c.contra[id];
   if(ct){const from=typeof ct==='string'?0:ct.from,t=typeof ct==='string'?ct:ct.t;if(i>=from){addAE(P,t,20,'Medicação contraindicada ou perigosa neste caso: '+D.n+'.');handled=true}}
   (c.seq||[]).forEach(s=>{if(id===s.then&&!P.rx.some(r=>r.id===s.first)){addAE(P,s.t,20,'Ordem errada de condutas: '+D.n+' antes de '+DRUGS[s.first].n+'.');handled=true}});
+  const ev=isEVrx(D,f.via);
+  if(ev){const dd=dlDefault(id);rx.dil=f.dil||dd.dil;rx.inf=f.inf||dd.inf;const R=DL[id];
+    if(R){if(R.bad&&R.bad[rx.dil]){if(!handled)addAE(P,R.bad[rx.dil],20,'Diluição perigosa: '+D.n+' em '+DIL[rx.dil]+'.');handled=true}
+      else if(R.ok&&!R.ok.includes(rx.dil))P.pen.push([3,'Diluição inadequada: '+D.n+' ('+DIL[rx.dil]+').']);
+      if(R.ibad&&R.ibad[rx.inf]){if(!handled)addAE(P,R.ibad[rx.inf],20,'Velocidade de infusão perigosa: '+D.n+'.');handled=true}
+      else if(R.ineff&&R.ineff.includes(rx.inf)){P.pen.push([6,R.ineffT||'Infusão ineficaz: '+D.n+'.']);handled=true}
+      else if(R.iok&&!R.iok.includes(rx.inf))P.pen.push([3,'Tempo de infusão inadequado: '+D.n+' ('+INF[rx.inf]+').'])}
+    if(f.freq==='ic'&&rx.inf!=='cont')P.pen.push([3,'Infusão contínua precisa correr em bomba: '+D.n+'.'])}
   let isKey=false;
   c.key.forEach((k,ki)=>{
     if(!k.ids.includes(id))return;isKey=true;
@@ -864,6 +996,7 @@ function rxAdd(P,f,free){
   });
   if(!isKey&&!handled){
     if(c.allowed.includes(id)||id==='o2'){if(D.tox!=null&&i>=D.tox)addAE(P,D.ae,12,'Dose acima da recomendada: '+D.n+'.')}
+    else if(['iot','cvc','dreno','parac','cardiov','desfib'].includes(id))addAE(P,'Procedimento invasivo sem indicação: '+D.n.toLowerCase()+' com complicação (sangramento, pneumotórax, infecção ou lesão de via aérea).',20,'Procedimento invasivo sem indicação: '+D.n+'.');
     else{P.pen.push([6,'Prescrição sem indicação: '+D.n+'.']);G.ins=Math.max(0,G.ins-1)}
   }
   if(!D.f.split(' ').includes(f.freq)||!D.dr.split(' ').includes(f.dur))P.pen.push([3,'Frequência ou duração inadequada: '+D.n+'.']);
@@ -877,6 +1010,7 @@ function canGo(d){
   if(d==='UTI')return bedFree('uti')>0?null:'Sem leito de UTI. Mantenha na sala de emergência ou solicite transferência regulada.';
   if(d==='ENF')return bedFree('enf')>0?null:'Enfermaria lotada.';
   if(d==='OBS')return bedFree('obs')>0?null:'Observação lotada.';
+  if(d==='AMA')return bedFree('ama')>0?null:'Sala amarela lotada.';
   return null;
 }
 function commit(P,d){
@@ -889,7 +1023,7 @@ function commit(P,d){
 function depart(P){P.depT=G.t;finalize(P,'TRANS',true);alert_(fmt(G.t)+' '+P.c.nome.split(' ')[0]+' saiu em transferência regulada.');if(G.act===P.id)G.act=null}
 function finalize(P,d,fromReg){
   const c=P.c;
-  if(!fromReg){ if(d==='UTI')G.beds.uti.used++;if(d==='ENF')G.beds.enf.used++;if(d==='OBS')G.beds.obs.used++ }
+  if(!fromReg){ if(d==='UTI')G.beds.uti.used++;if(d==='ENF')G.beds.enf.used++;if(d==='OBS')G.beds.obs.used++;if(d==='AMA')G.beds.ama.used++ }
   const pen=P.pen.slice(),good=P.good.slice(),goods=[];
   const best=c.dest.best.includes(d),okd=c.dest.ok.includes(d);
   if(best)goods.push('Destino adequado: '+DESTS.find(x=>x[0]===d)[1]+'.');else if(okd)pen.push([8,'Destino aceitável, mas não o melhor: '+DESTS.find(x=>x[0]===d)[1]+'.']);
@@ -967,8 +1101,8 @@ function genAns(P,g){
   const L=(who?GA3:GA1)[g]||['Nada a acrescentar.'];return pre+L[hashS(c.id+g)%L.length]+end;
 }
 /* ===== NOTÍCIAS DOS SETORES E DEVOLUÇÕES ===== */
-const SECDOC={UTI:'Dra. Helena Marques, plantonista da UTI',ENF:'Dr. Rogério Sampaio, plantonista da enfermaria de Clínica Médica',OBS:'Dra. Patrícia Leal, médica da sala de observação',EMG:'Dr. Ícaro Freire, plantonista da sala vermelha',TRANS:'Dr. Fábio Moura, médico do hospital de referência'};
-const SECN={UTI:'UTI',ENF:'Enfermaria',OBS:'Observação',EMG:'Sala vermelha',TRANS:'Hospital de referência'};
+const SECDOC={UTI:'Dra. Helena Marques, plantonista da UTI',ENF:'Dr. Rogério Sampaio, plantonista da enfermaria de Clínica Médica',OBS:'Dra. Patrícia Leal, médica da sala de observação',AMA:'Dra. Lívia Andrade, plantonista da sala amarela',EMG:'Dr. Ícaro Freire, plantonista da sala vermelha',TRANS:'Dr. Fábio Moura, médico do hospital de referência'};
+const SECN={UTI:'UTI',ENF:'Enfermaria',OBS:'Observação',AMA:'Sala amarela',EMG:'Sala vermelha',TRANS:'Hospital de referência'};
 function addNews(title,txt,hot){G.news.unshift({t:G.t,title,txt,hot:!!hot});G.unread++;alert_(fmt(G.t)+' Recado: '+title+'.',hot)}
 function scheduleFate(P,d){
   const c=P.c,first=c.nome.split(' ')[0],inOK=c.dest.best.includes(d)||c.dest.ok.includes(d);
@@ -976,7 +1110,7 @@ function scheduleFate(P,d){
   P.missAtDest=miss;P.stageAtDest=P.stage;
   if(d==='ALTA')return;
   if(d==='UTI'&&!inOK){G.sched.push({at:G.t+rnd(25,45),P,kind:'ret',sec:'UTI',msg:'Avaliei '+first+': sem critério de UTI no momento. Leito de UTI é escasso e tem paciente esperando. Estou devolvendo para a emergência definir outro destino.'});return}
-  if((d==='ENF'||d==='OBS')&&(!inOK||(c.fatal&&miss.length&&P.stage<0))){G.sched.push({at:G.t+rnd(20,40),P,kind:'ret',sec:d,msg:first+' piorou aqui'+(miss.length?' e chegou sem '+miss.join(', '):'')+'. Não temos monitorização para esse quadro. Estou devolvendo para a sala vermelha.'});return}
+  if((d==='ENF'||d==='OBS'||d==='AMA')&&(!inOK||(c.fatal&&miss.length&&P.stage<0))){G.sched.push({at:G.t+rnd(20,40),P,kind:'ret',sec:d,msg:first+' piorou aqui'+(miss.length?' e chegou sem '+miss.join(', '):'')+'. Não temos monitorização para esse quadro. Estou devolvendo para a sala vermelha.'});return}
   if(d==='TRANS'&&!inOK){G.sched.push({at:G.t+rnd(80,120),P,kind:'ret',sec:'TRANS',msg:'Recebemos '+first+' e fizemos contrarreferência: o caso não tinha indicação de transferência e poderia ser resolvido no hospital regional. Ele está voltando na ambulância.'});return}
   G.sched.push({at:G.t+(d==='TRANS'?rnd(45,90):rnd(40,100)),P,kind:'news',sec:d});
 }
@@ -984,7 +1118,7 @@ function deliver(it,final){
   const P=it.P,c=P.c,first=c.nome.split(' ')[0],dx=(DXS.find(x=>x[0]===c.hyp)||[0,''])[1];
   if(it.kind==='ret'){
     if(final||!P.res){addNews(SECN[it.sec]+' · '+first,SECDOC[it.sec]+': "'+it.msg+'" (recado recebido na passagem de plantão)',true);if(P.res){P.res.errs.push('Encaminhamento inadequado: seria devolvido pelo setor ('+SECN[it.sec]+').');P.res.score=clamp(P.res.score-15)}return}
-    const k={UTI:'uti',ENF:'enf',OBS:'obs'}[P.dest];if(k)G.beds[k].used=Math.max(0,G.beds[k].used-1);
+    const k={UTI:'uti',ENF:'enf',OBS:'obs',AMA:'ama'}[P.dest];if(k)G.beds[k].used=Math.max(0,G.beds[k].used-1);
     P.returned=(P.returned||0)+1;P.st='queue';P.dest=null;P.res=null;P.pen.push([15,'Devolvido pelo setor ('+SECN[it.sec]+'): encaminhamento inadequado.']);
     if(it.sec!=='UTI'){P.adv.push(G.t);evolve(P)}
     G.rep=clamp(G.rep-3);
@@ -1011,21 +1145,33 @@ function emgCheck(P){
   P.log.push({t:G.t,k:'d',q:'Devolução · Sala vermelha',a:SECDOC.EMG+': "'+msg+'"',fresh:1});addNews('Sala vermelha · '+c.nome.split(' ')[0],SECDOC.EMG+': "'+msg+'"',true);
 }
 /* ===== MEDIDAS INICIAIS (MOV e cuidados básicos) ===== */
-const MOV=[['pac','Pacote MOV',0],['mon','Monitorizar',0],['ace','Acesso venoso',0],['o2c','O2 cateter',0],['o2m','O2 máscara',0],['vni','VNI / CPAP',0],['cab','Cabeceira 45°',0],['jej','Jejum',0],['glic','Glicemia capilar',0],['ecg','ECG',0]];
+const MOV=[['pac','Pacote MOV',0],['mon','Monitorizar',0],['ace','Acesso venoso',0],['o2c','O2 cateter nasal',0],['o2v','Máscara de Venturi',0],['o2m','Máscara não reinalante',0],['vni','VNI / CPAP',0],['cab','Cabeceira 45°',0],['jej','Jejum',0],['glic','Glicemia capilar',0],['ecg','ECG',0]];
 /* medidas básicas: a enfermagem executa em paralelo, sem custo de tempo e sem penalidade por excesso */
 function doMov(P,k){
   P.mov=P.mov||{};
   if(k==='pac'){['mon','ace'].forEach(x=>doMov(P,x));['glic','ecg'].forEach(x=>{if(!P.ord[x])order(P,x,true)});return null}
   if(k==='glic'||k==='ecg')return P.ord[k]?null:order(P,k,true);
-  if(k==='o2c'||k==='o2m'||k==='vni')return rxAdd(P,{drug:'o2',dose:{o2c:0,o2m:1,vni:2}[k],via:0,freq:'ic',dur:'ct'},true);
+  if(k==='o2c'||k==='o2v'||k==='o2m'||k==='vni')return rxAdd(P,{drug:'o2',dose:{o2c:0,o2v:1,o2m:2,vni:3}[k],via:0,freq:'ic',dur:'ct'},true);
   if(P.mov[k]!=null)return null;const it=MOV.find(x=>x[0]===k);P.mov[k]=G.t;
   P.log.push({t:G.t,k:'m',q:'Enfermagem',a:it[1]+': feito.',fresh:1});return null;
 }
 function movHtml(P){
   const m=P.mov||{},o2r=P.rx.find(r=>r.id==='o2'),o2=o2r?o2r.i:-1;
-  const on=k=>k==='pac'?(m.mon!=null&&m.ace!=null&&!!P.ord.glic&&!!P.ord.ecg):k==='glic'||k==='ecg'?!!P.ord[k]:k==='o2c'?o2===0:k==='o2m'?o2===1:k==='vni'?o2===2:m[k]!=null;
+  const on=k=>k==='pac'?(m.mon!=null&&m.ace!=null&&!!P.ord.glic&&!!P.ord.ecg):k==='glic'||k==='ecg'?!!P.ord[k]:k==='o2c'?o2===0:k==='o2v'?o2===1:k==='o2m'?o2===2:k==='vni'?o2===3:m[k]!=null;
   return'<div class="doc px"><h3>Medidas iniciais <span>enfermagem executa, sem custo de tempo</span></h3><div class="grid mov">'+MOV.map(([k,n,t])=>{const d=on(k);
     return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d?' disabled':'')+'>'+n+'<small>'+(d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG':'imediato')+'</small></button>'}).join('')+'</div></div>';
+}
+/* ===== procedimentos e lista de medicamentos por classe ===== */
+function doProc(P,id){
+  const it=PROCS.find(x=>x[0]===id);if(!it)return null;
+  const r=rxAdd(P,{drug:id,dose:0,via:0,freq:'u',dur:'u'},true);if(r)return r;
+  P.log.push({t:G.t,k:'p',q:'Procedimento',a:it[1]+': realizado.',fresh:1});adv(it[2]);return null;
+}
+function drugOpts(P,F){
+  const used=new Set(CATS.flatMap(c=>c[1])),rest=Object.keys(DRUGS).filter(k=>!used.has(k)&&DRUGS[k].v[0]!=='Procedimento');
+  const opt=k=>'<option value="'+k+'"'+(F.drug===k?' selected':'')+(k!=='o2'&&P.rx.some(r=>r.id===k)?' disabled':'')+'>'+DRUGS[k].n+'</option>';
+  return CATS.map(([g,L])=>'<optgroup label="'+g+'">'+L.filter(k=>DRUGS[k]).sort((a,b)=>DRUGS[a].n.localeCompare(DRUGS[b].n,'pt')).map(opt).join('')+'</optgroup>').join('')
+   +(rest.length?'<optgroup label="Outros">'+rest.map(opt).join('')+'</optgroup>':'');
 }
 /* ===== GERADOR LOCAL DE PACIENTES (roda só no navegador, sem IA) =====
  Cada plantão sorteia 9 modelos de caso (prioriza os que você ainda não viu) e cria uma pessoa nova para cada um:
@@ -1099,7 +1245,9 @@ function procStart(){
 function mkEvs(){return[
   {at:18,run:()=>{G.off.trop={until:G.t+120,why:'Reagente de troponina em falta. Previsão em 2 h.'};alert_(fmt(G.t)+' Laboratório: troponina indisponível por 2 horas.',true)}},
   {at:75,run:()=>{G.modal={k:'dil'};if(window.sfx)sfx('alarm')}},
-  {at:130,run:()=>{if(G.beds.uti.used>0)G.beds.uti.used--;alert_(fmt(G.t)+' UTI: um leito foi liberado.')}}]}
+  {at:130,run:()=>{if(G.beds.uti.used>0)G.beds.uti.used--;alert_(fmt(G.t)+' UTI: um leito foi liberado.')}},
+  {at:150,run:()=>{G.beds.enf.used=Math.max(0,G.beds.enf.used-2);alert_(fmt(G.t)+' Enfermaria: duas altas, dois leitos liberados.')}},
+  {at:250,run:()=>{G.beds.enf.used=Math.max(0,G.beds.enf.used-2);if(G.beds.ama)G.beds.ama.used=Math.max(0,G.beds.ama.used-1);alert_(fmt(G.t)+' Enfermaria e sala amarela liberaram leitos.')}}]}
 function saveGame(){
   if(!G||G.over)return;
   try{
@@ -1115,7 +1263,7 @@ function loadGame(){
     const S=JSON.parse(localStorage.getItem('pr_cur')||'null');if(!S||!S.G)return false;
     const g=S.G;g.evs=mkEvs().map((e,i)=>Object.assign(e,{done:!!(S.evd||[])[i]}));
     g.pts.forEach(P=>{P.asked=new Set(P.asked);P.examined=new Set(P.examined);P.orient=new Set(P.orient);P.mov=P.mov||{}});
-    G=g;G.pts.forEach(P=>{P.off=sprite(P)});
+    G=g;if(!G.beds.ama)G.beds.ama={cap:8,used:5};G.pts.forEach(P=>{P.off=sprite(P)});
     G.sched=G.sched.map(it=>Object.assign(it,{P:pt(it.P)})).filter(it=>it.P);
     UI.tab=S.tab||'anam';UI.destSel=null;UI.news=false;UI.menu=false;UI.msg='';UI.msg2='';
     return true;
@@ -1168,7 +1316,7 @@ function renderTop(){
   const m=(n,v)=>'<span class="meter">'+n+'<i><b style="width:'+Math.round(clamp(v))+'%"></b></i></span>';
   $('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL<small>Hospital Regional · Plantão '+G.n+' · Rotina normal</small></div>'
    +'<div class="lcd" aria-label="Horário">'+fmt(Math.min(G.t,G.end))+'</div>'
-   +'<div class="mini">'+ch('Emerg.','emg')+ch('Obs.','obs')+ch('Enf.','enf')+ch('UTI','uti')+'<span class="chip">Insumos <b>'+G.ins+'</b></span><span class="chip">Pacientes <b>'+G.pts.filter(p=>p.st!=='wait').length+'/'+G.slots.length+'</b></span></div>'
+   +'<div class="mini">'+ch('Emerg.','emg')+ch('Obs.','obs')+ch('Amarela','ama')+ch('Enf.','enf')+ch('UTI','uti')+'<span class="chip">Insumos <b>'+G.ins+'</b></span><span class="chip">Pacientes <b>'+G.pts.filter(p=>p.st!=='wait').length+'/'+G.slots.length+'</b></span></div>'
    +'<div class="mini">'+m('Equipe',G.eq)+m('Reputação',G.rep)+'</div>'
    +'<div class="alerts" aria-live="polite">'+G.al.slice(0,3).map(a=>'<div class="'+(a.hot?'hot':'')+'">'+esc(a.txt)+'</div>').join('')+'</div>'
    +'<div class="mini"><button class="btn" data-a="menu">Menu</button><button class="btn'+(G.unread?' amber':'')+'" data-a="news">Recados'+(G.unread?' ('+G.unread+')':'')+'</button><button class="btn" data-a="snd" aria-pressed="'+UI.snd+'">Som: '+(UI.snd?'on':'off')+'</button></div><div class="musbox"><label for="trk">Trilha sonora</label><select id="trk" data-s="trk">'+trackSelectHtml()+'</select><div class="np" id="np">'+esc(npText())+'</div><button class="btn" data-a="mus" aria-pressed="'+MUS.on+'">'+(MUS.on?'Pausar música':'Tocar música')+'</button></div>';
@@ -1197,7 +1345,7 @@ function renderWork(){
    +vs.map((x,i)=>'<div class="v'+(vAbn(i,v[i])?' abn':'')+'"><label>'+x[0]+'</label><b>'+v[i]+'</b> <small>'+x[1]+'</small></div>').join('')+'</div>'
    +'<div class="row"><button class="btn paper" data-a="vit">Aferir de novo (1 min)</button><button class="btn paper" data-a="reav">Reavaliar (3 min)</button></div></div>'+movHtml(P)+'</div>';
   w.innerHTML=left+'<div class="right"><div class="tabs" role="tablist">'
-   +[['anam','Anamnese'],['fis','Exame físico'],['ex','Exames'],['rx','Prescrição'],['pront','Prontuário']].map(([k,n])=>'<button class="tab" role="tab" data-a="tab:'+k+'" aria-selected="'+(UI.tab===k)+'">'+n+(k==='ex'&&P.newRes>0?' *':'')+'</button>').join('')
+   +[['anam','Anamnese'],['fis','Exame físico'],['ex','Exames'],['rx','Prescrição'],['proc','Procedimentos'],['pront','Prontuário']].map(([k,n])=>'<button class="tab" role="tab" data-a="tab:'+k+'" aria-selected="'+(UI.tab===k)+'">'+n+(k==='ex'&&P.newRes>0?' *':'')+'</button>').join('')
    +'</div><div class="doc sheet px" id="sheet">'+tabHtml(P)+'</div></div>';
   renderDecide(P);
 }
@@ -1215,23 +1363,28 @@ function tabHtml(P){
   if(UI.tab==='ex'){
     const ids=Object.keys(EXAMS);
     const res=ids.filter(k=>P.ord[k]&&P.ord[k].done);
-    return'<h3>Exames e imagem <span>insumos: '+G.ins+'</span></h3><div class="grid">'+ids.map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
+    return'<h3>Exames e imagem <span>insumos: '+G.ins+'</span></h3>'+EXGROUPS.map(([gn,L])=>'<p class="sub">'+gn+'</p><div class="grid">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
       const st=o?(o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível':E.t+' min · custo '+E.c;
-      return'<button class="btn paper opt'+(o?' on':'')+'" data-a="ord:'+k+'"'+(o?' disabled':'')+'>'+E.n+'<small>'+st+'</small></button>'}).join('')
-     +'</div><p class="sub">Resultados</p>'+(res.length?'<ul class="qa">'+res.map(k=>'<li><b>'+EXAMS[k].n+'</b><br>'+esc(P.c.res[k]||'Sem alterações relevantes.')+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhum resultado disponível.</p>');
+      return'<button class="btn paper opt'+(o?' on':'')+'" data-a="ord:'+k+'"'+(o?' disabled':'')+'>'+E.n+'<small>'+st+'</small></button>'}).join('')+'</div>').join('')
+     +'<p class="sub">Resultados</p>'+(res.length?'<ul class="qa">'+res.map(k=>'<li><b>'+EXAMS[k].n+'</b><br>'+esc(P.c.res[k]||'Sem alterações relevantes.')+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhum resultado disponível.</p>');
+  }
+  if(UI.tab==='proc'){const done=id=>P.rx.some(r=>r.id===id);
+    return'<h3>Procedimentos <span>tempo de execução realista</span></h3><div class="grid">'+PROCS.map(([id,n,t])=>'<button class="btn paper opt'+(done(id)?' on':'')+'" data-a="proc:'+id+'"'+(done(id)?' disabled':'')+'>'+n+'<small>'+(done(id)?'feito':t+' min')+'</small></button>').join('')+'</div>'
+     +(UI.msg?'<p class="warn">'+esc(UI.msg)+'</p>':'')+'<p class="sub">Registro</p>'+logList(P,['p']);
   }
   if(UI.tab==='rx'){
     const F=UI.F,D=DRUGS[F.drug],keys=Object.keys(DRUGS).sort((a,b)=>DRUGS[a].n.localeCompare(DRUGS[b].n));
-    let h='<h3>Prescrição <span>RENAME / protocolos do SUS</span></h3><div class="form"><label>Medicamento<select data-s="drug"><option value="">Selecione</option>'+keys.map(k=>'<option value="'+k+'"'+(F.drug===k?' selected':'')+(P.rx.some(r=>r.id===k)?' disabled':'')+'>'+DRUGS[k].n+'</option>').join('')+'</select></label>';
+    let h='<h3>Prescrição <span>RENAME / protocolos do SUS</span></h3><div class="form"><label>Medicamento<select data-s="drug"><option value="">Selecione</option>'+drugOpts(P,F)+'</select></label>';
     if(D){
       const fs=Object.keys(FREQ),dr=Object.keys(DUR);
       h+='<label>Dose<select data-s="dose">'+D.d.map((d,i)=>'<option value="'+i+'"'+(F.dose===i?' selected':'')+'>'+esc(d)+'</option>').join('')+'</select></label>'
        +'<label>Via<select data-s="via">'+D.v.map((d,i)=>'<option value="'+i+'"'+(F.via===i?' selected':'')+'>'+d+'</option>').join('')+'</select></label>'
        +'<label>Frequência<select data-s="freq">'+fs.map(k=>'<option value="'+k+'"'+(F.freq===k?' selected':'')+'>'+FREQ[k]+'</option>').join('')+'</select></label>'
-       +'<label>Duração<select data-s="dur">'+dr.map(k=>'<option value="'+k+'"'+(F.dur===k?' selected':'')+'>'+DUR[k]+'</option>').join('')+'</select></label>';
+       +'<label>Duração<select data-s="dur">'+dr.map(k=>'<option value="'+k+'"'+(F.dur===k?' selected':'')+'>'+DUR[k]+'</option>').join('')+'</select></label>'
+       +(isEVrx(D,F.via)?'<label>Diluição<select data-s="dil">'+Object.keys(DIL).map(k=>'<option value="'+k+'"'+(F.dil===k?' selected':'')+'>'+DIL[k]+'</option>').join('')+'</select></label><label>Tempo de infusão<select data-s="inf">'+Object.keys(INF).map(k=>'<option value="'+k+'"'+(F.inf===k?' selected':'')+'>'+INF[k]+'</option>').join('')+'</select></label>':'');
     }
-    h+='</div>'+(UI.msg?'<p class="warn">'+esc(UI.msg)+'</p>':'')+'<div class="row"><button class="btn paper" data-a="rxgo"'+(D?'':' disabled')+'>Prescrever (2 min)</button></div>';
-    h+='<p class="sub">Prescrições ativas</p>'+(P.rx.length?'<ul class="rxl">'+P.rx.map(r=>{const d=DRUGS[r.id];return'<li><b>'+d.n+'</b> · '+esc(d.d[r.i])+' · '+d.v[r.via||0]+' · '+FREQ[r.freq]+' · '+DUR[r.dur]+' <small>('+fmt(r.t)+')</small></li>'}).join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhuma prescrição.</p>');
+    h+='</div>'+(UI.msg?'<p class="warn">'+esc(UI.msg)+'</p>':'')+'<div class="row"><button class="btn paper" data-a="rxgo"'+(D?'':' disabled')+'>Prescrever (1 min)</button></div>';
+    h+='<p class="sub">Prescrições ativas</p>'+(P.rx.length?'<ul class="rxl">'+P.rx.map(r=>{const d=DRUGS[r.id];return'<li><b>'+d.n+'</b> · '+esc(d.d[r.i])+' · '+d.v[r.via||0]+' · '+FREQ[r.freq]+' · '+DUR[r.dur]+(r.dil?' · '+DIL[r.dil]+' · '+INF[r.inf]:'')+' <small>('+fmt(r.t)+')</small></li>'}).join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhuma prescrição.</p>');
     return h;
   }
   const log=P.log.slice().reverse();
@@ -1241,8 +1394,8 @@ function tabHtml(P){
 }
 function renderDecide(P){
   const d=$('#decide');if(!P){d.hidden=true;return}d.hidden=false;
-  const info=k=>k==='UTI'?bedFree('uti')+' livres':k==='ENF'?bedFree('enf')+' livres':k==='OBS'?bedFree('obs')+' livres':k==='ALTA'?'liberar o paciente':k==='EMG'?'manter monitorizado':'regulação ~60-100 min';
-  d.innerHTML='<h4>CARIMBO DE DESTINO</h4><div class="dests">'+DESTS.map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0);
+  const info=k=>k==='UTI'?bedFree('uti')+' livres':k==='ENF'?bedFree('enf')+' livres':k==='OBS'?bedFree('obs')+' livres':k==='AMA'?bedFree('ama')+' livres':k==='ALTA'?'liberar o paciente':k==='EMG'?'manter monitorizado':'regulação ~60-100 min';
+  d.innerHTML='<h4>CARIMBO DE DESTINO</h4><div class="dests">'+DESTS.map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0)||(k==='AMA'&&bedFree('ama')<=0);
     return'<button class="dest" data-a="dest:'+k+'" aria-pressed="'+(UI.destSel===k)+'"'+(dis?' disabled':'')+'>'+n+'<small>'+(dis?'lotado':info(k))+'</small></button>'}).join('')+'</div>'
    +(UI.destSel==='ALTA'?'<div class="orient">'+ORIENT.map(([k,n])=>'<label><input type="checkbox" data-s="or" value="'+k+'"'+(P.orient.has(k)?' checked':'')+'> '+n+'</label>').join('')+'</div>':'')
    +(UI.msg2?'<p class="warn" style="color:#f0a79b;margin:0">'+esc(UI.msg2)+'</p>':'')
@@ -1306,12 +1459,13 @@ document.addEventListener('click',e=>{
   else if(k==='finish')endShift();
   else if(!P)return;
   else if(k==='ask')askQ(P,v);
+  else if(k==='proc'){UI.msg=doProc(P,v)||''}
   else if(k==='mov'){UI.msg2=doMov(P,v)||''}
   else if(k==='sys')exam(P,v);
   else if(k==='vit')vitals(P);
   else if(k==='reav')reassess(P);
   else if(k==='ord'){UI.msg=order(P,v)||'';if(UI.msg){UI.msg2=UI.msg;UI.msg=''}}
-  else if(k==='rxgo'){const F=UI.F;UI.msg=rxAdd(P,{drug:F.drug,dose:F.dose,via:F.via,freq:F.freq,dur:F.dur})||'';if(!UI.msg){UI.F={drug:'',dose:0,via:0,freq:'',dur:''}}}
+  else if(k==='rxgo'){const F=UI.F;UI.msg=rxAdd(P,{drug:F.drug,dose:F.dose,via:F.via,freq:F.freq,dur:F.dur,dil:F.dil,inf:F.inf})||'';if(!UI.msg){UI.F={drug:'',dose:0,via:0,freq:'',dur:'',dil:'',inf:''}}}
   else if(k==='dest')UI.destSel=v;
   else if(k==='commit'){const r=commit(P,UI.destSel);if(r)UI.msg2=r;else{UI.destSel=null;sfx('stamp')}}
   if(G&&G.over){render();return}
@@ -1320,8 +1474,8 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   const s=e.target.closest('[data-s]');if(!s||!G)return;const P=cur(),n=s.dataset.s,F=UI.F;
   if(n==='trk'){musSelect(s.value);renderTop();return}
-  if(n==='drug'){F.drug=s.value;F.dose=0;F.via=0;const D=DRUGS[F.drug];if(D){F.freq=D.f.split(' ')[0];F.dur=D.dr.split(' ')[0]}}
-  else if(n==='dose')F.dose=+s.value;else if(n==='via')F.via=+s.value;else if(n==='freq')F.freq=s.value;else if(n==='dur')F.dur=s.value;
+  if(n==='drug'){F.drug=s.value;F.dose=0;F.via=0;const D=DRUGS[F.drug];if(D){F.freq=D.f.split(' ')[0];F.dur=D.dr.split(' ')[0];const dd=dlDefault(F.drug);F.dil=dd.dil;F.inf=dd.inf}}
+  else if(n==='dose')F.dose=+s.value;else if(n==='via')F.via=+s.value;else if(n==='freq')F.freq=s.value;else if(n==='dur')F.dur=s.value;else if(n==='dil')F.dil=s.value;else if(n==='inf')F.inf=s.value;
   else if(n==='hyp'&&P)setHyp(P,s.value);
   else if(n==='or'&&P){s.checked?P.orient.add(s.value):P.orient.delete(s.value);return}
   if(n!=='hyp')renderWork();

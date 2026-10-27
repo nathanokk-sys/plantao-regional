@@ -2,7 +2,9 @@
 function mkEvs(){return[
   {at:18,run:()=>{G.off.trop={until:G.t+120,why:'Reagente de troponina em falta. Previsão em 2 h.'};alert_(fmt(G.t)+' Laboratório: troponina indisponível por 2 horas.',true)}},
   {at:75,run:()=>{G.modal={k:'dil'};if(window.sfx)sfx('alarm')}},
-  {at:130,run:()=>{if(G.beds.uti.used>0)G.beds.uti.used--;alert_(fmt(G.t)+' UTI: um leito foi liberado.')}}]}
+  {at:130,run:()=>{if(G.beds.uti.used>0)G.beds.uti.used--;alert_(fmt(G.t)+' UTI: um leito foi liberado.')}},
+  {at:150,run:()=>{G.beds.enf.used=Math.max(0,G.beds.enf.used-2);alert_(fmt(G.t)+' Enfermaria: duas altas, dois leitos liberados.')}},
+  {at:250,run:()=>{G.beds.enf.used=Math.max(0,G.beds.enf.used-2);if(G.beds.ama)G.beds.ama.used=Math.max(0,G.beds.ama.used-1);alert_(fmt(G.t)+' Enfermaria e sala amarela liberaram leitos.')}}]}
 function saveGame(){
   if(!G||G.over)return;
   try{
@@ -18,7 +20,7 @@ function loadGame(){
     const S=JSON.parse(localStorage.getItem('pr_cur')||'null');if(!S||!S.G)return false;
     const g=S.G;g.evs=mkEvs().map((e,i)=>Object.assign(e,{done:!!(S.evd||[])[i]}));
     g.pts.forEach(P=>{P.asked=new Set(P.asked);P.examined=new Set(P.examined);P.orient=new Set(P.orient);P.mov=P.mov||{}});
-    G=g;G.pts.forEach(P=>{P.off=sprite(P)});
+    G=g;if(!G.beds.ama)G.beds.ama={cap:8,used:5};G.pts.forEach(P=>{P.off=sprite(P)});
     G.sched=G.sched.map(it=>Object.assign(it,{P:pt(it.P)})).filter(it=>it.P);
     UI.tab=S.tab||'anam';UI.destSel=null;UI.news=false;UI.menu=false;UI.msg='';UI.msg2='';
     return true;

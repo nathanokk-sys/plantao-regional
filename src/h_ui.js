@@ -21,7 +21,7 @@ function renderTop(){
   const m=(n,v)=>'<span class="meter">'+n+'<i><b style="width:'+Math.round(clamp(v))+'%"></b></i></span>';
   $('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL<small>Hospital Regional · Plantão '+G.n+' · Rotina normal</small></div>'
    +'<div class="lcd" aria-label="Horário">'+fmt(Math.min(G.t,G.end))+'</div>'
-   +'<div class="mini">'+ch('Emerg.','emg')+ch('Obs.','obs')+ch('Enf.','enf')+ch('UTI','uti')+'<span class="chip">Insumos <b>'+G.ins+'</b></span><span class="chip">Pacientes <b>'+G.pts.filter(p=>p.st!=='wait').length+'/'+G.slots.length+'</b></span></div>'
+   +'<div class="mini">'+ch('Emerg.','emg')+ch('Obs.','obs')+ch('Amarela','ama')+ch('Enf.','enf')+ch('UTI','uti')+'<span class="chip">Insumos <b>'+G.ins+'</b></span><span class="chip">Pacientes <b>'+G.pts.filter(p=>p.st!=='wait').length+'/'+G.slots.length+'</b></span></div>'
    +'<div class="mini">'+m('Equipe',G.eq)+m('Reputação',G.rep)+'</div>'
    +'<div class="alerts" aria-live="polite">'+G.al.slice(0,3).map(a=>'<div class="'+(a.hot?'hot':'')+'">'+esc(a.txt)+'</div>').join('')+'</div>'
    +'<div class="mini"><button class="btn" data-a="menu">Menu</button><button class="btn'+(G.unread?' amber':'')+'" data-a="news">Recados'+(G.unread?' ('+G.unread+')':'')+'</button><button class="btn" data-a="snd" aria-pressed="'+UI.snd+'">Som: '+(UI.snd?'on':'off')+'</button></div><div class="musbox"><label for="trk">Trilha sonora</label><select id="trk" data-s="trk">'+trackSelectHtml()+'</select><div class="np" id="np">'+esc(npText())+'</div><button class="btn" data-a="mus" aria-pressed="'+MUS.on+'">'+(MUS.on?'Pausar música':'Tocar música')+'</button></div>';
@@ -50,7 +50,7 @@ function renderWork(){
    +vs.map((x,i)=>'<div class="v'+(vAbn(i,v[i])?' abn':'')+'"><label>'+x[0]+'</label><b>'+v[i]+'</b> <small>'+x[1]+'</small></div>').join('')+'</div>'
    +'<div class="row"><button class="btn paper" data-a="vit">Aferir de novo (1 min)</button><button class="btn paper" data-a="reav">Reavaliar (3 min)</button></div></div>'+movHtml(P)+'</div>';
   w.innerHTML=left+'<div class="right"><div class="tabs" role="tablist">'
-   +[['anam','Anamnese'],['fis','Exame físico'],['ex','Exames'],['rx','Prescrição'],['pront','Prontuário']].map(([k,n])=>'<button class="tab" role="tab" data-a="tab:'+k+'" aria-selected="'+(UI.tab===k)+'">'+n+(k==='ex'&&P.newRes>0?' *':'')+'</button>').join('')
+   +[['anam','Anamnese'],['fis','Exame físico'],['ex','Exames'],['rx','Prescrição'],['proc','Procedimentos'],['pront','Prontuário']].map(([k,n])=>'<button class="tab" role="tab" data-a="tab:'+k+'" aria-selected="'+(UI.tab===k)+'">'+n+(k==='ex'&&P.newRes>0?' *':'')+'</button>').join('')
    +'</div><div class="doc sheet px" id="sheet">'+tabHtml(P)+'</div></div>';
   renderDecide(P);
 }
@@ -68,23 +68,28 @@ function tabHtml(P){
   if(UI.tab==='ex'){
     const ids=Object.keys(EXAMS);
     const res=ids.filter(k=>P.ord[k]&&P.ord[k].done);
-    return'<h3>Exames e imagem <span>insumos: '+G.ins+'</span></h3><div class="grid">'+ids.map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
+    return'<h3>Exames e imagem <span>insumos: '+G.ins+'</span></h3>'+EXGROUPS.map(([gn,L])=>'<p class="sub">'+gn+'</p><div class="grid">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
       const st=o?(o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível':E.t+' min · custo '+E.c;
-      return'<button class="btn paper opt'+(o?' on':'')+'" data-a="ord:'+k+'"'+(o?' disabled':'')+'>'+E.n+'<small>'+st+'</small></button>'}).join('')
-     +'</div><p class="sub">Resultados</p>'+(res.length?'<ul class="qa">'+res.map(k=>'<li><b>'+EXAMS[k].n+'</b><br>'+esc(P.c.res[k]||'Sem alterações relevantes.')+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhum resultado disponível.</p>');
+      return'<button class="btn paper opt'+(o?' on':'')+'" data-a="ord:'+k+'"'+(o?' disabled':'')+'>'+E.n+'<small>'+st+'</small></button>'}).join('')+'</div>').join('')
+     +'<p class="sub">Resultados</p>'+(res.length?'<ul class="qa">'+res.map(k=>'<li><b>'+EXAMS[k].n+'</b><br>'+esc(P.c.res[k]||'Sem alterações relevantes.')+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhum resultado disponível.</p>');
+  }
+  if(UI.tab==='proc'){const done=id=>P.rx.some(r=>r.id===id);
+    return'<h3>Procedimentos <span>tempo de execução realista</span></h3><div class="grid">'+PROCS.map(([id,n,t])=>'<button class="btn paper opt'+(done(id)?' on':'')+'" data-a="proc:'+id+'"'+(done(id)?' disabled':'')+'>'+n+'<small>'+(done(id)?'feito':t+' min')+'</small></button>').join('')+'</div>'
+     +(UI.msg?'<p class="warn">'+esc(UI.msg)+'</p>':'')+'<p class="sub">Registro</p>'+logList(P,['p']);
   }
   if(UI.tab==='rx'){
     const F=UI.F,D=DRUGS[F.drug],keys=Object.keys(DRUGS).sort((a,b)=>DRUGS[a].n.localeCompare(DRUGS[b].n));
-    let h='<h3>Prescrição <span>RENAME / protocolos do SUS</span></h3><div class="form"><label>Medicamento<select data-s="drug"><option value="">Selecione</option>'+keys.map(k=>'<option value="'+k+'"'+(F.drug===k?' selected':'')+(P.rx.some(r=>r.id===k)?' disabled':'')+'>'+DRUGS[k].n+'</option>').join('')+'</select></label>';
+    let h='<h3>Prescrição <span>RENAME / protocolos do SUS</span></h3><div class="form"><label>Medicamento<select data-s="drug"><option value="">Selecione</option>'+drugOpts(P,F)+'</select></label>';
     if(D){
       const fs=Object.keys(FREQ),dr=Object.keys(DUR);
       h+='<label>Dose<select data-s="dose">'+D.d.map((d,i)=>'<option value="'+i+'"'+(F.dose===i?' selected':'')+'>'+esc(d)+'</option>').join('')+'</select></label>'
        +'<label>Via<select data-s="via">'+D.v.map((d,i)=>'<option value="'+i+'"'+(F.via===i?' selected':'')+'>'+d+'</option>').join('')+'</select></label>'
        +'<label>Frequência<select data-s="freq">'+fs.map(k=>'<option value="'+k+'"'+(F.freq===k?' selected':'')+'>'+FREQ[k]+'</option>').join('')+'</select></label>'
-       +'<label>Duração<select data-s="dur">'+dr.map(k=>'<option value="'+k+'"'+(F.dur===k?' selected':'')+'>'+DUR[k]+'</option>').join('')+'</select></label>';
+       +'<label>Duração<select data-s="dur">'+dr.map(k=>'<option value="'+k+'"'+(F.dur===k?' selected':'')+'>'+DUR[k]+'</option>').join('')+'</select></label>'
+       +(isEVrx(D,F.via)?'<label>Diluição<select data-s="dil">'+Object.keys(DIL).map(k=>'<option value="'+k+'"'+(F.dil===k?' selected':'')+'>'+DIL[k]+'</option>').join('')+'</select></label><label>Tempo de infusão<select data-s="inf">'+Object.keys(INF).map(k=>'<option value="'+k+'"'+(F.inf===k?' selected':'')+'>'+INF[k]+'</option>').join('')+'</select></label>':'');
     }
-    h+='</div>'+(UI.msg?'<p class="warn">'+esc(UI.msg)+'</p>':'')+'<div class="row"><button class="btn paper" data-a="rxgo"'+(D?'':' disabled')+'>Prescrever (2 min)</button></div>';
-    h+='<p class="sub">Prescrições ativas</p>'+(P.rx.length?'<ul class="rxl">'+P.rx.map(r=>{const d=DRUGS[r.id];return'<li><b>'+d.n+'</b> · '+esc(d.d[r.i])+' · '+d.v[r.via||0]+' · '+FREQ[r.freq]+' · '+DUR[r.dur]+' <small>('+fmt(r.t)+')</small></li>'}).join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhuma prescrição.</p>');
+    h+='</div>'+(UI.msg?'<p class="warn">'+esc(UI.msg)+'</p>':'')+'<div class="row"><button class="btn paper" data-a="rxgo"'+(D?'':' disabled')+'>Prescrever (1 min)</button></div>';
+    h+='<p class="sub">Prescrições ativas</p>'+(P.rx.length?'<ul class="rxl">'+P.rx.map(r=>{const d=DRUGS[r.id];return'<li><b>'+d.n+'</b> · '+esc(d.d[r.i])+' · '+d.v[r.via||0]+' · '+FREQ[r.freq]+' · '+DUR[r.dur]+(r.dil?' · '+DIL[r.dil]+' · '+INF[r.inf]:'')+' <small>('+fmt(r.t)+')</small></li>'}).join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhuma prescrição.</p>');
     return h;
   }
   const log=P.log.slice().reverse();
@@ -94,8 +99,8 @@ function tabHtml(P){
 }
 function renderDecide(P){
   const d=$('#decide');if(!P){d.hidden=true;return}d.hidden=false;
-  const info=k=>k==='UTI'?bedFree('uti')+' livres':k==='ENF'?bedFree('enf')+' livres':k==='OBS'?bedFree('obs')+' livres':k==='ALTA'?'liberar o paciente':k==='EMG'?'manter monitorizado':'regulação ~60-100 min';
-  d.innerHTML='<h4>CARIMBO DE DESTINO</h4><div class="dests">'+DESTS.map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0);
+  const info=k=>k==='UTI'?bedFree('uti')+' livres':k==='ENF'?bedFree('enf')+' livres':k==='OBS'?bedFree('obs')+' livres':k==='AMA'?bedFree('ama')+' livres':k==='ALTA'?'liberar o paciente':k==='EMG'?'manter monitorizado':'regulação ~60-100 min';
+  d.innerHTML='<h4>CARIMBO DE DESTINO</h4><div class="dests">'+DESTS.map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0)||(k==='AMA'&&bedFree('ama')<=0);
     return'<button class="dest" data-a="dest:'+k+'" aria-pressed="'+(UI.destSel===k)+'"'+(dis?' disabled':'')+'>'+n+'<small>'+(dis?'lotado':info(k))+'</small></button>'}).join('')+'</div>'
    +(UI.destSel==='ALTA'?'<div class="orient">'+ORIENT.map(([k,n])=>'<label><input type="checkbox" data-s="or" value="'+k+'"'+(P.orient.has(k)?' checked':'')+'> '+n+'</label>').join('')+'</div>':'')
    +(UI.msg2?'<p class="warn" style="color:#f0a79b;margin:0">'+esc(UI.msg2)+'</p>':'')
@@ -159,12 +164,13 @@ document.addEventListener('click',e=>{
   else if(k==='finish')endShift();
   else if(!P)return;
   else if(k==='ask')askQ(P,v);
+  else if(k==='proc'){UI.msg=doProc(P,v)||''}
   else if(k==='mov'){UI.msg2=doMov(P,v)||''}
   else if(k==='sys')exam(P,v);
   else if(k==='vit')vitals(P);
   else if(k==='reav')reassess(P);
   else if(k==='ord'){UI.msg=order(P,v)||'';if(UI.msg){UI.msg2=UI.msg;UI.msg=''}}
-  else if(k==='rxgo'){const F=UI.F;UI.msg=rxAdd(P,{drug:F.drug,dose:F.dose,via:F.via,freq:F.freq,dur:F.dur})||'';if(!UI.msg){UI.F={drug:'',dose:0,via:0,freq:'',dur:''}}}
+  else if(k==='rxgo'){const F=UI.F;UI.msg=rxAdd(P,{drug:F.drug,dose:F.dose,via:F.via,freq:F.freq,dur:F.dur,dil:F.dil,inf:F.inf})||'';if(!UI.msg){UI.F={drug:'',dose:0,via:0,freq:'',dur:'',dil:'',inf:''}}}
   else if(k==='dest')UI.destSel=v;
   else if(k==='commit'){const r=commit(P,UI.destSel);if(r)UI.msg2=r;else{UI.destSel=null;sfx('stamp')}}
   if(G&&G.over){render();return}
@@ -173,8 +179,8 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   const s=e.target.closest('[data-s]');if(!s||!G)return;const P=cur(),n=s.dataset.s,F=UI.F;
   if(n==='trk'){musSelect(s.value);renderTop();return}
-  if(n==='drug'){F.drug=s.value;F.dose=0;F.via=0;const D=DRUGS[F.drug];if(D){F.freq=D.f.split(' ')[0];F.dur=D.dr.split(' ')[0]}}
-  else if(n==='dose')F.dose=+s.value;else if(n==='via')F.via=+s.value;else if(n==='freq')F.freq=s.value;else if(n==='dur')F.dur=s.value;
+  if(n==='drug'){F.drug=s.value;F.dose=0;F.via=0;const D=DRUGS[F.drug];if(D){F.freq=D.f.split(' ')[0];F.dur=D.dr.split(' ')[0];const dd=dlDefault(F.drug);F.dil=dd.dil;F.inf=dd.inf}}
+  else if(n==='dose')F.dose=+s.value;else if(n==='via')F.via=+s.value;else if(n==='freq')F.freq=s.value;else if(n==='dur')F.dur=s.value;else if(n==='dil')F.dil=s.value;else if(n==='inf')F.inf=s.value;
   else if(n==='hyp'&&P)setHyp(P,s.value);
   else if(n==='or'&&P){s.checked?P.orient.add(s.value):P.orient.delete(s.value);return}
   if(n!=='hyp')renderWork();

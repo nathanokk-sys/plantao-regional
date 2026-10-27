@@ -19,8 +19,8 @@ function alert_(txt,hot){G.al.unshift({t:G.t,txt,hot:!!hot});G.al.length=Math.mi
 function bedFree(k){const b=G.beds[k];return b.cap-(k==='emg'?b.bg+active().length:b.used)}
 function newShift(n,mode){
   G={n,t:0,end:SHIFT,act:null,ins:100,rep:50,eq:50,al:[],over:false,modal:null,chefia:0,unsafe:0,news:[],sched:[],unread:0,
-    pts:[],mode:mode||'local',slots:mode==='local'?CASES.map(c=>c.arr):SLOTS.slice(),filled:0,no:0,stock:{sorobot:6,hemac:3},off:{tc:{until:9999,why:'Tomógrafo em manutenção. Só por regulação.'}},
-    beds:{emg:{cap:4,bg:2},obs:{cap:6,used:5},enf:{cap:10,used:9},uti:{cap:3,used:2}},
+    pts:[],mode:mode||'local',slots:mode==='local'?CASES.map(c=>c.arr):SLOTS.slice(),filled:0,no:0,stock:{sorobot:6,hemac:3},off:Math.random()<.3?{tc:{until:9999,why:'Tomógrafo em manutenção neste plantão. Só por regulação.'}}:{},
+    beds:{emg:{cap:6,bg:2},obs:{cap:10,used:6},ama:{cap:8,used:5},enf:{cap:20,used:14},uti:{cap:5,used:4}},
     evs:mkEvs()};
   if(G.mode==='local')CASES.forEach((c,i)=>admit(JSON.parse(JSON.stringify(c)),i));else procStart();
   tickMin();
@@ -100,6 +100,14 @@ function rxAdd(P,f,free){
   let handled=false;const ct=c.contra[id];
   if(ct){const from=typeof ct==='string'?0:ct.from,t=typeof ct==='string'?ct:ct.t;if(i>=from){addAE(P,t,20,'Medicação contraindicada ou perigosa neste caso: '+D.n+'.');handled=true}}
   (c.seq||[]).forEach(s=>{if(id===s.then&&!P.rx.some(r=>r.id===s.first)){addAE(P,s.t,20,'Ordem errada de condutas: '+D.n+' antes de '+DRUGS[s.first].n+'.');handled=true}});
+  const ev=isEVrx(D,f.via);
+  if(ev){const dd=dlDefault(id);rx.dil=f.dil||dd.dil;rx.inf=f.inf||dd.inf;const R=DL[id];
+    if(R){if(R.bad&&R.bad[rx.dil]){if(!handled)addAE(P,R.bad[rx.dil],20,'Diluição perigosa: '+D.n+' em '+DIL[rx.dil]+'.');handled=true}
+      else if(R.ok&&!R.ok.includes(rx.dil))P.pen.push([3,'Diluição inadequada: '+D.n+' ('+DIL[rx.dil]+').']);
+      if(R.ibad&&R.ibad[rx.inf]){if(!handled)addAE(P,R.ibad[rx.inf],20,'Velocidade de infusão perigosa: '+D.n+'.');handled=true}
+      else if(R.ineff&&R.ineff.includes(rx.inf)){P.pen.push([6,R.ineffT||'Infusão ineficaz: '+D.n+'.']);handled=true}
+      else if(R.iok&&!R.iok.includes(rx.inf))P.pen.push([3,'Tempo de infusão inadequado: '+D.n+' ('+INF[rx.inf]+').'])}
+    if(f.freq==='ic'&&rx.inf!=='cont')P.pen.push([3,'Infusão contínua precisa correr em bomba: '+D.n+'.'])}
   let isKey=false;
   c.key.forEach((k,ki)=>{
     if(!k.ids.includes(id))return;isKey=true;
@@ -110,6 +118,7 @@ function rxAdd(P,f,free){
   });
   if(!isKey&&!handled){
     if(c.allowed.includes(id)||id==='o2'){if(D.tox!=null&&i>=D.tox)addAE(P,D.ae,12,'Dose acima da recomendada: '+D.n+'.')}
+    else if(['iot','cvc','dreno','parac','cardiov','desfib'].includes(id))addAE(P,'Procedimento invasivo sem indicação: '+D.n.toLowerCase()+' com complicação (sangramento, pneumotórax, infecção ou lesão de via aérea).',20,'Procedimento invasivo sem indicação: '+D.n+'.');
     else{P.pen.push([6,'Prescrição sem indicação: '+D.n+'.']);G.ins=Math.max(0,G.ins-1)}
   }
   if(!D.f.split(' ').includes(f.freq)||!D.dr.split(' ').includes(f.dur))P.pen.push([3,'Frequência ou duração inadequada: '+D.n+'.']);
@@ -123,6 +132,7 @@ function canGo(d){
   if(d==='UTI')return bedFree('uti')>0?null:'Sem leito de UTI. Mantenha na sala de emergência ou solicite transferência regulada.';
   if(d==='ENF')return bedFree('enf')>0?null:'Enfermaria lotada.';
   if(d==='OBS')return bedFree('obs')>0?null:'Observação lotada.';
+  if(d==='AMA')return bedFree('ama')>0?null:'Sala amarela lotada.';
   return null;
 }
 function commit(P,d){
@@ -135,7 +145,7 @@ function commit(P,d){
 function depart(P){P.depT=G.t;finalize(P,'TRANS',true);alert_(fmt(G.t)+' '+P.c.nome.split(' ')[0]+' saiu em transferência regulada.');if(G.act===P.id)G.act=null}
 function finalize(P,d,fromReg){
   const c=P.c;
-  if(!fromReg){ if(d==='UTI')G.beds.uti.used++;if(d==='ENF')G.beds.enf.used++;if(d==='OBS')G.beds.obs.used++ }
+  if(!fromReg){ if(d==='UTI')G.beds.uti.used++;if(d==='ENF')G.beds.enf.used++;if(d==='OBS')G.beds.obs.used++;if(d==='AMA')G.beds.ama.used++ }
   const pen=P.pen.slice(),good=P.good.slice(),goods=[];
   const best=c.dest.best.includes(d),okd=c.dest.ok.includes(d);
   if(best)goods.push('Destino adequado: '+DESTS.find(x=>x[0]===d)[1]+'.');else if(okd)pen.push([8,'Destino aceitável, mas não o melhor: '+DESTS.find(x=>x[0]===d)[1]+'.']);
