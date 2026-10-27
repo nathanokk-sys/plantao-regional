@@ -126,6 +126,15 @@ textarea{min-height:70px;resize:vertical}
 .musbox label{font-size:15px;color:var(--fg2);text-transform:uppercase;letter-spacing:.06em}
 .musbox select{background:#141a17;color:var(--fg);border:2px solid var(--line);padding:3px 4px;font-family:var(--px);font-size:17px;min-width:0;width:100%}
 .np{font-size:15px;color:var(--amber);min-height:16px;overflow-wrap:anywhere}
+.clockbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;background:#0b100d;border:2px solid var(--line);box-shadow:0 3px 0 var(--line);padding:4px 10px;font-size:17px;color:var(--fg2)}
+.clockbar .lcd{font-size:15px;padding:3px 8px}
+.clockbar b{color:var(--amber);font-weight:400}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:#0b100d}
+.subt{margin-bottom:0}
+.subt .tab{border-bottom:2px solid var(--line)}
+.btn.paper.unav{background:repeating-linear-gradient(135deg,#dcb6aa 0 6px,#d0a598 6px 12px);color:#7a2a1a;border-color:#7a2a1a;box-shadow:3px 3px 0 #7a2a1a}
+.btn.paper.unav small{color:#7a2a1a}
+.btn.unav:disabled{opacity:1;cursor:not-allowed}
 .grid.mov{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
 .grid.mov .opt{overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -133,6 +142,7 @@ textarea{min-height:70px;resize:vertical}
 </head>
 <body>
 <div class="app" id="app">
+<div class="clockbar" id="clockbar" hidden></div>
 <header class="top px" id="top"></header>
 <section class="queue px" id="queue" aria-label="Fila de pacientes"></section>
 <main class="work" id="work"></main>
@@ -771,7 +781,7 @@ const DL={
 const dlDefault=id=>{const R=DL[id];return{dil:R&&R.ok?R.ok[0]:'ad10',inf:R&&R.iok?R.iok[0]:'lento'}};
 const isEVrx=(D,via)=>D&&D.v[0]!=='Procedimento'&&!D.fluid&&!['sf','ringer','sg10','salhip','albu','hemac'].includes(Object.keys(DRUGS).find(k=>DRUGS[k]===D))&&/EV/.test(D.v[via||0]);
 EXAMS.glic.g='Beira-leito';EXAMS.ecg.g='Beira-leito';EXAMS.cet.g='Beira-leito';EXAMS.gaso.g='Beira-leito';EXAMS.lact.g='Beira-leito';
-const EXGROUPS=[['Beira-leito',['glic','ecg','cet','gaso','lact']],['Laboratório',['hemo','eletr','cr','calc','coag','hepat','amil','pcr','dimero','trop','ck','tsh','tipag']],['Urina e culturas',['urina','hemoc','escarro']],['Infecção e toxicologia',['sorol','gota','bacil','tox','lcr']],['Imagem',['rx','us','tc']]];
+const EXGROUPS=[['Laboratório',['glic','gaso','lact','cet','hemo','eletr','cr','calc','coag','hepat','amil','pcr','dimero','trop','ck','tsh','tipag','urina','tox']],['Microbiologia',['hemoc','escarro','bacil','gota','sorol','lcr']],['Imagem e ECG',['ecg','rx','us','tc']]];
 /* sala amarela: destino entre observação e sala vermelha */
 DESTS.splice(2,0,['AMA','Sala amarela']);
 CASES.forEach(c=>{const d=c.dest;if(d.best.includes('OBS'))d.best.push('AMA');else if(d.ok.includes('OBS'))d.ok.push('AMA');if(d.best.includes('ENF')&&!d.best.includes('AMA')&&!d.ok.includes('AMA'))d.ok.push('AMA')});
@@ -956,13 +966,13 @@ function reassess(P){adv(3);P.lv={t:G.t,v:P.c.vit[P.stage]};P.log.push({t:G.t,k:
 function order(P,id,free){
   const E=EXAMS[id];if(P.ord[id])return'Já solicitado.';
   const off=G.off[id];if(off&&G.t<off.until)return off.why;
-  if(G.ins<E.c)return'Insumos insuficientes para este exame.';
-  G.ins-=E.c;P.ord[id]={t0:G.t,due:G.t+E.t,done:E.t<=1};
-  if(!P.c.util.includes(id)&&id!=='glic'&&id!=='ecg'){P.pen.push([2,'Exame sem indicação: '+E.n+'.'])}
+  if(G.ins<E.c){if(P.c.tri==='VERMELHO'||P.c.tri==='LARANJA'){G.overCota=(G.overCota||0)+(E.c-G.ins);G.rep=clamp(G.rep-1);alert_(fmt(G.t)+' Direção: exame liberado como urgência acima da cota de insumos.')}else return'Cota de insumos esgotada: agora só há exames de urgência para pacientes vermelhos e laranjas (e os exames sem custo).'}
+  G.ins=Math.max(0,G.ins-E.c);P.ord[id]={t0:G.t,due:G.t+E.t,done:E.t<=1};
+  if(!P.c.util.includes(id)&&id!=='glic'&&id!=='ecg'){P.pen.push([2,'Exame sem indicação: '+E.n+'.']);if(window.rqe)rqe('ex',.35)}
   if(E.t<=1)P.newRes++;
   adv(free?0:.5);return null;
 }
-function addAE(P,txt,pen,why){P.adv.push(G.t);P.pen.push([pen,why||txt]);P.log.push({t:G.t,k:'ae',q:'Evento adverso',a:txt,fresh:1});alert_(fmt(G.t)+' Evento adverso em '+P.c.nome.split(' ')[0]+'.',true)}
+function addAE(P,txt,pen,why){P.adv.push(G.t);P.pen.push([pen,why||txt]);P.log.push({t:G.t,k:'ae',q:'Evento adverso',a:txt,fresh:1});alert_(fmt(G.t)+' Evento adverso em '+P.c.nome.split(' ')[0]+'.',true);if(window.rqe)rqe('ae',.75)}
 function rxAdd(P,f,free){
   const id=f.drug,D=DRUGS[id],c=P.c,i=f.dose;
   if(!D)return'Escolha um medicamento.';
@@ -1173,6 +1183,16 @@ function drugOpts(P,F){
   return CATS.map(([g,L])=>'<optgroup label="'+g+'">'+L.filter(k=>DRUGS[k]).sort((a,b)=>DRUGS[a].n.localeCompare(DRUGS[b].n,'pt')).map(opt).join('')+'</optgroup>').join('')
    +(rest.length?'<optgroup label="Outros">'+rest.map(opt).join('')+'</optgroup>':'');
 }
+/* ===== O preceptor (RQE) ===== */
+const RQE={
+ ae:['Você quer matar o paciente ou a minha paciência?','Quem te ensinou isso? Vou ligar pra sua faculdade.','Eu tenho RQE há 20 anos e nunca vi isso.','Doutor, o paciente não é cobaia.','Respira, lê a bula e depois prescreve.','Isso aí nem o calouro do primeiro período faria.','Vai responder no CRM por mim, é?','Parabéns, criou um caso clínico novo. Pena que é iatrogênico.','Na minha época a gente estudava antes do plantão.','Anota aí no caderninho: isso NÃO se faz.'],
+ ex:['Pede logo uma ressonância e um PET-CT, já que é de graça… ah, não é.','Exame não substitui anamnese, doutor.','O laboratório mandou um abraço. E uma reclamação.','Vai pedir o exame por quê? Pra ver se dá alguma coisa?','A clínica é soberana. O resto é enfeite.'],
+ bom:['Hoje até eu dormiria tranquilo no plantão. Quase.','Gostei. Não vai acostumar.','Assim que se faz. Pode continuar vindo.'],
+ mid:['Dá pra melhorar. E muito.','Sobreviveu. Os pacientes, nem todos.','Plantão razoável. Amanhã eu quero melhor.'],
+ ruim:['Vou fingir que não vi esse relatório.','Leva esse relatório pra casa e estuda cada linha.','Hoje o plantão foi de você contra os pacientes. Os pacientes perderam.']
+};
+function rqe(kind,ch){if(ch!=null&&Math.random()>ch)return;const L=RQE[kind]||RQE.ae;alert_(fmt(G.t)+' Preceptor (RQE): "'+L[Math.floor(Math.random()*L.length)]+'"',true)}
+function rqeFinal(score){const L=score>=70?RQE.bom:score>=45?RQE.mid:RQE.ruim;return L[Math.floor(Math.random()*L.length)]}
 /* ===== GERADOR LOCAL DE PACIENTES (roda só no navegador, sem IA) =====
  Cada plantão sorteia 9 modelos de caso (prioriza os que você ainda não viu) e cria uma pessoa nova para cada um:
  nome inédito, idade, sexo, município, ocupação, rosto, sinais vitais levemente diferentes e, às vezes, uma alergia. */
@@ -1363,9 +1383,9 @@ function tabHtml(P){
   if(UI.tab==='ex'){
     const ids=Object.keys(EXAMS);
     const res=ids.filter(k=>P.ord[k]&&P.ord[k].done);
-    return'<h3>Exames e imagem <span>insumos: '+G.ins+'</span></h3>'+EXGROUPS.map(([gn,L])=>'<p class="sub">'+gn+'</p><div class="grid">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
-      const st=o?(o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível':E.t+' min · custo '+E.c;
-      return'<button class="btn paper opt'+(o?' on':'')+'" data-a="ord:'+k+'"'+(o?' disabled':'')+'>'+E.n+'<small>'+st+'</small></button>'}).join('')+'</div>').join('')
+    return'<h3>Exames <span>insumos: '+G.ins+' de 100 · gastos '+(100-G.ins+(G.overCota||0))+'</span></h3><p style="margin:0 0 8px;color:var(--ink2);font-size:17px">Os insumos são a cota de exames do plantão. Se acabarem, ninguém morre por isso: ficam liberados só os exames de urgência para vermelhos e laranjas. Medicações e medidas iniciais não gastam insumos.</p><div class="tabs subt">'+EXGROUPS.map((g,i)=>'<button class="tab" data-a="extab:'+i+'" aria-selected="'+((UI.exTab||0)===i)+'">'+g[0]+(g[1].some(k=>P.ord[k]&&P.ord[k].done)?' ·':'')+'</button>').join('')+'</div>'+[EXGROUPS[UI.exTab||0]].map(([gn,L])=>'<div class="grid" style="margin-top:8px">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
+      const st=o?(o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível · '+G.off[k].why:E.t+' min · custo '+E.c;
+      return'<button class="btn paper opt'+(o?' on':'')+(off&&!o?' unav':'')+'" data-a="ord:'+k+'"'+(o||off?' disabled':'')+(off&&!o?' title="'+esc(G.off[k].why)+'"':'')+'>'+E.n+'<small>'+st+'</small></button>'}).join('')+'</div>').join('')
      +'<p class="sub">Resultados</p>'+(res.length?'<ul class="qa">'+res.map(k=>'<li><b>'+EXAMS[k].n+'</b><br>'+esc(P.c.res[k]||'Sem alterações relevantes.')+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhum resultado disponível.</p>');
   }
   if(UI.tab==='proc'){const done=id=>P.rx.some(r=>r.id===id);
@@ -1414,7 +1434,7 @@ function renderVeil(){
   }
   if(G&&G.over&&G.final){
     const F=G.final;
-    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Passagem de plantão <span>relatório</span></h3><div class="big">Nota '+F.score+'/100</div>'
+    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Passagem de plantão <span>relatório</span></h3><div class="big">Nota '+F.score+'/100</div><p><b>Preceptor (RQE):</b> "'+esc(F.rqe||(F.rqe=rqeFinal(F.score)))+'"</p>'
      +'<p>Média dos atendimentos: <b>'+F.avg+'</b>. Óbitos: <b>'+F.dead+'</b>. Altas inseguras: <b>'+F.unsafe+'</b>. Exames desnecessários: <b>'+F.exams+'</b>. Prescrições inadequadas: <b>'+F.rx+'</b>. Diagnósticos perdidos: <b>'+F.missed+'</b>. Decisões corretas: <b>'+F.right+'</b>.</p>'
      +'<p>Reputação '+Math.round(G.rep)+' · Confiança da equipe '+Math.round(G.eq)+' · Insumos restantes '+G.ins+'. A nota prioriza segurança e raciocínio clínico, não a rapidez.</p>'
      +(G.news.length?'<p class="sub">Recados dos setores</p><ul class="qa">'+G.news.slice().reverse().map(n=>'<li><b>'+fmt(n.t)+' · '+esc(n.title)+'</b><br>'+esc(n.txt)+'</li>').join('')+'</ul>':'')
@@ -1426,9 +1446,16 @@ function renderVeil(){
   if(!G){v.hidden=false;v.innerHTML=introHtml();return}
   v.hidden=true;
 }
+function renderClock(){
+  const c=$('#clockbar');if(!c)return;c.hidden=false;const left=Math.max(0,G.end-Math.floor(G.t)),P=cur(),sp=100-G.ins+(G.overCota||0);
+  c.innerHTML='<span class="lcd">'+fmt(Math.min(G.t,G.end))+'</span><span>Plantão '+G.n+' · faltam '+Math.floor(left/60)+'h'+pad(left%60)+'</span>'
+   +'<span>Leitos livres: obs <b>'+bedFree('obs')+'</b> · amarela <b>'+bedFree('ama')+'</b> · enf <b>'+bedFree('enf')+'</b> · UTI <b>'+bedFree('uti')+'</b></span>'
+   +'<span>Insumos <b>'+G.ins+'</b>/100 · gastos <b>'+sp+'</b></span>'
+   +(P?'<span style="color:var(--tc-'+P.c.tri+')">Na mesa: '+esc(P.c.nome.split(' ')[0])+'</span>':'');
+}
 function render(){
-  if(!G){$('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL</div>';$('#queue').innerHTML='';$('#work').innerHTML='';$('#decide').hidden=true;renderVeil();return}
-  renderTop();renderQueue();renderWork();renderVeil();saveGame();
+  if(!G){$('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL</div>';$('#queue').innerHTML='';$('#work').innerHTML='';$('#decide').hidden=true;$('#clockbar').hidden=true;renderVeil();return}
+  renderClock();renderTop();renderQueue();renderWork();renderVeil();saveGame();
 }
 /* ===== eventos ===== */
 document.addEventListener('click',e=>{
@@ -1455,6 +1482,7 @@ document.addEventListener('click',e=>{
   UI.msg='';UI.msg2='';
   if(k==='pick'){pick(v);UI.destSel=null;UI.tab='anam'}
   else if(k==='tab'){UI.tab=v;if(P&&v==='ex')P.newRes=0}
+  else if(k==='extab'){UI.exTab=+v}
   else if(k==='wait')adv(+v);
   else if(k==='finish')endShift();
   else if(!P)return;

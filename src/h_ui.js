@@ -68,9 +68,9 @@ function tabHtml(P){
   if(UI.tab==='ex'){
     const ids=Object.keys(EXAMS);
     const res=ids.filter(k=>P.ord[k]&&P.ord[k].done);
-    return'<h3>Exames e imagem <span>insumos: '+G.ins+'</span></h3>'+EXGROUPS.map(([gn,L])=>'<p class="sub">'+gn+'</p><div class="grid">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
-      const st=o?(o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível':E.t+' min · custo '+E.c;
-      return'<button class="btn paper opt'+(o?' on':'')+'" data-a="ord:'+k+'"'+(o?' disabled':'')+'>'+E.n+'<small>'+st+'</small></button>'}).join('')+'</div>').join('')
+    return'<h3>Exames <span>insumos: '+G.ins+' de 100 · gastos '+(100-G.ins+(G.overCota||0))+'</span></h3><p style="margin:0 0 8px;color:var(--ink2);font-size:17px">Os insumos são a cota de exames do plantão. Se acabarem, ninguém morre por isso: ficam liberados só os exames de urgência para vermelhos e laranjas. Medicações e medidas iniciais não gastam insumos.</p><div class="tabs subt">'+EXGROUPS.map((g,i)=>'<button class="tab" data-a="extab:'+i+'" aria-selected="'+((UI.exTab||0)===i)+'">'+g[0]+(g[1].some(k=>P.ord[k]&&P.ord[k].done)?' ·':'')+'</button>').join('')+'</div>'+[EXGROUPS[UI.exTab||0]].map(([gn,L])=>'<div class="grid" style="margin-top:8px">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
+      const st=o?(o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível · '+G.off[k].why:E.t+' min · custo '+E.c;
+      return'<button class="btn paper opt'+(o?' on':'')+(off&&!o?' unav':'')+'" data-a="ord:'+k+'"'+(o||off?' disabled':'')+(off&&!o?' title="'+esc(G.off[k].why)+'"':'')+'>'+E.n+'<small>'+st+'</small></button>'}).join('')+'</div>').join('')
      +'<p class="sub">Resultados</p>'+(res.length?'<ul class="qa">'+res.map(k=>'<li><b>'+EXAMS[k].n+'</b><br>'+esc(P.c.res[k]||'Sem alterações relevantes.')+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhum resultado disponível.</p>');
   }
   if(UI.tab==='proc'){const done=id=>P.rx.some(r=>r.id===id);
@@ -119,7 +119,7 @@ function renderVeil(){
   }
   if(G&&G.over&&G.final){
     const F=G.final;
-    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Passagem de plantão <span>relatório</span></h3><div class="big">Nota '+F.score+'/100</div>'
+    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Passagem de plantão <span>relatório</span></h3><div class="big">Nota '+F.score+'/100</div><p><b>Preceptor (RQE):</b> "'+esc(F.rqe||(F.rqe=rqeFinal(F.score)))+'"</p>'
      +'<p>Média dos atendimentos: <b>'+F.avg+'</b>. Óbitos: <b>'+F.dead+'</b>. Altas inseguras: <b>'+F.unsafe+'</b>. Exames desnecessários: <b>'+F.exams+'</b>. Prescrições inadequadas: <b>'+F.rx+'</b>. Diagnósticos perdidos: <b>'+F.missed+'</b>. Decisões corretas: <b>'+F.right+'</b>.</p>'
      +'<p>Reputação '+Math.round(G.rep)+' · Confiança da equipe '+Math.round(G.eq)+' · Insumos restantes '+G.ins+'. A nota prioriza segurança e raciocínio clínico, não a rapidez.</p>'
      +(G.news.length?'<p class="sub">Recados dos setores</p><ul class="qa">'+G.news.slice().reverse().map(n=>'<li><b>'+fmt(n.t)+' · '+esc(n.title)+'</b><br>'+esc(n.txt)+'</li>').join('')+'</ul>':'')
@@ -131,9 +131,16 @@ function renderVeil(){
   if(!G){v.hidden=false;v.innerHTML=introHtml();return}
   v.hidden=true;
 }
+function renderClock(){
+  const c=$('#clockbar');if(!c)return;c.hidden=false;const left=Math.max(0,G.end-Math.floor(G.t)),P=cur(),sp=100-G.ins+(G.overCota||0);
+  c.innerHTML='<span class="lcd">'+fmt(Math.min(G.t,G.end))+'</span><span>Plantão '+G.n+' · faltam '+Math.floor(left/60)+'h'+pad(left%60)+'</span>'
+   +'<span>Leitos livres: obs <b>'+bedFree('obs')+'</b> · amarela <b>'+bedFree('ama')+'</b> · enf <b>'+bedFree('enf')+'</b> · UTI <b>'+bedFree('uti')+'</b></span>'
+   +'<span>Insumos <b>'+G.ins+'</b>/100 · gastos <b>'+sp+'</b></span>'
+   +(P?'<span style="color:var(--tc-'+P.c.tri+')">Na mesa: '+esc(P.c.nome.split(' ')[0])+'</span>':'');
+}
 function render(){
-  if(!G){$('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL</div>';$('#queue').innerHTML='';$('#work').innerHTML='';$('#decide').hidden=true;renderVeil();return}
-  renderTop();renderQueue();renderWork();renderVeil();saveGame();
+  if(!G){$('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL</div>';$('#queue').innerHTML='';$('#work').innerHTML='';$('#decide').hidden=true;$('#clockbar').hidden=true;renderVeil();return}
+  renderClock();renderTop();renderQueue();renderWork();renderVeil();saveGame();
 }
 /* ===== eventos ===== */
 document.addEventListener('click',e=>{
@@ -160,6 +167,7 @@ document.addEventListener('click',e=>{
   UI.msg='';UI.msg2='';
   if(k==='pick'){pick(v);UI.destSel=null;UI.tab='anam'}
   else if(k==='tab'){UI.tab=v;if(P&&v==='ex')P.newRes=0}
+  else if(k==='extab'){UI.exTab=+v}
   else if(k==='wait')adv(+v);
   else if(k==='finish')endShift();
   else if(!P)return;

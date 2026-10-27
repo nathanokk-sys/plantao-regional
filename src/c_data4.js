@@ -118,7 +118,7 @@ const DL={
 const dlDefault=id=>{const R=DL[id];return{dil:R&&R.ok?R.ok[0]:'ad10',inf:R&&R.iok?R.iok[0]:'lento'}};
 const isEVrx=(D,via)=>D&&D.v[0]!=='Procedimento'&&!D.fluid&&!['sf','ringer','sg10','salhip','albu','hemac'].includes(Object.keys(DRUGS).find(k=>DRUGS[k]===D))&&/EV/.test(D.v[via||0]);
 EXAMS.glic.g='Beira-leito';EXAMS.ecg.g='Beira-leito';EXAMS.cet.g='Beira-leito';EXAMS.gaso.g='Beira-leito';EXAMS.lact.g='Beira-leito';
-const EXGROUPS=[['Beira-leito',['glic','ecg','cet','gaso','lact']],['Laboratório',['hemo','eletr','cr','calc','coag','hepat','amil','pcr','dimero','trop','ck','tsh','tipag']],['Urina e culturas',['urina','hemoc','escarro']],['Infecção e toxicologia',['sorol','gota','bacil','tox','lcr']],['Imagem',['rx','us','tc']]];
+const EXGROUPS=[['Laboratório',['glic','gaso','lact','cet','hemo','eletr','cr','calc','coag','hepat','amil','pcr','dimero','trop','ck','tsh','tipag','urina','tox']],['Microbiologia',['hemoc','escarro','bacil','gota','sorol','lcr']],['Imagem e ECG',['ecg','rx','us','tc']]];
 /* sala amarela: destino entre observação e sala vermelha */
 DESTS.splice(2,0,['AMA','Sala amarela']);
 CASES.forEach(c=>{const d=c.dest;if(d.best.includes('OBS'))d.best.push('AMA');else if(d.ok.includes('OBS'))d.ok.push('AMA');if(d.best.includes('ENF')&&!d.best.includes('AMA')&&!d.ok.includes('AMA'))d.ok.push('AMA')});

@@ -95,3 +95,13 @@ function drugOpts(P,F){
   return CATS.map(([g,L])=>'<optgroup label="'+g+'">'+L.filter(k=>DRUGS[k]).sort((a,b)=>DRUGS[a].n.localeCompare(DRUGS[b].n,'pt')).map(opt).join('')+'</optgroup>').join('')
    +(rest.length?'<optgroup label="Outros">'+rest.map(opt).join('')+'</optgroup>':'');
 }
+/* ===== O preceptor (RQE) ===== */
+const RQE={
+ ae:['Você quer matar o paciente ou a minha paciência?','Quem te ensinou isso? Vou ligar pra sua faculdade.','Eu tenho RQE há 20 anos e nunca vi isso.','Doutor, o paciente não é cobaia.','Respira, lê a bula e depois prescreve.','Isso aí nem o calouro do primeiro período faria.','Vai responder no CRM por mim, é?','Parabéns, criou um caso clínico novo. Pena que é iatrogênico.','Na minha época a gente estudava antes do plantão.','Anota aí no caderninho: isso NÃO se faz.'],
+ ex:['Pede logo uma ressonância e um PET-CT, já que é de graça… ah, não é.','Exame não substitui anamnese, doutor.','O laboratório mandou um abraço. E uma reclamação.','Vai pedir o exame por quê? Pra ver se dá alguma coisa?','A clínica é soberana. O resto é enfeite.'],
+ bom:['Hoje até eu dormiria tranquilo no plantão. Quase.','Gostei. Não vai acostumar.','Assim que se faz. Pode continuar vindo.'],
+ mid:['Dá pra melhorar. E muito.','Sobreviveu. Os pacientes, nem todos.','Plantão razoável. Amanhã eu quero melhor.'],
+ ruim:['Vou fingir que não vi esse relatório.','Leva esse relatório pra casa e estuda cada linha.','Hoje o plantão foi de você contra os pacientes. Os pacientes perderam.']
+};
+function rqe(kind,ch){if(ch!=null&&Math.random()>ch)return;const L=RQE[kind]||RQE.ae;alert_(fmt(G.t)+' Preceptor (RQE): "'+L[Math.floor(Math.random()*L.length)]+'"',true)}
+function rqeFinal(score){const L=score>=70?RQE.bom:score>=45?RQE.mid:RQE.ruim;return L[Math.floor(Math.random()*L.length)]}

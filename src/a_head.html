@@ -120,6 +120,15 @@ textarea{min-height:70px;resize:vertical}
 .musbox label{font-size:15px;color:var(--fg2);text-transform:uppercase;letter-spacing:.06em}
 .musbox select{background:#141a17;color:var(--fg);border:2px solid var(--line);padding:3px 4px;font-family:var(--px);font-size:17px;min-width:0;width:100%}
 .np{font-size:15px;color:var(--amber);min-height:16px;overflow-wrap:anywhere}
+.clockbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;background:#0b100d;border:2px solid var(--line);box-shadow:0 3px 0 var(--line);padding:4px 10px;font-size:17px;color:var(--fg2)}
+.clockbar .lcd{font-size:15px;padding:3px 8px}
+.clockbar b{color:var(--amber);font-weight:400}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:#0b100d}
+.subt{margin-bottom:0}
+.subt .tab{border-bottom:2px solid var(--line)}
+.btn.paper.unav{background:repeating-linear-gradient(135deg,#dcb6aa 0 6px,#d0a598 6px 12px);color:#7a2a1a;border-color:#7a2a1a;box-shadow:3px 3px 0 #7a2a1a}
+.btn.paper.unav small{color:#7a2a1a}
+.btn.unav:disabled{opacity:1;cursor:not-allowed}
 .grid.mov{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
 .grid.mov .opt{overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

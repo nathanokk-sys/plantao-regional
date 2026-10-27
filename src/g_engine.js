@@ -78,13 +78,13 @@ function reassess(P){adv(3);P.lv={t:G.t,v:P.c.vit[P.stage]};P.log.push({t:G.t,k:
 function order(P,id,free){
   const E=EXAMS[id];if(P.ord[id])return'Já solicitado.';
   const off=G.off[id];if(off&&G.t<off.until)return off.why;
-  if(G.ins<E.c)return'Insumos insuficientes para este exame.';
-  G.ins-=E.c;P.ord[id]={t0:G.t,due:G.t+E.t,done:E.t<=1};
-  if(!P.c.util.includes(id)&&id!=='glic'&&id!=='ecg'){P.pen.push([2,'Exame sem indicação: '+E.n+'.'])}
+  if(G.ins<E.c){if(P.c.tri==='VERMELHO'||P.c.tri==='LARANJA'){G.overCota=(G.overCota||0)+(E.c-G.ins);G.rep=clamp(G.rep-1);alert_(fmt(G.t)+' Direção: exame liberado como urgência acima da cota de insumos.')}else return'Cota de insumos esgotada: agora só há exames de urgência para pacientes vermelhos e laranjas (e os exames sem custo).'}
+  G.ins=Math.max(0,G.ins-E.c);P.ord[id]={t0:G.t,due:G.t+E.t,done:E.t<=1};
+  if(!P.c.util.includes(id)&&id!=='glic'&&id!=='ecg'){P.pen.push([2,'Exame sem indicação: '+E.n+'.']);if(window.rqe)rqe('ex',.35)}
   if(E.t<=1)P.newRes++;
   adv(free?0:.5);return null;
 }
-function addAE(P,txt,pen,why){P.adv.push(G.t);P.pen.push([pen,why||txt]);P.log.push({t:G.t,k:'ae',q:'Evento adverso',a:txt,fresh:1});alert_(fmt(G.t)+' Evento adverso em '+P.c.nome.split(' ')[0]+'.',true)}
+function addAE(P,txt,pen,why){P.adv.push(G.t);P.pen.push([pen,why||txt]);P.log.push({t:G.t,k:'ae',q:'Evento adverso',a:txt,fresh:1});alert_(fmt(G.t)+' Evento adverso em '+P.c.nome.split(' ')[0]+'.',true);if(window.rqe)rqe('ae',.75)}
 function rxAdd(P,f,free){
   const id=f.drug,D=DRUGS[id],c=P.c,i=f.dose;
   if(!D)return'Escolha um medicamento.';
