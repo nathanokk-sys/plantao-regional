@@ -73,6 +73,7 @@ const MOV=[['pac','Pacote MOV',0],['mon','Monitorizar',0],['ace','Acesso venoso'
 /* medidas básicas: a enfermagem executa em paralelo, sem custo de tempo e sem penalidade por excesso */
 function doMov(P,k){
   P.mov=P.mov||{};
+  if(/^iso[cgap]$/.test(k))return doIso(P,k);
   if(k==='pac'){['mon','ace'].forEach(x=>doMov(P,x));['glic','ecg'].forEach(x=>{if(!P.ord[x])order(P,x,true)});return null}
   if(k==='glic'||k==='ecg')return P.ord[k]?null:order(P,k,true);
   if(k==='o2c'||k==='o2v'||k==='o2m'||k==='vni')return rxAdd(P,{drug:'o2',dose:{o2c:0,o2v:1,o2m:2,vni:3}[k],via:0,freq:'ic',dur:'ct'},true);
@@ -84,7 +85,7 @@ function movHtml(P){
   const m=P.mov||{},o2r=P.rx.find(r=>r.id==='o2'),o2=o2r?o2r.i:-1;
   const on=k=>k==='pac'?(m.mon!=null&&m.ace!=null&&!!P.ord.glic&&!!P.ord.ecg):k==='glic'||k==='ecg'?!!P.ord[k]:k==='o2c'?o2===0:k==='o2v'?o2===1:k==='o2m'?o2===2:k==='vni'?o2===3:m[k]!=null;
   return'<div class="doc px"><h3>Medidas iniciais <span>enfermagem executa, sem custo de tempo</span></h3><div class="grid mov">'+MOV.map(([k,n,t])=>{const d=on(k);
-    return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d&&k!=='jej'?' disabled':'')+'>'+n+'<small>'+(d&&k==='jej'?'ativa · toque para liberar':d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG':'imediato')+'</small></button>'}).join('')+'</div></div>';
+    return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d&&k!=='jej'?' disabled':'')+'>'+n+'<small>'+(d&&k==='jej'?'ativa · toque para liberar':d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG':'imediato')+'</small></button>'}).join('')+'</div>'+(window.isoHtml?isoHtml(P):'')+'</div>';
 }
 /* ===== procedimentos e lista de medicamentos por classe ===== */
 function doProc(P,id){

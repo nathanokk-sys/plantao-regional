@@ -29,9 +29,9 @@ const DXG=[
 const DXGRP=(()=>{const byL=Object.fromEntries(DXS.map(([i,l])=>[l,i]));let n=0;
   const out=DXG.map(([g,L])=>[g,L.map(l=>{if(!byL[l]){const id='z'+(n++);DXS.push([id,l]);byL[l]=id}return byL[l]})]);
   const used=new Set(out.flatMap(x=>x[1]));const rest=DXS.filter(d=>!used.has(d[0])).map(d=>d[0]);if(rest.length)out.push(['Outros',rest]);return out})();
-function dxOpts(P){
-  const lab=Object.fromEntries(DXS.map(d=>[d[0],d[1]]));
-  return DXGRP.map(([g,L])=>'<optgroup label="'+g+'">'+L.slice().sort((a,b)=>lab[a].localeCompare(lab[b],'pt')).map(k=>'<option value="'+k+'"'+(P.hyp===k?' selected':'')+'>'+lab[k]+'</option>').join('')+'</optgroup>').join('');
+function dxOpts(P,q){
+  const lab=Object.fromEntries(DXS.map(d=>[d[0],d[1]])),nz=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),Q=nz(q||'');
+  return DXGRP.map(([g,L0])=>{const L=L0.filter(k=>!Q||nz(lab[k]).includes(Q));return L.length?[g,L]:null}).filter(Boolean).map(([g,L])=>'<optgroup label="'+g+'">'+L.slice().sort((a,b)=>lab[a].localeCompare(lab[b],'pt')).map(k=>'<option value="'+k+'"'+(P.hyp===k?' selected':'')+'>'+lab[k]+'</option>').join('')+'</optgroup>').join('');
 }
 /* prescrição por abas (um medicamento pode estar em mais de uma) */
 CATS.length=0;CATS.push(

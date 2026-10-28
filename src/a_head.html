@@ -141,4 +141,25 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .grid.mov{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
 .grid.mov .opt{overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Parte 10: laudos, receita, suspensão */
+.labw{border:2px solid var(--ink2);padding:6px 8px;margin:8px 0;background:var(--paper)}
+.labh{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.labh b{font-size:20px}.labh small{flex-basis:100%;color:var(--ink2);font-size:16px}
+.labh .ibtn{position:static;margin-left:auto}
+table.lab{width:100%;border-collapse:collapse;font-size:17px;margin-top:4px;table-layout:fixed}
+table.lab td:nth-child(1),table.lab th:nth-child(1){width:38%}table.lab td:nth-child(3),table.lab th:nth-child(3){width:30%;overflow-wrap:anywhere}
+table.lab th{text-align:left;font-weight:400;color:var(--ink2);border-bottom:2px solid var(--ink2);padding:2px 4px}
+table.lab th.grp{color:var(--ink);font-family:var(--hd);font-size:9px;padding-top:8px;border-bottom:1px dashed var(--ink2)}
+table.lab td{padding:2px 4px;border-bottom:1px dotted #b9b08f;vertical-align:top}
+table.lab td:nth-child(3){color:var(--ink2);font-size:16px}
+table.lab tr.abn td:nth-child(2){color:#9c2a1a}
+.labn,.laudo{margin:4px 0 0;font-size:18px}.labn{color:var(--ink2)}
+.btn.sm{padding:2px 8px;font-size:16px;min-height:0}
+.rxl li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}.rxl li .btn{margin-left:auto}
+.rxl.off li{opacity:.6;text-decoration:line-through}.rxl.off li small{text-decoration:none}
+.receita{background:var(--paper);color:var(--ink);padding:6px 8px;margin:6px 0;font-size:18px}
+.receita label{display:flex;flex-direction:column;gap:2px;font-size:16px;color:var(--ink2)}
+.receita select{font:inherit;font-size:18px;padding:4px;background:#f6efd6;color:var(--ink);border:2px solid var(--ink2);width:100%;max-width:100%;min-width:0}
+.receita{min-width:0;overflow-wrap:anywhere}#decide{min-width:0;max-width:100%}
+.receita p{margin:6px 0 0}
 </style>

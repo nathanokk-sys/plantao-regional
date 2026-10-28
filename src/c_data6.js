@@ -6,7 +6,7 @@ CASES.forEach(c=>{(REQIND[c.id]||[]).forEach(r=>c.allowed.push(r));c.allowed.pus
 const REQOK={eda:'EDA realizada: ',eco:'Ecocardiograma realizado sem intercorrências.',hd:'Hemodiálise de urgência realizada; potássio normalizado.',pcir:'A cirurgia geral avaliou e acompanha o caso.',pcard:'A cardiologia avaliou e concordou com a conduta.',pneuro:'A neurologia avaliou e ajustou os anticonvulsivantes.',pgastro:'A gastroenterologia avaliou e acompanha o caso.',pinfec:'A infectologia avaliou e ajustou o esquema.',fisio:'A fisioterapia acompanhou a ventilação.',nutri:'A nutrição ajustou a dieta.',social:'O serviço social organizou o acesso aos remédios e o retorno.'};
 function reqNews(P){
   const c=P.c,b=c.base||c.id,ind=REQIND[b]||[],out=[],S=P.reqSt=P.reqSt||{};
-  P.rx.filter(r=>DRUGS[r.id]&&DRUGS[r.id].v[0]==='Solicitação').forEach(r=>{
+  P.rx.filter(r=>DRUGS[r.id]&&DRUGS[r.id].v[0]==='Solicitação'&&r.id!=='ccih').forEach(r=>{
     const n=DRUGS[r.id].n;
     if(!ind.includes(r.id)){S[r.id]='noind';out.push(n+': "Sem indicação de avaliação neste caso."');return}
     if(r.id==='eda'){
@@ -21,7 +21,10 @@ function reqNews(P){
 }
 function doReq(P,id){
   const r=rxAdd(P,{drug:id,dose:0,via:0,freq:'u',dur:'u'},true);if(r)return r;
-  P.log.push({t:G.t,k:'p',q:'Solicitação',a:DRUGS[id].n+': pedido feito.',fresh:1});adv(1);return null;
+  P.log.push({t:G.t,k:'p',q:'Solicitação',a:DRUGS[id].n+': pedido feito.',fresh:1});
+  if(id==='ccih'){let n=0;(P.ksPend||[]).forEach(x=>{if(x.ccih){x.ccih=0;x.at=G.t+15;n++}});P.rx.forEach(r=>{if(r.ccih){r.ccih=0;n++}});
+    P.log.push({t:G.t,k:'p',q:'CCIH',a:n?'Ficha recebida. A farmácia libera o antimicrobiano em cerca de 15 minutos.':'Ficha registrada. Quando houver antimicrobiano restrito, a farmácia libera direto.',fresh:1})}
+  adv(1);return null;
 }
 /* erros de interno (baixa, mas presente: 10%), de aparelho (5%) e de laboratório/técnicos (3%) */
 const LABERR=['Amostra hemolisada. Peça de novo.','A requisição não desceu para o laboratório (ficou esquecida no posto). Peça de novo.','Amostra coagulada no tubo. Peça de novo.'];

@@ -115,18 +115,19 @@ function rxAdd(P,f,free){
   c.key.forEach((k,ki)=>{
     if(!k.ids.includes(id))return;isKey=true;
     const ok=okIdx(k,id);
-    if(ok.includes(i)){if(P.ks[ki]==null&&!handled){if(isEVrx(D,f.via)&&Math.random()<.01){P.ksPend=(P.ksPend||[]).concat([{ki,at:G.t+30}]);P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'A medicação foi trocada com a do leito vizinho; o erro foi percebido a tempo e a dose certa atrasou 30 min.',fresh:1});alert_(fmt(G.t)+' Enfermagem: troca de medicação com o leito vizinho percebida a tempo; '+D.n+' atrasou 30 min.',true)}else P.ks[ki]=G.t}}
+    if(ok.includes(i)){if(P.ks[ki]==null&&!handled){if(RESTR.includes(id)&&!P.rx.some(r=>r.id==='ccih')){P.ksPend=(P.ksPend||[]).concat([{ki,at:1e9,ccih:1}])}else if(isEVrx(D,f.via)&&Math.random()<.01){P.ksPend=(P.ksPend||[]).concat([{ki,at:G.t+30}]);P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'A medicação foi trocada com a do leito vizinho; o erro foi percebido a tempo e a dose certa atrasou 30 min.',fresh:1});alert_(fmt(G.t)+' Enfermagem: troca de medicação com o leito vizinho percebida a tempo; '+D.n+' atrasou 30 min.',true)}else P.ks[ki]=G.t}}
     else if(i>Math.max(...ok)){if(!handled){addAE(P,D.ae||'Dose acima da recomendada.',12,'Dose acima da recomendada: '+D.n+'.');handled=true}}
     else if(id!=='o2')P.pen.push([6,'Dose insuficiente: '+D.n+'.']);
   });
   if(!isKey&&!handled){
-    if(c.allowed.includes(id)||id==='o2'){if(D.tox!=null&&i>=D.tox)addAE(P,D.ae,12,'Dose acima da recomendada: '+D.n+'.')}
+    if(c.allowed.includes(id)||id==='o2'||id==='ccih'){if(D.tox!=null&&i>=D.tox)addAE(P,D.ae,12,'Dose acima da recomendada: '+D.n+'.')}
     else if(['iot','cvc','dreno','parac','cardiov','desfib'].includes(id))addAE(P,'Procedimento invasivo sem indicação: '+D.n.toLowerCase()+' com complicação (sangramento, pneumotórax, infecção ou lesão de via aérea).',20,'Procedimento invasivo sem indicação: '+D.n+'.');
     else if(D.v[0]==='Solicitação'){P.pen.push([3,'Solicitação sem indicação: '+D.n+'.']);if(window.rqe)rqe('ex',.5)}
     else{P.pen.push([6,'Prescrição sem indicação: '+D.n+'.']);G.ins=Math.max(0,G.ins-1)}
   }
   if(!D.f.split(' ').includes(f.freq)||!D.dr.split(' ').includes(f.dur))P.pen.push([3,'Frequência ou duração inadequada: '+D.n+'.']);
   P.rx.push(rx);
+  if(RESTR.includes(id)&&!P.rx.some(r=>r.id==='ccih')){rx.ccih=1;P.log.push({t:G.t,k:'m',q:'Farmácia',a:D.n+' é antimicrobiano de uso restrito: só é dispensado com a ficha de solicitação à CCIH (aba Procedimentos e pedidos).',fresh:1});alert_(fmt(G.t)+' Farmácia: '+D.n+' aguardando a ficha da CCIH.',true)}
   if(/EV/.test(D.v[f.via||0])&&P.mov.ace==null){P.mov.ace=G.t;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Acesso venoso puncionado para a medicação EV.',fresh:1})}
   adv(free?0:1);return null;
 }
@@ -166,6 +167,13 @@ function finalize(P,d,fromReg){
   if(P.seen!=null){const w=Math.round(P.seen-c.arr);if(c.tri==='VERMELHO'&&w>12)pen.push([10,'Atendimento tardio de paciente vermelho (espera de '+w+' min).']);else if(c.tri==='LARANJA'&&w>25)pen.push([5,'Atendimento tardio de paciente laranja (espera de '+w+' min).'])}
   if(c.tri==='VERMELHO'||c.tri==='LARANJA'){if(P.mov.mon==null)pen.push([8,'Paciente grave sem monitorização.']);else goods.push('Paciente grave monitorizado.');if(P.mov.ace==null)pen.push([6,'Paciente grave sem acesso venoso.'])}
   if(c.visit&&window.visitPen)visitPen(P,d,pen,goods);
+  if(typeof ISO!=='undefined'){const m=P.mov||{};
+    if(c.iso){const need=ISOK[c.iso],nm=ISO.find(x=>x[0]===need)[2].toLowerCase();if(m.iso!==need)pen.push([m.iso?4:8,(m.iso?'Isolamento inadequado; o indicado era ':'Faltou isolamento: ')+nm+'.']);else goods.push('Isolamento correto.')}
+    else if(m.iso)pen.push([2,'Isolamento sem indicação (leito de isolamento ocupado).'])}
+  if(d==='ALTA'&&c.ret){if(!P.ret)pen.push([3,'Alta sem retorno definido.']);else if(!c.ret.includes(P.ret))pen.push([2,'Retorno inadequado para o quadro.']);else goods.push('Retorno adequado.');
+    P.rx.filter(r=>DRUGS[r.id]&&isEVrx(DRUGS[r.id],r.via)&&r.freq!=='u'&&!['u','h24'].includes(r.dur)).forEach(r=>pen.push([3,'Alta com '+DRUGS[r.id].n+' EV em uso contínuo: suspenda e passe para VO na receita.']))}
+  if(P.rx.some(r=>r.id==='ccih')&&!P.rx.some(r=>RESTR.includes(r.id)))pen.push([3,'Solicitação à CCIH sem antimicrobiano restrito.']);
+  if(P.ksPend&&P.ksPend.some(x=>x.ccih))pen.push([5,'Antimicrobiano restrito prescrito sem a ficha da CCIH: a farmácia não dispensou.']);
   if(P.worst<=-2)pen.push([20,'Deterioração clínica importante durante o atendimento.']);else if(P.worst===-1)pen.push([8,'Piora clínica durante o atendimento.']);
   if(d==='TRANS'&&P.stage<0)pen.push([25,'Transferido ainda instável.']);
   let sc=100;const errs=[];pen.forEach(([p,t])=>{sc-=p;errs.push(t)});sc=clamp(sc);

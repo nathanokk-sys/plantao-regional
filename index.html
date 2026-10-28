@@ -147,6 +147,27 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .grid.mov{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
 .grid.mov .opt{overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Parte 10: laudos, receita, suspensão */
+.labw{border:2px solid var(--ink2);padding:6px 8px;margin:8px 0;background:var(--paper)}
+.labh{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.labh b{font-size:20px}.labh small{flex-basis:100%;color:var(--ink2);font-size:16px}
+.labh .ibtn{position:static;margin-left:auto}
+table.lab{width:100%;border-collapse:collapse;font-size:17px;margin-top:4px;table-layout:fixed}
+table.lab td:nth-child(1),table.lab th:nth-child(1){width:38%}table.lab td:nth-child(3),table.lab th:nth-child(3){width:30%;overflow-wrap:anywhere}
+table.lab th{text-align:left;font-weight:400;color:var(--ink2);border-bottom:2px solid var(--ink2);padding:2px 4px}
+table.lab th.grp{color:var(--ink);font-family:var(--hd);font-size:9px;padding-top:8px;border-bottom:1px dashed var(--ink2)}
+table.lab td{padding:2px 4px;border-bottom:1px dotted #b9b08f;vertical-align:top}
+table.lab td:nth-child(3){color:var(--ink2);font-size:16px}
+table.lab tr.abn td:nth-child(2){color:#9c2a1a}
+.labn,.laudo{margin:4px 0 0;font-size:18px}.labn{color:var(--ink2)}
+.btn.sm{padding:2px 8px;font-size:16px;min-height:0}
+.rxl li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}.rxl li .btn{margin-left:auto}
+.rxl.off li{opacity:.6;text-decoration:line-through}.rxl.off li small{text-decoration:none}
+.receita{background:var(--paper);color:var(--ink);padding:6px 8px;margin:6px 0;font-size:18px}
+.receita label{display:flex;flex-direction:column;gap:2px;font-size:16px;color:var(--ink2)}
+.receita select{font:inherit;font-size:18px;padding:4px;background:#f6efd6;color:var(--ink);border:2px solid var(--ink2);width:100%;max-width:100%;min-width:0}
+.receita{min-width:0;overflow-wrap:anywhere}#decide{min-width:0;max-width:100%}
+.receita p{margin:6px 0 0}
 </style>
 <div class="app" id="app">
 <div class="clockbar" id="clockbar" hidden></div>
@@ -777,6 +798,55 @@ CASES.push(
  out:{ok:'Alta com hidratação oral, sinais de alarme e retorno no dia da defervescência.',part:'Alta sem orientação de sinais de alarme.',bad:'Leito ocupado sem necessidade.',obito:''},
  ensina:'Dengue sem sinais de alarme: hidratação oral de 60 mL/kg/dia, paracetamol ou dipirona, nunca AINE, e orientação dos sinais de alarme.',ex0:'n',sw:1,pale0:0,cy:0,hand:null}
 );
+/* ===== Parte 10: mais casos de porta ===== */
+DXS.push(['tb','Tuberculose pulmonar'],['lombal','Lombalgia mecânica']);
+CASES.push(
+{id:'tb',sexo:'M',ageR:[24,58],tri:'AMARELO',queixa:'"Tô com essa tosse faz mais de um mês, hoje saiu um pouco de sangue no catarro."',
+ comorb:'Nenhuma conhecida.',uso:'Xarope caseiro.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Tem febre? Em que horário?','No fim da tarde, todo dia, e acordo molhado de suor.',1],['Perdeu peso?','Uns oito quilos em dois meses, a roupa tá larga.',1],['Alguém em casa com tosse parecida?','Meu cunhado, que mora com a gente, tratou "um negócio do pulmão" ano passado.',1],['Quanto sangue saiu?','Só uns rajados no catarro, nada de golfar.']],
+ ex:{geral:'Emagrecido, descorado +/4, febril.',resp:'Estertores e sopro tubário em ápice direito, sem esforço respiratório.',cardio:'Taquicardia leve.',cab:'Sem linfonodomegalias palpáveis.'},
+ res:{rx:'Cavitação de paredes espessas em ápice direito com infiltrado ao redor.',bacil:'BAAR positivo (++) · TRM-TB: M. tuberculosis detectado, sem resistência à rifampicina.',escarro:'Flora mista, sem predomínio.',hemo:'Hb 11,2 · leucócitos 9.400.',sorol:'HIV não reagente.',cr:'Ureia 28 · Cr 0,8.'},
+ util:['rx','bacil','escarro','hemo','sorol','cr'],evid:['bacil'],hyp:'tb',iso:'aer',
+ key:[{ids:['ripe'],ok:[1],by:360,lb:'Esquema RIPE (dose por peso)'}],allowed:['dipi','para'],
+ contra:{cipro:'Fluoroquinolona sem confirmação: mascara a tuberculose e favorece resistência.',levo:'Fluoroquinolona sem confirmação: mascara a tuberculose e favorece resistência.'},
+ vit:{0:['118/74',100,20,95,37.9],1:['116/72',88,18,96,37.2],'-1':['112/70',108,24,93,38.4],'-2':['104/66',116,28,91,38.8]},reav:{0:'Tossindo, sem sangramento ativo.',1:'Estável, tosse menor.','-1':'Mais cansado.','-2':'Hemoptise maior.'},
+ fatal:0,fatalBy:999,tEff:60,dest:{best:['ALTA'],ok:['ENF'],alta:1},ret:['ubs7'],
+ out:{ok:'Isolado no pronto-socorro, confirmado, notificado e encaminhado para tratamento diretamente observado na UBS.',part:'Saiu sem isolamento adequado ou sem esquema.',bad:'Ficou na sala de espera tossindo, sem máscara, por horas.',obito:''},
+ ensina:'Tuberculose pulmonar: isolamento respiratório (aerossóis) desde a suspeita, baciloscopia ou TRM-TB, teste de HIV, notificação, RIPE por peso e tratamento diretamente observado na UBS. Avaliar os contatos.',ex0:'n',sw:1,pale0:1,cy:0,hand:null},
+{id:'erisip',sexo:'*',ageR:[40,70],tri:'VERDE',queixa:'"Minha perna tá vermelha, quente e inchada desde ontem, e tive calafrio."',
+ comorb:'Pressão alta.',uso:'Losartana.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Tem ferida ou micose entre os dedos?','Tenho uma frieira que não sara.',1],['A vermelhidão está crescendo rápido ou com bolhas escuras?','Não, só vermelha e quente.',1],['Tem diabetes?','Não.']],
+ ex:{geral:'Bom estado geral, febril.',ext:'Placa eritematosa de bordas nítidas em perna esquerda, quente, sem crepitação nem necrose; intertrigo interdigital.',cardio:'Sem alterações.'},
+ res:{hemo:'Leucócitos 12.600.',pcr:'Elevada.',cr:'Ureia 32 · Cr 0,9.'},util:['hemo','pcr'],evid:[],hyp:'cel',
+ key:[{ids:['cefal','amox','peni'],ok:{cefal:[1],amox:[1],peni:[1]},by:300,lb:'Antibiótico para estreptococo (cefalexina ou amoxicilina)'}],allowed:['dipi','para','ibu'],
+ contra:{},
+ vit:{0:['132/84',96,16,98,38.3],1:['128/80',82,16,98,37.1],'-1':['126/78',104,18,98,38.8],'-2':['112/70',112,20,97,39.1]},reav:{0:'Febril.',1:'Febre cedeu.','-1':'Placa aumentou.','-2':'Febre alta e placa maior.'},
+ fatal:0,fatalBy:999,tEff:30,dest:{best:['ALTA'],ok:['OBS','AMA'],alta:1},ret:['r48'],
+ out:{ok:'Alta com antibiótico oral, perna elevada, tratamento da porta de entrada e reavaliação em 48 h.',part:'Alta sem esquema adequado.',bad:'Internação sem necessidade.',obito:''},
+ ensina:'Erisipela sem sinais de gravidade: cefalexina 500 mg 6/6 h ou amoxicilina por 7 a 10 dias, elevar o membro, tratar a micose interdigital e reavaliar em 48 h.',ex0:'n',sw:0,pale0:0,cy:0,hand:null},
+{id:'lombal',sexo:'*',ageR:[25,55],tri:'AZUL',queixa:'"Travei as costas carregando saco de cimento hoje cedo."',
+ comorb:'Nenhuma.',uso:'Nenhum.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['A dor desce para a perna, ou tem fraqueza ou dormência?','Não, fica só na lombar.',1],['Perdeu controle de urina ou fezes? Teve febre?','Não.',1],['Tem câncer ou perdeu peso?','Não.']],
+ ex:{geral:'Bom estado geral, dor à movimentação.',neuro:'Força e reflexos preservados, Lasègue negativo.',ext:'Contratura paravertebral lombar.'},
+ res:{rx:'Sem alterações.',tc:'Sem alterações.'},util:[],evid:[],hyp:'lombal',
+ key:[{ids:['dipi','ibu','para','diclo','ceto'],ok:{dipi:[1],ibu:[1],para:[2],diclo:[0],ceto:[1]},by:60,lb:'Analgesia simples ou AINE'}],allowed:['hioscomp'],
+ contra:{morf:'Opioide forte em lombalgia mecânica simples: sem benefício e com risco.'},
+ vit:{0:['128/80',84,16,98,36.5],1:NORMV,'-1':['134/84',90,16,98,36.5],'-2':['138/86',94,16,98,36.5]},reav:{0:'Ainda com dor.',1:'Dor aliviada.','-1':'Dor pior.','-2':'Dor intensa.'},
+ fatal:0,fatalBy:999,tEff:30,dest:{best:['ALTA'],ok:[],alta:1},ret:['ubs7','sn'],
+ out:{ok:'Alta com analgésico, orientação de manter-se ativo e retorno à UBS.',part:'Alta ainda com dor.',bad:'Exames de imagem e leito sem necessidade.',obito:''},
+ ensina:'Lombalgia mecânica sem bandeiras vermelhas: analgésico ou AINE por poucos dias, manter atividade, sem exame de imagem.',ex0:'p',sw:0,pale0:0,cy:0,hand:'abd'},
+{id:'ansied',sexo:'F',ageR:[18,40],tri:'VERDE',queixa:'"Meu coração disparou, formigou a boca e as mãos, achei que ia morrer."',
+ comorb:'Nenhuma.',uso:'Nenhum.',alergia:[],alergiaTxt:'Nenhuma.',
+ perg:[['Já aconteceu antes?','Umas três vezes este mês, sempre depois de discussão em casa.',1],['Tem dor no peito ao esforço ou desmaiou?','Não, foi parada em casa.',1],['Usa alguma droga ou estimulante?','Não, só café.']],
+ ex:{geral:'Ansiosa, hiperventilando, sem cianose.',cardio:'Taquicardia regular, sem sopros.',resp:'Murmúrio presente, sem ruídos.',neuro:'Parestesia perioral, sem déficit.'},
+ res:{ecg:'Taquicardia sinusal de 112 bpm, sem outras alterações.',glic:'98 mg/dL.',trop:'Normal.',hemo:'Sem alterações.'},util:['ecg','glic'],evid:['ecg'],hyp:'ans',
+ key:[],allowed:['diaz'],
+ contra:{},
+ vit:{0:['132/84',112,26,99,36.6],1:['122/78',86,16,99,36.6],'-1':['136/86',118,28,99,36.6],'-2':['138/88',122,30,99,36.6]},reav:{0:'Ainda ansiosa.',1:'Mais calma, respirando devagar.','-1':'Mais agitada.','-2':'Muito agitada.'},
+ fatal:0,fatalBy:999,tEff:20,dest:{best:['ALTA'],ok:['OBS'],alta:1},ret:['ubs7','amb'],
+ out:{ok:'Descartada causa orgânica; alta com acolhimento e encaminhamento à saúde mental (UBS/CAPS).',part:'Alta sem encaminhamento.',bad:'Exames e leito sem necessidade.',obito:''},
+ ensina:'Crise de ansiedade: acolher, ECG e glicemia para afastar causa orgânica, técnica de respiração; benzodiazepínico só se necessário e em dose baixa. Encaminhar para saúde mental.',ex0:'a',sw:1,pale0:0,cy:0,hand:null}
+);
 /* ===== Parte 6: oxigênio específico, diluições, mais medicamentos, procedimentos, exames agrupados ===== */
 /* oxigênio: dispositivos em ordem crescente de suporte */
 DRUGS.o2={n:'Oxigênio',v:['Inalatória'],d:['Cateter nasal 1–5 L/min (FiO2 ~24–40%)','Máscara de Venturi 24–50% (FiO2 fixa)','Máscara não reinalante com reservatório 10–15 L/min','VNI / CPAP 8–10 cmH2O'],f:'ic',dr:'ct',ae:'Excesso de oxigênio: hiperóxia e, no retentor de CO2, piora da hipercapnia.'};
@@ -932,9 +1002,9 @@ const DXG=[
 const DXGRP=(()=>{const byL=Object.fromEntries(DXS.map(([i,l])=>[l,i]));let n=0;
   const out=DXG.map(([g,L])=>[g,L.map(l=>{if(!byL[l]){const id='z'+(n++);DXS.push([id,l]);byL[l]=id}return byL[l]})]);
   const used=new Set(out.flatMap(x=>x[1]));const rest=DXS.filter(d=>!used.has(d[0])).map(d=>d[0]);if(rest.length)out.push(['Outros',rest]);return out})();
-function dxOpts(P){
-  const lab=Object.fromEntries(DXS.map(d=>[d[0],d[1]]));
-  return DXGRP.map(([g,L])=>'<optgroup label="'+g+'">'+L.slice().sort((a,b)=>lab[a].localeCompare(lab[b],'pt')).map(k=>'<option value="'+k+'"'+(P.hyp===k?' selected':'')+'>'+lab[k]+'</option>').join('')+'</optgroup>').join('');
+function dxOpts(P,q){
+  const lab=Object.fromEntries(DXS.map(d=>[d[0],d[1]])),nz=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),Q=nz(q||'');
+  return DXGRP.map(([g,L0])=>{const L=L0.filter(k=>!Q||nz(lab[k]).includes(Q));return L.length?[g,L]:null}).filter(Boolean).map(([g,L])=>'<optgroup label="'+g+'">'+L.slice().sort((a,b)=>lab[a].localeCompare(lab[b],'pt')).map(k=>'<option value="'+k+'"'+(P.hyp===k?' selected':'')+'>'+lab[k]+'</option>').join('')+'</optgroup>').join('');
 }
 /* prescrição por abas (um medicamento pode estar em mais de uma) */
 CATS.length=0;CATS.push(
@@ -995,7 +1065,7 @@ CASES.forEach(c=>{(REQIND[c.id]||[]).forEach(r=>c.allowed.push(r));c.allowed.pus
 const REQOK={eda:'EDA realizada: ',eco:'Ecocardiograma realizado sem intercorrências.',hd:'Hemodiálise de urgência realizada; potássio normalizado.',pcir:'A cirurgia geral avaliou e acompanha o caso.',pcard:'A cardiologia avaliou e concordou com a conduta.',pneuro:'A neurologia avaliou e ajustou os anticonvulsivantes.',pgastro:'A gastroenterologia avaliou e acompanha o caso.',pinfec:'A infectologia avaliou e ajustou o esquema.',fisio:'A fisioterapia acompanhou a ventilação.',nutri:'A nutrição ajustou a dieta.',social:'O serviço social organizou o acesso aos remédios e o retorno.'};
 function reqNews(P){
   const c=P.c,b=c.base||c.id,ind=REQIND[b]||[],out=[],S=P.reqSt=P.reqSt||{};
-  P.rx.filter(r=>DRUGS[r.id]&&DRUGS[r.id].v[0]==='Solicitação').forEach(r=>{
+  P.rx.filter(r=>DRUGS[r.id]&&DRUGS[r.id].v[0]==='Solicitação'&&r.id!=='ccih').forEach(r=>{
     const n=DRUGS[r.id].n;
     if(!ind.includes(r.id)){S[r.id]='noind';out.push(n+': "Sem indicação de avaliação neste caso."');return}
     if(r.id==='eda'){
@@ -1010,7 +1080,10 @@ function reqNews(P){
 }
 function doReq(P,id){
   const r=rxAdd(P,{drug:id,dose:0,via:0,freq:'u',dur:'u'},true);if(r)return r;
-  P.log.push({t:G.t,k:'p',q:'Solicitação',a:DRUGS[id].n+': pedido feito.',fresh:1});adv(1);return null;
+  P.log.push({t:G.t,k:'p',q:'Solicitação',a:DRUGS[id].n+': pedido feito.',fresh:1});
+  if(id==='ccih'){let n=0;(P.ksPend||[]).forEach(x=>{if(x.ccih){x.ccih=0;x.at=G.t+15;n++}});P.rx.forEach(r=>{if(r.ccih){r.ccih=0;n++}});
+    P.log.push({t:G.t,k:'p',q:'CCIH',a:n?'Ficha recebida. A farmácia libera o antimicrobiano em cerca de 15 minutos.':'Ficha registrada. Quando houver antimicrobiano restrito, a farmácia libera direto.',fresh:1})}
+  adv(1);return null;
 }
 /* erros de interno (baixa, mas presente: 10%), de aparelho (5%) e de laboratório/técnicos (3%) */
 const LABERR=['Amostra hemolisada. Peça de novo.','A requisição não desceu para o laboratório (ficou esquecida no posto). Peça de novo.','Amostra coagulada no tubo. Peça de novo.'];
@@ -1029,6 +1102,33 @@ function idealFor(c){
     ...(c.evid.length?['Confirmar com: '+c.evid.map(e=>EXAMS[e]?EXAMS[e].n:e).join(' ou ')]:[]),
     ...(REQIND[b]||[]).slice(0,2).map(r=>DRUGS[r].n)];
 }
+/* ===== Parte 10: ajustes de dados (abas, CCIH, isolamento, retorno, sintomáticos) ===== */
+/* remédios que estavam fora das abas */
+(()=>{const add=(cat,ids)=>{const C=CATS.find(c=>c[0]===cat);ids.forEach(i=>{if(!C[1].includes(i))C[1].push(i)})};
+  add('Antibióticos',['nitrof','fosfo']);add('Soros e soluções',['sro']);add('Gastrointestinal',['sro','simet']);add('Dor e febre',['para','ibu'])})();
+/* dipirona também por via oral (receita de alta) */
+if(!DRUGS.dipi.v.includes('VO'))DRUGS.dipi.v.push('VO');
+DRUGS.dipi.dr='d3 ct u d5';
+/* sintomáticos não contam como "prescrição sem indicação" (a contraindicação continua valendo) */
+const SYMPT=['dipi','para','ondan','bromo','metoc','simet','hiosc','hioscomp','omep'];
+CASES.forEach(c=>SYMPT.forEach(s=>{if(!c.allowed.includes(s))c.allowed.push(s)}));
+/* antimicrobianos de uso restrito: a farmácia só dispensa com a ficha da CCIH */
+const RESTR=['anfo','mero','vanco','pip','cefep','ceftaz','amica'];
+REQS.push(['ccih','Solicitação à CCIH (antimicrobiano restrito)']);
+DRUGS.ccih={n:'Solicitação à CCIH (antimicrobiano restrito)',v:['Solicitação'],d:['Pedido'],f:'u',dr:'u'};
+/* isolamento */
+const ISO=[['isoc','contato','Isolamento de contato'],['isog','gotículas','Isolamento para gotículas'],['isoa','aerossóis','Isolamento para aerossóis'],['isop','protetor','Isolamento protetor (reverso)']];
+const ISOK={aer:'isoa',got:'isog',con:'isoc',prot:'isop'};
+(CASES.find(c=>c.id==='neutro')||{}).iso='prot';
+/* retorno da alta */
+const RET=[['r24','Reavaliação diária (até 48 h após a febre ceder)'],['r48','Reavaliação em 48 a 72 h'],['ubs7','UBS em 7 dias'],['amb','Ambulatório de especialidade'],['sn','Só se piorar (sinais de alarme)']];
+const RETC={pneuleve:['r48'],dengsa:['r24'],cist:['sn','ubs7'],asmamod:['ubs7','amb'],colren:['ubs7','amb','sn'],geaa:['sn','ubs7'],urtic:['sn','ubs7'],enxaq:['ubs7','amb'],faring:['sn','ubs7'],has:['ubs7']};
+CASES.forEach(c=>{if(!c.ret)c.ret=RETC[c.id]||['ubs7','amb','r48']});
+ORIENT.splice(0,ORIENT.length,...ORIENT.filter(o=>o[0]!=='ubs'));
+/* hemoculturas ficam prontas no 3º dia de internação */
+const HEMOC={sepse:'Escherichia coli em 2 de 2 amostras, sensível a ceftriaxona, resistente a ampicilina.',neutro:'Sem crescimento bacteriano em 48 h.'};
+/* novos casos recebem a Hb rápida, como os outros */
+CASES.forEach(c=>{if(!c.res.hbrap){const m=(c.res.hemo||'').match(/Hb\s*([\d,]+)/);c.res.hbrap=(m?'Hb '+m[1]:'Hb 13,1')+' g/dL (capilar, valor aproximado).'}});
 /* ===== PIXEL ART: cada paciente é desenhado em 160x120 e ampliado sem suavização ===== */
 const SKIN=['#f1cfa8','#e2b085','#cb915f','#a9693f','#85502f','#5f3a22'];
 const sh=(h,k)=>{const n=parseInt(h.slice(1),16),f=x=>Math.max(0,Math.min(255,Math.round(x*k)));return'#'+[n>>16,(n>>8)&255,n&255].map(x=>f(x).toString(16).padStart(2,'0')).join('')};
@@ -1247,18 +1347,19 @@ function rxAdd(P,f,free){
   c.key.forEach((k,ki)=>{
     if(!k.ids.includes(id))return;isKey=true;
     const ok=okIdx(k,id);
-    if(ok.includes(i)){if(P.ks[ki]==null&&!handled){if(isEVrx(D,f.via)&&Math.random()<.01){P.ksPend=(P.ksPend||[]).concat([{ki,at:G.t+30}]);P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'A medicação foi trocada com a do leito vizinho; o erro foi percebido a tempo e a dose certa atrasou 30 min.',fresh:1});alert_(fmt(G.t)+' Enfermagem: troca de medicação com o leito vizinho percebida a tempo; '+D.n+' atrasou 30 min.',true)}else P.ks[ki]=G.t}}
+    if(ok.includes(i)){if(P.ks[ki]==null&&!handled){if(RESTR.includes(id)&&!P.rx.some(r=>r.id==='ccih')){P.ksPend=(P.ksPend||[]).concat([{ki,at:1e9,ccih:1}])}else if(isEVrx(D,f.via)&&Math.random()<.01){P.ksPend=(P.ksPend||[]).concat([{ki,at:G.t+30}]);P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'A medicação foi trocada com a do leito vizinho; o erro foi percebido a tempo e a dose certa atrasou 30 min.',fresh:1});alert_(fmt(G.t)+' Enfermagem: troca de medicação com o leito vizinho percebida a tempo; '+D.n+' atrasou 30 min.',true)}else P.ks[ki]=G.t}}
     else if(i>Math.max(...ok)){if(!handled){addAE(P,D.ae||'Dose acima da recomendada.',12,'Dose acima da recomendada: '+D.n+'.');handled=true}}
     else if(id!=='o2')P.pen.push([6,'Dose insuficiente: '+D.n+'.']);
   });
   if(!isKey&&!handled){
-    if(c.allowed.includes(id)||id==='o2'){if(D.tox!=null&&i>=D.tox)addAE(P,D.ae,12,'Dose acima da recomendada: '+D.n+'.')}
+    if(c.allowed.includes(id)||id==='o2'||id==='ccih'){if(D.tox!=null&&i>=D.tox)addAE(P,D.ae,12,'Dose acima da recomendada: '+D.n+'.')}
     else if(['iot','cvc','dreno','parac','cardiov','desfib'].includes(id))addAE(P,'Procedimento invasivo sem indicação: '+D.n.toLowerCase()+' com complicação (sangramento, pneumotórax, infecção ou lesão de via aérea).',20,'Procedimento invasivo sem indicação: '+D.n+'.');
     else if(D.v[0]==='Solicitação'){P.pen.push([3,'Solicitação sem indicação: '+D.n+'.']);if(window.rqe)rqe('ex',.5)}
     else{P.pen.push([6,'Prescrição sem indicação: '+D.n+'.']);G.ins=Math.max(0,G.ins-1)}
   }
   if(!D.f.split(' ').includes(f.freq)||!D.dr.split(' ').includes(f.dur))P.pen.push([3,'Frequência ou duração inadequada: '+D.n+'.']);
   P.rx.push(rx);
+  if(RESTR.includes(id)&&!P.rx.some(r=>r.id==='ccih')){rx.ccih=1;P.log.push({t:G.t,k:'m',q:'Farmácia',a:D.n+' é antimicrobiano de uso restrito: só é dispensado com a ficha de solicitação à CCIH (aba Procedimentos e pedidos).',fresh:1});alert_(fmt(G.t)+' Farmácia: '+D.n+' aguardando a ficha da CCIH.',true)}
   if(/EV/.test(D.v[f.via||0])&&P.mov.ace==null){P.mov.ace=G.t;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Acesso venoso puncionado para a medicação EV.',fresh:1})}
   adv(free?0:1);return null;
 }
@@ -1298,6 +1399,13 @@ function finalize(P,d,fromReg){
   if(P.seen!=null){const w=Math.round(P.seen-c.arr);if(c.tri==='VERMELHO'&&w>12)pen.push([10,'Atendimento tardio de paciente vermelho (espera de '+w+' min).']);else if(c.tri==='LARANJA'&&w>25)pen.push([5,'Atendimento tardio de paciente laranja (espera de '+w+' min).'])}
   if(c.tri==='VERMELHO'||c.tri==='LARANJA'){if(P.mov.mon==null)pen.push([8,'Paciente grave sem monitorização.']);else goods.push('Paciente grave monitorizado.');if(P.mov.ace==null)pen.push([6,'Paciente grave sem acesso venoso.'])}
   if(c.visit&&window.visitPen)visitPen(P,d,pen,goods);
+  if(typeof ISO!=='undefined'){const m=P.mov||{};
+    if(c.iso){const need=ISOK[c.iso],nm=ISO.find(x=>x[0]===need)[2].toLowerCase();if(m.iso!==need)pen.push([m.iso?4:8,(m.iso?'Isolamento inadequado; o indicado era ':'Faltou isolamento: ')+nm+'.']);else goods.push('Isolamento correto.')}
+    else if(m.iso)pen.push([2,'Isolamento sem indicação (leito de isolamento ocupado).'])}
+  if(d==='ALTA'&&c.ret){if(!P.ret)pen.push([3,'Alta sem retorno definido.']);else if(!c.ret.includes(P.ret))pen.push([2,'Retorno inadequado para o quadro.']);else goods.push('Retorno adequado.');
+    P.rx.filter(r=>DRUGS[r.id]&&isEVrx(DRUGS[r.id],r.via)&&r.freq!=='u'&&!['u','h24'].includes(r.dur)).forEach(r=>pen.push([3,'Alta com '+DRUGS[r.id].n+' EV em uso contínuo: suspenda e passe para VO na receita.']))}
+  if(P.rx.some(r=>r.id==='ccih')&&!P.rx.some(r=>RESTR.includes(r.id)))pen.push([3,'Solicitação à CCIH sem antimicrobiano restrito.']);
+  if(P.ksPend&&P.ksPend.some(x=>x.ccih))pen.push([5,'Antimicrobiano restrito prescrito sem a ficha da CCIH: a farmácia não dispensou.']);
   if(P.worst<=-2)pen.push([20,'Deterioração clínica importante durante o atendimento.']);else if(P.worst===-1)pen.push([8,'Piora clínica durante o atendimento.']);
   if(d==='TRANS'&&P.stage<0)pen.push([25,'Transferido ainda instável.']);
   let sc=100;const errs=[];pen.forEach(([p,t])=>{sc-=p;errs.push(t)});sc=clamp(sc);
@@ -1413,6 +1521,7 @@ const MOV=[['pac','Pacote MOV',0],['mon','Monitorizar',0],['ace','Acesso venoso'
 /* medidas básicas: a enfermagem executa em paralelo, sem custo de tempo e sem penalidade por excesso */
 function doMov(P,k){
   P.mov=P.mov||{};
+  if(/^iso[cgap]$/.test(k))return doIso(P,k);
   if(k==='pac'){['mon','ace'].forEach(x=>doMov(P,x));['glic','ecg'].forEach(x=>{if(!P.ord[x])order(P,x,true)});return null}
   if(k==='glic'||k==='ecg')return P.ord[k]?null:order(P,k,true);
   if(k==='o2c'||k==='o2v'||k==='o2m'||k==='vni')return rxAdd(P,{drug:'o2',dose:{o2c:0,o2v:1,o2m:2,vni:3}[k],via:0,freq:'ic',dur:'ct'},true);
@@ -1424,7 +1533,7 @@ function movHtml(P){
   const m=P.mov||{},o2r=P.rx.find(r=>r.id==='o2'),o2=o2r?o2r.i:-1;
   const on=k=>k==='pac'?(m.mon!=null&&m.ace!=null&&!!P.ord.glic&&!!P.ord.ecg):k==='glic'||k==='ecg'?!!P.ord[k]:k==='o2c'?o2===0:k==='o2v'?o2===1:k==='o2m'?o2===2:k==='vni'?o2===3:m[k]!=null;
   return'<div class="doc px"><h3>Medidas iniciais <span>enfermagem executa, sem custo de tempo</span></h3><div class="grid mov">'+MOV.map(([k,n,t])=>{const d=on(k);
-    return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d&&k!=='jej'?' disabled':'')+'>'+n+'<small>'+(d&&k==='jej'?'ativa · toque para liberar':d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG':'imediato')+'</small></button>'}).join('')+'</div></div>';
+    return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d&&k!=='jej'?' disabled':'')+'>'+n+'<small>'+(d&&k==='jej'?'ativa · toque para liberar':d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG':'imediato')+'</small></button>'}).join('')+'</div>'+(window.isoHtml?isoHtml(P):'')+'</div>';
 }
 /* ===== procedimentos e lista de medicamentos por classe ===== */
 function doProc(P,id){
@@ -1545,6 +1654,146 @@ function saveInfo(){
 }
 function nextN(){try{return(JSON.parse(localStorage.getItem('pr_save')||'{"shifts":[]}').shifts.length||0)+1}catch(e){return 1}}
 function resetAll(){['pr_cur','pr_save','pr_hist','pr_used','pr_week'].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});G=null;W=null;UI.menu=false;UI.confirmReset=false}
+/* ===== Parte 10: laudos completos (hemograma, gasometria com íons, bioquímica), com data, hora e referência ===== */
+const num=s=>s==null?null:parseFloat(String(s).replace(/\./g,'').replace(',','.'));
+const numD=s=>s==null?null:parseFloat(String(s).replace(',','.'));
+const grab=(t,re,f)=>{const m=(t||'').match(re);return m?(f||numD)(m[1]):null};
+const fmtN=(v,d)=>{if(typeof v==='string')return v;if(v==null||isNaN(v))return'—';
+  if(d<0){const p=Math.pow(10,-d);v=Math.round(v/p)*p;return Math.round(v).toLocaleString('pt-BR')}
+  return v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d})};
+/* [chave, rótulo, unidade, [ref baixa, ref alta], casas decimais] */
+const LP={
+ hemo:{n:'Hemograma completo',rows:[['hem','Hemácias','milhões/mm³',[4.2,5.9],2],['hb','Hemoglobina','g/dL',[12,16],1],['ht','Hematócrito','%',[36,48],0],['vcm','VCM','fL',[80,100],0],['hcm','HCM','pg',[27,33],0],['rdw','RDW','%',[11.5,14.5],1],
+   ['leu','Leucócitos','/mm³',[4000,11000],-2],['seg','Segmentados','%',[40,75],0],['bas','Bastões','%',[0,5],0],['lin','Linfócitos','%',[20,45],0],['mon','Monócitos','%',[2,10],0],['eos','Eosinófilos','%',[1,5],0],['plq','Plaquetas','/mm³',[150000,450000],-3]],sec:['Série vermelha',0,6,'Série branca',6,12,'Plaquetas',12,13]},
+ gaso:{n:'Gasometria arterial com eletrólitos',rows:[['ph','pH','',[7.35,7.45],2],['pco2','pCO2','mmHg',[35,45],0],['po2','pO2','mmHg',[80,100],0],['hco3','HCO3','mEq/L',[22,26],1],['be','Excesso de base','mEq/L',[-2,2],1],['sat','SatO2','%',[95,100],0],['lac','Lactato','mmol/L',[0.5,2.0],1],
+   ['na','Sódio','mEq/L',[135,145],0],['k','Potássio','mEq/L',[3.5,5.0],1],['cl','Cloro','mEq/L',[98,107],0],['cai','Cálcio iônico','mmol/L',[1.12,1.32],2],['gli','Glicose','mg/dL',[70,99],0],['ag','Ânion gap','mEq/L',[8,12],0]]},
+ eletr:{n:'Eletrólitos',rows:[['na','Sódio','mEq/L',[135,145],0],['k','Potássio','mEq/L',[3.5,5.0],1],['cl','Cloro','mEq/L',[98,107],0]]},
+ cr:{n:'Função renal',rows:[['ur','Ureia','mg/dL',[15,45],0],['cr','Creatinina','mg/dL',[0.6,1.2],1]]},
+ calc:{n:'Cálcio, magnésio e fósforo',rows:[['ca','Cálcio total','mg/dL',[8.5,10.5],1],['mg','Magnésio','mg/dL',[1.7,2.4],1],['p','Fósforo','mg/dL',[2.5,4.5],1]]},
+ coag:{n:'Coagulograma',rows:[['tp','Tempo de protrombina','s',[11,13.5],1],['inr','INR','',[0.8,1.2],1],['ttpa','TTPa','s',[25,35],0],['fib','Fibrinogênio','mg/dL',[200,400],0]]},
+ hepat:{n:'Função hepática',rows:[['tgo','TGO (AST)','U/L',[5,40],0],['tgp','TGP (ALT)','U/L',[7,56],0],['fa','Fosfatase alcalina','U/L',[40,129],0],['ggt','GGT','U/L',[8,61],0],['bt','Bilirrubina total','mg/dL',[0.2,1.2],1],['bd','Bilirrubina direta','mg/dL',[0,0.3],1],['alb','Albumina','g/dL',[3.5,5.2],1],['glo','Globulinas','g/dL',[2.0,3.5],1]]},
+ glic:{n:'Glicemia capilar',rows:[['g','Glicemia capilar','mg/dL',[70,140],0]]},
+ lact:{n:'Lactato',rows:[['lac','Lactato arterial','mmol/L',[0.5,2.0],1]]},
+ pcr:{n:'Provas inflamatórias',rows:[['pcr','Proteína C reativa','mg/L',[0,5],0],['vhs','VHS','mm/h',[0,20],0]]},
+ trop:{n:'Troponina',rows:[['tro','Troponina I ultrassensível','ng/L',[0,26],0]]},
+ ck:{n:'CPK',rows:[['ck','CPK total','U/L',[26,192],0]]},
+ amil:{n:'Enzimas pancreáticas',rows:[['ami','Amilase','U/L',[28,100],0],['lip','Lipase','U/L',[13,60],0]]},
+ tsh:{n:'Função tireoidiana',rows:[['tsh','TSH','µUI/mL',[0.4,4.5],2],['t4','T4 livre','ng/dL',[0.9,1.7],1]]},
+ dimero:{n:'D-dímero',rows:[['dd','D-dímero','ng/mL FEU',[0,500],0]]},
+ cet:{n:'Cetonemia',rows:[['bhb','Beta-hidroxibutirato','mmol/L',[0,0.6],1]]},
+ hbrap:{n:'Hb rápida (hemoglobinômetro)',rows:[['hb','Hemoglobina capilar','g/dL',[12,17],1]]},
+ urina:{n:'Urina tipo I (EAS)',rows:[['dens','Densidade','',[1.005,1.030],3],['uph','pH','',[5,7],1],['prot','Proteínas','',null,0],['ugli','Glicose','',null,0],['ucet','Corpos cetônicos','',null,0],['nit','Nitrito','',null,0],['uleu','Leucócitos','/campo',[0,5],0],['uhem','Hemácias','/campo',[0,3],0],['bact','Bactérias','',null,0]]}
+};
+const GASO_IONS=['gaso','eletr','calc','lact','glic','cet'];
+function rnd01(seed){let x=Math.sin(seed*9301+49297)*233280;return x-Math.floor(x)}
+function seedOf(P,k){let h=0;const s=P.id+k;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h)%100000}
+function normV(P,k,ref,d){const r=rnd01(seedOf(P,k));const v=ref[0]+(ref[1]-ref[0])*(.3+.4*r);return d<0?v:Math.round(v*Math.pow(10,d))/Math.pow(10,d)}
+/* lê os números que o caso já traz e completa o resto com valores normais coerentes */
+function labVals(P,id){
+  const c=P.c,R=c.res,t=R[id]||'',F=c.sexo==='F',out={},b=c.base||c.id;
+  const def=(k,ref,d)=>{if(out[k]==null)out[k]=normV(P,id+k,ref,d)};
+  const ok=/sem altera|normal/i.test(t);
+  if(id==='hemo'||id==='hbrap'){
+    const h=R.hemo||'';out.hb=grab(h,/\bHb\s*([\d,]+)/);out.ht=grab(h,/(?:\bHt|hemat[óo]crito)\s*([\d,]+)/i);out.vcm=grab(h,/VCM\s*([\d,]+)/);
+    out.leu=grab(h,/leuc[óo]citos\s*([\d.]+)/i,num);out.plq=grab(h,/plaquetas\s*([\d.]+)/i,num);out.bas=grab(h,/([\d,]+)\s*%\s*de\s*bast/i);
+    const neu=grab(h,/neutr[óo]filos\s*([\d.]+)/i,num);
+    if(/pancitopenia/i.test(h)){out.hb=out.hb||8.1;out.leu=out.leu||2300;out.plq=out.plq||72000}
+    if(id==='hbrap')return{hb:out.hb!=null?out.hb:normV(P,'hemohb',F?[12.5,14.5]:[13.8,16],1)};
+    if(out.hb==null&&out.ht!=null)out.hb=Math.round(out.ht/3*10)/10;
+    def('hb',F?[12.5,14.5]:[13.8,16],1);if(out.ht==null)out.ht=Math.round(out.hb*3);
+    out.hem=Math.round(out.hb/(out.vcm&&out.vcm>100?3.4:2.95)*100)/100;def('vcm',[84,94],0);out.hcm=Math.round(out.hb/out.hem*10);def('rdw',[12,13.8],1);if(out.vcm>100)out.rdw=15.6;
+    def('leu',[5200,8800],-2);
+    if(neu!=null&&neu<1500)out.seg=Math.max(1,Math.round(neu/out.leu*100));
+    else if(out.leu>12000)out.seg=out.bas>8?70:82;
+    def('seg',[52,66],0);if(out.bas==null)out.bas=out.leu>15000?6:out.seg<20?0:2;
+    out.mon=out.seg<20?4:6;out.eos=out.seg<20?0:2;out.lin=Math.max(3,100-out.seg-out.bas-out.mon-out.eos);
+    def('plq',[190000,320000],-3);
+  }
+  if(id==='gaso'){
+    const ga=R.gaso||'',el=R.eletr||'';
+    out.ph=grab(ga,/pH\s*([\d,]+)/);out.pco2=grab(ga,/pCO2\s*([\d,]+)/);out.po2=grab(ga,/pO2\s*([\d,]+)/);out.hco3=grab(ga,/HCO3\s*([\d,]+)/);
+    out.lac=grab(ga,/lactato\s*([\d,]+)/i);if(out.lac==null)out.lac=grab(R.lact||'',/^([\d,]+)/);
+    out.na=grab(el,/\bNa\s*([\d,]+)/);out.k=grab(el,/\bK\s*([\d,]+)/);
+    const gl=R.glic||'';out.gli=/HI/.test(gl)?'> 500':grab(gl,/^([\d,]+)/);
+    const a=x=>Math.pow(10,x-6.1);
+    if(out.ph!=null&&out.pco2!=null&&out.hco3==null)out.hco3=Math.round(.03*out.pco2*a(out.ph)*10)/10;
+    else if(out.ph!=null&&out.hco3!=null&&out.pco2==null)out.pco2=Math.round(out.hco3/(.03*a(out.ph)));
+    else if(out.ph==null&&out.pco2!=null&&out.hco3!=null)out.ph=Math.round((6.1+Math.log10(out.hco3/(.03*out.pco2)))*100)/100;
+    else if(out.ph!=null&&out.pco2==null&&out.hco3==null){const A=a(out.ph);if(out.ph<7.37){out.hco3=Math.round(.24*A/(1-.045*A)*10)/10;out.pco2=Math.round(1.5*out.hco3+8)}else{out.pco2=40;out.hco3=Math.round(.03*40*A*10)/10}}
+    else if(out.ph==null){out.ph=normV(P,'gph',[7.38,7.42],2);out.pco2=normV(P,'gpc',[37,43],0);out.hco3=Math.round(.03*out.pco2*a(out.ph)*10)/10}
+    if(out.po2==null){const s=+(P.c.vit[P.stage]||[0,0,0,97])[3]||97;out.po2=s>=97?normV(P,'gpo',[88,98],0):s>=94?72:s>=90?62:s>=85?52:44}
+    out.sat=Math.min(100,Math.round(100/(1+23400/(Math.pow(out.po2,3)+150*out.po2))));
+    out.be=Math.round(.93*(out.hco3-24.4+14.8*(out.ph-7.4))*10)/10;
+    def('lac',[0.8,1.6],1);def('na',[137,142],0);def('k',[3.8,4.6],1);def('cai',[1.16,1.28],2);if(out.gli==null)def('gli',[82,98],0);
+    const cr=grab(R.cr||'',/Cr\s*([\d,]+)/)||1;
+    out.ag=Math.round(12+Math.max(0,out.lac-1.5)*1.2+(cr>4?6:0)+(b==='cad'?14:0));
+    out.cl=Math.round(out.na-out.hco3-out.ag);
+  }
+  if(id==='eletr'){out.na=grab(t,/\bNa\s*([\d,]+)/);out.k=grab(t,/\bK\s*([\d,]+)/);def('na',[137,142],0);def('k',[3.8,4.6],1);
+    const hc=grab(R.gaso||'',/HCO3\s*([\d,]+)/)||24;out.cl=Math.round(out.na-hc-12)}
+  if(id==='cr'){out.ur=grab(t,/Ureia\s*([\d,]+)/i);out.cr=grab(t,/Cr\s*([\d,]+)/);def('ur',[20,38],0);def('cr',F?[0.6,0.9]:[0.8,1.1],1)}
+  if(id==='calc'){out.ca=grab(t,/C[áa]lcio\s*([\d,]+)/i);out.mg=grab(t,/Mg\s*([\d,]+)/);def('ca',[8.8,9.8],1);def('mg',[1.9,2.2],1);def('p',[3,4],1)}
+  if(id==='coag'){out.inr=grab(t,/INR\s*([\d,]+)/);if(/incoagul/i.test(t)){out.tp='> 120 (incoagulável)';out.ttpa='> 180 (incoagulável)';out.fib=/fibrinog[êe]nio baixo/i.test(t)?60:null}
+    def('inr',[0.95,1.1],1);if(out.tp==null)out.tp=Math.round(12.2*out.inr*10)/10;if(out.ttpa==null)out.ttpa=out.inr>1.5?Math.round(30+(out.inr-1)*12):normV(P,'ttpa',[27,33],0);def('fib',[240,360],0)}
+  if(id==='hepat'){out.tgo=grab(t,/TGO\s*([\d,]+)/);out.tgp=grab(t,/TGP\s*([\d,]+)/);out.ggt=grab(t,/GGT\s*([\d,]+)/);out.bt=grab(t,/bilirrubina(?: total)?\s*([\d,]+)/i);out.alb=grab(t,/albumina\s*([\d,]+)/i);out.glo=grab(t,/globulinas\s*([\d,]+)/i);
+    def('tgo',[18,32],0);def('tgp',[15,38],0);def('fa',[60,110],0);def('ggt',[15,45],0);def('bt',[0.4,0.9],1);out.bd=Math.round(out.bt*(out.bt>2?.6:.25)*10)/10;def('alb',[3.8,4.6],1);def('glo',[2.4,3.1],1)}
+  if(id==='glic')out.g=/HI/.test(t)?'HI (> 500)':grab(t,/^([\d,]+)/);
+  if(id==='lact')out.lac=grab(t,/^([\d,]+)/);
+  if(id==='pcr'){const hi=/elevad/i.test(t);out.pcr=hi?normV(P,'pcrh',[60,140],0):ok?3:grab(t,/([\d,]+)/);out.vhs=hi?normV(P,'vhs',[40,70],0):null;def('pcr',[1,4],0);def('vhs',[5,15],0)}
+  if(id==='trop'){const m=grab(t,/\((\d+)\s*vezes/);out.tro=m?m*26:/discretamente/i.test(t)?48:/elevad/i.test(t)?320:null;def('tro',[2,10],0)}
+  if(id==='ck'){out.ck=/discretamente/i.test(t)?420:/elevad/i.test(t)?2600:null;def('ck',[60,150],0)}
+  if(id==='amil'){out.ami=grab(t,/amilase\s*([\d.]+)/i,num);out.lip=grab(t,/lipase\s*([\d.]+)/i,num);def('ami',[40,80],0);def('lip',[20,45],0)}
+  if(id==='tsh'){out.tsh=/indetect/i.test(t)?'< 0,01':grab(t,/TSH\s*([\d,]+)/);out.t4=grab(t,/T4 livre\s*([\d,]+)/i);def('tsh',[0.9,2.8],2);def('t4',[1.0,1.4],1)}
+  if(id==='dimero'){out.dd=grab(t,/\(([\d.]+)\s*ng/,num)||(/elevad/i.test(t)?1800:null);def('dd',[150,380],0)}
+  if(id==='cet'){out.bhb=grab(R.cet||'',/hidroxibutirato\s*([\d,]+)/i);def('bhb',[0.1,0.3],1)}
+  if(id==='glic'||id==='lact'){const k=id==='glic'?'g':'lac';if(out[k]==null)out[k]=normV(P,id,id==='glic'?[82,110]:[0.8,1.6],id==='glic'?0:1)}
+  if(id==='urina'){const pi=/piúria|leucocitúria/i.test(t),ni=/nitrito positivo/i.test(t),he=/hematúria|hemácias/i.test(t);
+    Object.assign(out,{dens:1.018+(pi?0.004:0),uph:6,prot:/proteinúria/i.test(t)&&!/sem proteinúria/i.test(t)?'++':'Negativo',ugli:/glicosúria/i.test(t)?'+++':'Negativo',ucet:/cetonúria\s*3\+/i.test(R.cet||'')?'+++':'Negativo',
+      nit:ni?'Positivo':'Negativo',uleu:pi?(/maciça|intensa/i.test(t)?'> 50':'25'):2,uhem:/sem hematúria/i.test(t)?1:/discretas/i.test(t)?8:he?'> 30':1,bact:/bacteri/i.test(t)||ni?'Numerosas':'Raras'})}
+  /* na visita, os valores andam em direção ao normal ou se afastam, conforme a evolução */
+  if(c.visit){const f={1:.6,0:.15,'-1':-.2,'-2':-.35}[P.stage]||0;const L=LP[id];if(L)L.rows.forEach(([k,,,ref,d])=>{const v=out[k];if(typeof v!=='number'||!ref)return;const mid=(ref[0]+ref[1])/2;if(v>=ref[0]&&v<=ref[1])return;
+    let nv=v+(mid-v)*f;out[k]=d<0?nv:Math.round(nv*Math.pow(10,d))/Math.pow(10,d)})}
+  return out;
+}
+function refTxt(ref,d,k,F){if(!ref)return k==='bact'?'Raras':'Negativo';if(F&&k==='hb')ref=[12,16];if(!F&&k==='hb')ref=[13.5,17.5];if(F&&k==='ht')ref=[36,46];if(!F&&k==='ht')ref=[40,52];return fmtN(ref[0],d)+'–'+fmtN(ref[1],d)}
+function flag(v,ref,k,F){if(typeof v==='string')return /> |HI|incoag|Positivo|\+|Numerosas/.test(v)&&!/^Negativo/.test(v)?(v.startsWith('<')?'L':'H'):v.startsWith('<')?'L':'';if(v==null||!ref)return'';
+  let r=ref;if(k==='hb')r=F?[12,16]:[13.5,17.5];if(k==='ht')r=F?[36,46]:[40,52];return v<r[0]?'L':v>r[1]?'H':''}
+/* data do jogo: a semana começa na data real em que foi iniciada */
+function gameDate(t){
+  const base=(W&&W.d0)||(G&&G.d0)||Date.now(),day0=(G&&G.mode==='visit'?1:0)+((W&&G&&G.week?W.day:1)-1);
+  const m=(G&&G.t0!=null?G.t0:T0)+t,d=new Date(base+(day0+Math.floor(m/1440))*864e5);
+  return pad(d.getDate())+'/'+pad(d.getMonth()+1)}
+function stamp(o){return'Coleta '+gameDate(o.t0)+' '+fmt(o.t0)+' · liberado '+gameDate(o.due)+' '+fmt(o.due)+(o.urg?' · URGÊNCIA':'')}
+function labTable(P,id){
+  const L=LP[id],F=P.c.sexo==='F';if(!L)return'';
+  if(!P.labs)P.labs={};const key=id+'@'+P.stage;if(!P.labs[id])P.labs[id]=labVals(P,id);const V=P.labs[id];
+  const row=([k,n,u,ref,d])=>{const v=V[k];const f=flag(v,ref,k,F);return'<tr class="'+(f?'abn':'')+'"><td>'+n+'</td><td><b>'+fmtN(v,d)+(f?' '+(f==='H'?'↑':'↓'):'')+'</b> '+u+'</td><td>'+refTxt(ref,d,k,F)+'</td></tr>'};
+  const hd='<tr><th>Exame</th><th>Resultado</th><th>Ref.</th></tr>';
+  if(L.sec){const s=L.sec;let h='';for(let i=0;i<s.length;i+=3)h+='<tr><th colspan="3" class="grp">'+s[i]+'</th></tr>'+L.rows.slice(s[i+1],s[i+2]).map(row).join('');return'<table class="lab">'+hd+h+'</table>'}
+  return'<table class="lab">'+hd+L.rows.filter(r=>V[r[0]]!=null).map(row).join('')+'</table>';
+}
+const NOTE=t=>{const m=(t||'').match(/\(([^)]+)\)/g);return m?'<p class="labn">Observação: '+esc(m.join(' ').replace(/[()]/g,''))+'</p>':''};
+function resultBlock(P,k){
+  const o=P.ord[k],E=EXAMS[k];
+  let h='<div class="labw"><div class="labh"><b>'+(LP[k]?LP[k].n:E.n)+'</b><button class="ibtn" data-a="exinfo:'+k+'" aria-label="Referência e informações de '+esc(E.n)+'">i</button><small>'+stamp(o)+'</small></div>';
+  if(UI.exInfo===k&&EXINFO[k])h+='<div class="infobox">'+EXINFO[k]+' <button class="btn paper" data-a="exinfo:">Fechar</button></div>';
+  if(o.bad)return h+'<p class="warn">PROBLEMA: '+esc(o.bad)+'</p></div>';
+  if(LP[k])return h+labTable(P,k)+(k==='hbrap'?'':NOTE(P.c.res[k]))+'</div>';
+  return h+'<p class="laudo">'+esc(P.c.res[k]||(k==='ecg'?'Ritmo sinusal, sem alterações agudas.':k==='rx'?'Sem alterações.':k==='us'?'Sem alterações ao exame à beira-leito.':k==='tc'?'Sem alterações agudas.':'Sem alterações relevantes.'))+'</p></div>';
+}
+function resultsHtml(P){
+  const done=Object.keys(EXAMS).filter(k=>P.ord[k]&&P.ord[k].done),pend=Object.keys(EXAMS).filter(k=>P.ord[k]&&!P.ord[k].done);
+  const sub=UI.resTab||0,gaso=done.filter(k=>GASO_IONS.includes(k)),rest=done.filter(k=>!GASO_IONS.includes(k)||k==='glic'||k==='lact'||k==='cet');
+  const L=sub===1?gaso:rest.sort((a,b)=>P.ord[b].due-P.ord[a].due);
+  return'<h3>Resultados <span>'+done.length+' pronto'+(done.length===1?'':'s')+(pend.length?' · '+pend.length+' aguardando':'')+'</span></h3>'
+   +'<div class="tabs subt"><button class="tab" data-a="restab:0" aria-selected="'+(sub===0)+'">Exames feitos</button><button class="tab" data-a="restab:1" aria-selected="'+(sub===1)+'">Gasometria e íons</button></div>'
+   +(pend.length?'<p style="color:var(--ink2);font-size:17px;margin:6px 0">Aguardando: '+pend.map(k=>EXAMS[k].n+' (às '+fmt(P.ord[k].due)+')').join(' · ')+'</p>':'')
+   +(L.length?L.map(k=>resultBlock(P,k)).join(''):'<p class="hint" style="padding:6px 0;color:var(--ink2)">'+(sub===1?'Nenhuma gasometria ou dosagem de íons pronta.':'Nenhum resultado disponível.')+'</p>');
+}
+/* referência no "i" da lista de pedidos */
+(()=>{Object.keys(LP).forEach(k=>{const L=LP[k];const r=L.rows.filter(x=>x[3]).map(x=>x[1]+' '+refTxt(x[3],x[4],x[0],true)+(x[2]?' '+x[2]:'')).join('; ');
+  if(r&&EXINFO[k]!=null&&!/Referência:/.test(EXINFO[k]))EXINFO[k]+=' <br><b>Referência:</b> '+r+(L.rows.some(x=>x[0]==='hb'||x[0]==='ht')?' (Hb e Ht: valores femininos; masculino Hb 13,5 a 17,5 e Ht 40 a 52)':'')+'.';
+  else if(r&&EXINFO[k]==null)EXINFO[k]='<b>Referência:</b> '+r+'.'})})();
 /* ===== Parte 9: semana (ou mês) com plantão noturno + visita da manhã, e escolha do posto ===== */
 let W=null;
 function loadWeek(){try{W=JSON.parse(localStorage.getItem('pr_week')||'null')}catch(e){W=null}}
@@ -1596,7 +1845,9 @@ function mkEvs(mode,posto){
   {at:150,run:()=>{G.beds.enf.used=Math.max(0,G.beds.enf.used-2);alert_(fmt(G.t)+' Enfermaria: duas altas, dois leitos liberados.')}},
   {at:250,run:()=>{G.beds.enf.used=Math.max(0,G.beds.enf.used-2);if(G.beds.ama)G.beds.ama.used=Math.max(0,G.beds.ama.used-1);alert_(fmt(G.t)+' Enfermaria e sala amarela liberaram leitos.')}}];
   if(posto==='porta'||posto==='sala')[45,170,290].forEach(at=>L.push({at,run:()=>{
-    const m=pickOf(COLMSG[posto]);if(m[1])m[1](G);addNews('Colega · '+(posto==='porta'?'Sala vermelha':'Porta'),COLEGA[posto]+': "'+m[0]+'"',false)}}));
+    const from=posto==='porta'?'Sala vermelha':'Porta';
+    if(Math.random()<.4&&window.extraPt){const N=extraPt(posto);if(N){addNews('Colega · '+from,COLEGA[posto]+': "'+(posto==='porta'?'A recepção mandou '+N+' para a sala vermelha, mas é caso seu. Devolvi para a sua fila.':N+' estava na cadeira da porta e piorou. Te mandei; já está na sua fila.')+'"',true);return}}
+    const m=pickOf(COLMSG[posto]);if(m[1])m[1](G);addNews('Colega · '+from,COLEGA[posto]+': "'+m[0]+'"',false)}}));
   return L;
 }
 /* ===== desfechos de cada plantão para a semana ===== */
@@ -1604,7 +1855,7 @@ function wkRec(P,sector,extra){
   const c=P.c,r=P.res||{};
   return Object.assign({uid:c.id,nome:c.nome,idade:c.idade,sexo:c.sexo,look:c.look||P.look,c:JSON.parse(JSON.stringify(c)),sector,hd:1,trend:0,
     need:(c.dest.best.includes('UTI')||c.dest.best.includes('EMG')?4:c.dest.best.includes('ENF')?3:2)+rnd(0,1),
-    hyp:P.hyp,ksMiss:c.key.filter((k,i)=>P.ks[i]==null).map(k=>k.lb),jej:P.mov&&P.mov.jej!=null,reqs:Object.assign({},P.reqSt||{}),
+    hyp:P.hyp,ksMiss:c.key.filter((k,i)=>P.ks[i]==null).map(k=>k.lb),jej:P.mov&&P.mov.jej!=null,iso:P.mov&&P.mov.iso,rx:P.rx.filter(r=>r.freq!=='u'&&DRUGS[r.id]&&DRUGS[r.id].v[0]!=='Solicitação').map(r=>Object.assign({},r)),reqs:Object.assign({},P.reqSt||{}),
     adm:{day:W.day,cls:r.cls||'pend',score:r.score||0,stage:P.stage},destOk:c.dest.best.includes(sector)||c.dest.ok.includes(sector),
     path:['Noite '+W.day+': '+POSTOS[W.posto][0].toLowerCase()+' → '+SECN[sector]],could:[]},extra||{});
 }
@@ -1636,9 +1887,10 @@ function weekAfter(){
     G.pts.forEach(P=>{
       const R=W.inp.find(x=>x.uid===P.c.uid);if(!R)return;const c0=R.c;
       R.hyp=P.hyp||R.hyp;R.jej=P.mov.jej!=null;
-      P.rx.forEach(x=>{const D=DRUGS[x.id];if(D&&D.v[0]==='Solicitação'&&R.reqs[x.id]!=='ok')R.reqs[x.id]='pend'});
+      P.rx.forEach(x=>{const D=DRUGS[x.id];if(D&&D.v[0]==='Solicitação'&&x.id!=='ccih'&&R.reqs[x.id]!=='ok')R.reqs[x.id]='pend'});
+      R.rx=P.rx.filter(r=>r.freq!=='u'&&DRUGS[r.id]&&DRUGS[r.id].v[0]!=='Solicitação').map(r=>Object.assign({},r));R.iso=P.mov.iso;
       /* ajuste de prescrição: retomou uma conduta do caso com dose correta */
-      R.adjust=P.rx.some(x=>c0.key.some(k=>k.ids.includes(x.id)&&okIdx(k,x.id).includes(x.i)));
+      R.adjust=P.rx.some(x=>!x.carry&&c0.key.some(k=>k.ids.includes(x.id)&&okIdx(k,x.id).includes(x.i)));
       if(R.ksMiss.length&&R.adjust)R.ksMiss=[];
       R.missedVisit=P.st==='handoff';
       const d=P.dest,lb='Visita D'+R.hd+': ';
@@ -1706,7 +1958,9 @@ function visitCase(R){
     ['Quer ir para casa?',ready?'Quero sim, me sinto bem para ir.':st<0?'Agora não tenho condição, doutor.':'Queria, mas ainda não me sinto bem.']];
   const ex={};SYS.forEach(([k])=>{const a=c0.ex[k];ex[k]=k==='geral'?(c0.reav[st]||c0.ex.geral):st>=1?'Sem alterações novas; melhor que na admissão.':a?(st<0?a+' Pior que na admissão.':a):'Sem alterações dignas de nota.'});c.ex=ex;
   const suf={1:' Controle de hoje: em melhora.',0:' Controle de hoje: sem mudança.','-1':' Controle de hoje: pior.','-2':' Controle de hoje: pior.'}[st];
-  Object.keys(c.res).forEach(k=>{c.res[k]=c.res[k]+suf});
+  Object.keys(c.res).forEach(k=>{if(k!=='hemoc')c.res[k]=c.res[k]+suf});
+  if(c.res.hemoc&&R.hd>=3)c.res.hemoc=HEMOC[c0.base||c0.id]||'Sem crescimento bacteriano em 48 h.';
+  c.secLbl=SECN[sec]+' · D'+R.hd;
   const b=c0.base||c0.id,crit=CRIT[b];
   c.key=crit&&R.reqs[crit]!=='ok'&&R.reqs[crit]!=='pend'?[{ids:[crit],ok:[0],by:9999,lb:'Pedir: '+DRUGS[crit].n.replace(/^Solicitar /,'')}]:[];
   c.allowed=[...new Set([...c0.allowed,...c0.key.flatMap(k=>k.ids),...(REQIND[b]||[]),'jej'])];
@@ -1730,14 +1984,15 @@ function visitPen(P,d,pen,goods){
 }
 /* ===== fluxo ===== */
 function startNight(){
+  W.mark=W.done.length;
   newShift(nextN(),'proc',W.posto);G.rep=W.rep;G.eq=W.eq;G.week=1;W.phase='night';saveWeek();
 }
 function startWeek(posto,len){
-  W={v:1,posto,len,day:1,phase:'night',inp:[],done:[],days:[],pendRet:[],rep:50,eq:50,morning:[]};
+  W={v:1,d0:Date.now(),posto,len,day:1,phase:'night',inp:[],done:[],days:[],pendRet:[],rep:50,eq:50,morning:[]};
   startNight();
 }
 function goVisit(){
-  const news=[];
+  const news=[];W.mark=W.done.length;
   /* altas que voltaram */
   (W.pendRet||[]).forEach(x=>{const R=x.rec,N=firstN(R);
     if(x.unsafe&&Math.random()<.6){R.trend=-2;R.hd=1;R.adm={day:W.day,cls:'ruim',score:0,stage:-1};R.destOk=true;R.ksMiss=[];R.path.push('Madrugada: voltou em piora e foi internado pelo colega');R.could.push('Não dar alta antes da estabilização.');R.night=['Voltou ao pronto-socorro às '+pad(rnd(1,5))+':'+pad(rnd(0,59))+' em piora, depois da alta.'];R.returned=1;W.inp.push(R);
@@ -1765,7 +2020,7 @@ function goVisit(){
     pts:[],mode:'visit',posto:W.posto,week:1,slots:[],filled:0,no:0,stock:{sorobot:6,hemac:8},off:{},
     beds:{emg:{cap:6,bg:2},obs:{cap:10,used:4},ama:{cap:8,used:4},enf:{cap:20,used:10},uti:{cap:5,used:3}},evs:[]};
   mine.forEach(R=>{const c=visitCase(R),P=mkPt(c);P.no=++G.no;P.off=sprite(P);P.st='queue';P.hyp=R.hyp;P.mov={ace:0};if(R.sector==='UTI')P.mov.mon=0;if(R.jej)P.mov.jej=0;
-    P.stage=wkStage(R.trend);P.worst=0;P.lv={t:0,v:c.vit[P.stage]};G.pts.push(P);G.slots.push(0);G.filled++});
+    P.stage=wkStage(R.trend);P.worst=0;P.rx=(R.rx||[]).map(r=>Object.assign({},r,{t:0,carry:1}));if(R.iso)P.mov.iso=R.iso;P.lv={t:0,v:c.vit[P.stage]};G.pts.push(P);G.slots.push(0);G.filled++});
   news.forEach(x=>addNews(x[0],x[1],x[2]));
   if(!n)addNews('Visita da manhã','Nenhum paciente seu na enfermaria esta manhã.',false);
   alert_(fmt(0)+' Visita da manhã: '+n+' paciente'+(n===1?'':'s')+' internado'+(n===1?'':'s')+'.');
@@ -1833,12 +2088,51 @@ function introHtml(){
     +'<div class="row"><button class="btn paper'+on(L,7)+'" data-a="wk:len:7">Semana (7 noites)</button><button class="btn paper'+on(L,30)+'" data-a="wk:len:30">Mês (30 noites)</button><button class="btn paper'+on(L,1)+'" data-a="wk:len:1">Plantão avulso</button></div>'
     +'<div class="row"><button class="btn'+(sv||mid||wk?'':' red')+'" data-a="wk:start">Começar '+(L===1?'o plantão':L===7?'a semana':'o mês')+'</button></div>';
   const conf=UI.confirmReset?'<div class="doc" style="border:3px double #9c2a1a;margin-top:10px"><p class="warn"><b>Começar do zero apaga tudo:</b> o plantão e a semana em andamento, as notas e o histórico de pacientes e quadros já vistos. A trilha sonora escolhida continua.</p><div class="row"><button class="btn red" data-a="resetok">Apagar tudo e começar do zero</button><button class="btn paper" data-a="resetno">Cancelar</button></div></div>':'';
-  return'<article class="doc px card"><h3>Hospital Regional <span>'+(mid?'Menu':'Parte 9 do protótipo')+'</span></h3><div class="big">PLANTÃO<br>REGIONAL</div>'
+  return'<article class="doc px card"><h3>Hospital Regional <span>'+(mid?'Menu':'Parte 10 do protótipo')+'</span></h3><div class="big">PLANTÃO<br>REGIONAL</div>'
    +(mid?'':'<p>Você é o médico de Clínica Médica de um hospital regional do SUS no Vale do São Francisco. A noite é de superlotação, poucos leitos e decisões rápidas. Todos os pacientes têm 16 anos ou mais.</p>'
    +'<ul><li><b>Noite (19:00 à 01:00):</b> você fica num posto. O colega do outro posto manda recados.</li><li><b>Manhã (07:00):</b> visita aos seus internados. Revise exames, ajuste a prescrição, programe procedimentos (dieta zero na véspera!), dê alta ou mude de setor.</li><li>Quem você interna continua no jogo nos dias seguintes: melhora, piora, volta ou morre conforme o que foi feito.</li><li>O básico (monitor, acesso, O2) é feito pela enfermagem, sem custo. O diagnóstico nunca é revelado.</li></ul>'
    +'<p>'+CASES.length+' quadros clínicos; as pessoas são sempre novas. Tudo roda no seu navegador, sem usar o Claude.</p>')
    +hist+(sv?'<p>Salvo: <b>'+esc(sv)+'</b>. O jogo salva sozinho a cada ação.</p>':'')
    +(btns?'<div class="row">'+btns+'</div>':'')+(mid?'':pick)+'<div class="row"><button class="btn" data-a="reset">Começar do zero</button></div>'+conf+'</article>';
+}
+/* ===== Parte 10: suspender prescrição, isolamento, paciente mandado pelo colega, desfechos por turno ===== */
+function suspRx(P,idx){
+  const r=P.rx[idx];if(!r)return'Prescrição não encontrada.';const D=DRUGS[r.id];
+  P.rx.splice(idx,1);(P.rxOff=P.rxOff||[]).push(Object.assign({},r,{off:G.t}));
+  /* tratamento contínuo interrompido deixa de contar como feito */
+  if(r.freq!=='u')P.c.key.forEach((k,ki)=>{if(k.ids.includes(r.id)&&P.ks[ki]!=null&&!P.rx.some(x=>k.ids.includes(x.id)&&okIdx(k,x.id).includes(x.i))){P.ks[ki]=null}});
+  if(P.ksPend)P.ksPend=P.ksPend.filter(x=>!(x.ccih&&P.c.key[x.ki].ids.includes(r.id)));
+  P.log.push({t:G.t,k:'m',q:'Prescrição',a:D.n+': suspenso.',fresh:1});
+  return null;
+}
+function doIso(P,k){
+  const it=ISO.find(x=>x[0]===k);if(!it)return null;
+  if(P.mov.iso===k){delete P.mov.iso;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Isolamento suspenso.',fresh:1});return null}
+  P.mov.iso=k;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:it[2]+': paciente no leito de isolamento, com placa e EPI na porta.',fresh:1});return null;
+}
+function isoHtml(P){
+  const m=P.mov||{};
+  return'<p class="sub" style="margin:8px 0 4px">Isolamento (sem custo de tempo; toque de novo para suspender)</p><div class="grid mov">'+ISO.map(([k,n])=>'<button class="btn paper opt'+(m.iso===k?' on':'')+'" data-a="mov:'+k+'">'+n[0].toUpperCase()+n.slice(1)+'<small>'+(m.iso===k?'ativo':'isolar')+'</small></button>').join('')+'</div>';
+}
+/* o colega do outro posto manda um paciente de verdade para a sua fila */
+function extraPt(posto){
+  const pool=poolFor(posto==='porta'?'porta':'sala');if(!pool.length)return null;
+  const H=loadH(),taken=new Set(G.pts.map(p=>p.c.nome.split(' ')[0]));
+  const c=vary(pickOf(pool),G.slots.length,H,taken);H.n.push(c.nome);H.t.push(c.base);saveH(H);
+  c.arr=G.t;G.slots.push(G.t);admit(c,G.slots.length-1);return c.nome.split(' ')[0];
+}
+/* desfechos que aconteceram desde o último relatório */
+function shiftOutcomes(){
+  if(!W||!G||!G.week)return'';
+  const L=G.mode==='visit'?W.done.slice(W.mark||0):[],inp=W.inp;
+  if(!L.length&&!inp.length)return'';
+  const desc=R=>R.sector==='UTI'?'na UTI':R.trend>=1?'melhorando':R.trend<=-2?'grave':R.trend<0?'pior':'estável';
+  return'<p class="sub">Seus pacientes: o que aconteceu</p><div class="rep">'
+   +L.map(x=>'<div class="rp"><h4><span>'+esc(x.nome)+', '+x.idade+'</span><span class="tag t-'+(/^Óbito/.test(x.out)?'obito':/insegura|precoce/.test(x.out)?'ruim':/^Alta/.test(x.out)?'otimo':'pend')+'">'+esc(x.out.toUpperCase())+'</span></h4>'
+     +'<div style="color:var(--ink2);font-size:18px">'+x.path.map(esc).join(' → ')+'</div>'
+     +(x.could.length?'<div style="font-size:18px"><b>Nesse caso, poderia ter feito:</b></div><ul class="warn">'+[...new Set(x.could)].slice(0,7).map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')+'</div>').join('')
+   +(inp.length?'<div class="rp"><h4><span>Seguem internados</span></h4><ul>'+inp.map(R=>'<li>'+esc(R.nome)+', '+R.idade+' · '+SECN[R.sector]+' · D'+R.hd+(G.mode==='visit'?' · '+desc(R):R.hd===1&&R.adm.day===W.day?' · internado esta noite':'')+'</li>').join('')+'</ul></div>':'')
+   +'</div>';
 }
 /* ===== INTERFACE: estação de trabalho do médico ===== */
 const UI={tab:'anam',F:{drug:'',dose:0,via:0,freq:'',dur:''},destSel:null,msg:'',snd:true};
@@ -1875,7 +2169,7 @@ function renderQueue(){
   q.innerHTML=L.map(P=>{
     const w=(P.st==='queue'?Math.max(0,Math.floor(G.t-P.c.arr)):0),tags=[];if(P.returned)tags.push('<u>VOLTOU</u>');
     if(P.newRes>0)tags.push('<u>EX</u>');if(P.st==='reg')tags.push('<u>REG</u>');if(P.st==='emg')tags.push('<u>EMG</u>');
-    return'<button class="qc" style="--tc:var(--tc-'+P.c.tri+')" data-a="pick:'+P.id+'" aria-pressed="'+(G.act===P.id)+'"><canvas class="qt" data-id="'+P.id+'" width="48" height="48"></canvas><span>'+esc(P.c.nome.split(' ')[0])+'<br>'+P.c.idade+' anos</span><em>'+trLbl(P.c.tri)+(P.st==='queue'?' · espera '+w+' min':'')+' '+tags.join('')+'</em></button>'}).join('')+(more>0?'<div class="qempty" style="font-size:17px;padding:0 8px">+'+more+' a caminho</div>':'');
+    return'<button class="qc" style="--tc:'+(P.c.visit?'var(--fg2)':'var(--tc-'+P.c.tri+')')+'" data-a="pick:'+P.id+'" aria-pressed="'+(G.act===P.id)+'"><canvas class="qt" data-id="'+P.id+'" width="48" height="48"></canvas><span>'+esc(P.c.nome.split(' ')[0])+'<br>'+P.c.idade+' anos</span><em>'+(P.c.visit?esc(P.c.secLbl||'Internado'):trLbl(P.c.tri))+(P.st==='queue'&&!P.c.visit?' · espera '+w+' min':'')+' '+tags.join('')+'</em></button>'}).join('')+(more>0?'<div class="qempty" style="font-size:17px;padding:0 8px">+'+more+' a caminho</div>':'');
   q.querySelectorAll('canvas.qt').forEach(cv=>{const P=pt(cv.dataset.id),X=cv.getContext('2d');if(X&&P&&P.off){X.imageSmoothingEnabled=false;X.drawImage(P.off,52,18,56,56,0,0,48,48)}});
 }
 function dlRow(k,v,unk){return'<div><dt>'+k+'</dt><dd'+(unk?' class="unk"':'')+'>'+(unk?'não investigado':esc(v))+'</dd></div>'}
@@ -1885,14 +2179,14 @@ function renderWork(){
   const c=P.c,mon=P.mov&&P.mov.mon!=null,v=mon?c.vit[P.stage]:P.lv.v,vs=[['PA','mmHg'],['FC','bpm'],['FR','irpm'],['SatO2','%'],['Temp','°C']];
   const g=k=>P.asked.has('g:'+k);
   const left='<div class="left"><div class="scene px"><canvas id="scene" width="160" height="120" aria-label="Retrato em pixel art de '+esc(c.nome)+'"></canvas></div>'
-   +'<div class="doc px"><div class="stamp" style="color:var(--tc-'+c.tri+')">TRIAGEM<br>'+c.tri+'</div><h3>Ficha de admissão <span>Atend. '+(4200+P.no)+'</span></h3>'
+   +'<div class="doc px"><div class="stamp" style="color:'+(c.visit?'var(--ink2)':'var(--tc-'+c.tri+')')+'">'+(c.visit?'INTERNADO':'TRIAGEM<br>'+c.tri)+'</div><h3>Ficha de admissão <span>Atend. '+(4200+P.no)+'</span></h3>'
    +'<div class="idn">'+esc(c.nome)+'</div><dl class="dl">'+dlRow('Idade',c.idade+' anos · '+(c.sexo==='F'?'feminino':'masculino'))+dlRow('Origem',c.mun)+dlRow('Ocupação',c.ocup)+dlRow('Queixa',c.queixa)
    +dlRow('Doenças',c.comorb,!g('comorb'))+dlRow('Em uso',c.uso,!g('uso'))+(g('alerg')?dlRow('Alergias',c.alergiaTxt):dlRow('Alergias',c.alTri||'Triagem: não informado (reconfirmar)'))+'</dl></div>'
    +'<div class="doc px"><h3>Sinais vitais <span>'+(mon?'monitor contínuo':'aferidos às '+fmt(P.lv.t))+'</span></h3><div class="vit">'
    +vs.map((x,i)=>'<div class="v'+(vAbn(i,v[i])?' abn':'')+'"><label>'+x[0]+'</label><b>'+v[i]+'</b> <small>'+x[1]+'</small></div>').join('')+'</div>'
    +'<div class="row"><button class="btn paper" data-a="vit">Aferir de novo (1 min)</button><button class="btn paper" data-a="reav">Reavaliar (3 min)</button></div></div>'+movHtml(P)+'</div>';
   w.innerHTML=left+'<div class="right"><div class="tabs" role="tablist">'
-   +[['anam','Anamnese'],['fis','Exame físico'],['ex','Exames'],['rx','Prescrição'],['proc','Procedimentos e pedidos'],['pront','Prontuário']].map(([k,n])=>'<button class="tab" role="tab" data-a="tab:'+k+'" aria-selected="'+(UI.tab===k)+'">'+n+(k==='ex'&&P.newRes>0?' *':'')+'</button>').join('')
+   +[['anam','Anamnese'],['fis','Exame físico'],['ex','Exames'],['res','Resultados'],['rx','Prescrição'],['proc','Procedimentos e pedidos'],['pront','Prontuário']].map(([k,n])=>'<button class="tab" role="tab" data-a="tab:'+k+'" aria-selected="'+(UI.tab===k)+'">'+n+(k==='res'&&P.newRes>0?' *':'')+'</button>').join('')
    +'</div><div class="doc sheet px" id="sheet">'+tabHtml(P)+'</div></div>';
   renderDecide(P);
 }
@@ -1914,8 +2208,9 @@ function tabHtml(P){
     return'<h3>Exames <span>insumos: '+G.ins+' de 100 · gastos '+(100-G.ins+(G.overCota||0))+'</span></h3><p style="margin:0 0 8px;color:var(--ink2);font-size:17px">Os insumos são a cota de exames do plantão. Se acabarem, ninguém morre por isso: ficam liberados só os exames de urgência para vermelhos e laranjas. Medicações e medidas iniciais não gastam insumos.</p><div class="row" style="margin:0 0 8px"><button class="btn paper'+(UI.urg?' on':'')+'" data-a="urg" aria-pressed="'+!!UI.urg+'">'+(UI.urg?'URGÊNCIA ligada: metade do tempo, +1 insumo':'Solicitar com URGÊNCIA')+'</button></div><div class="tabs subt">'+EXGROUPS.map((g,i)=>'<button class="tab" data-a="extab:'+i+'" aria-selected="'+((UI.exTab||0)===i)+'">'+g[0]+(g[1].some(k=>P.ord[k]&&P.ord[k].done)?' ·':'')+'</button>').join('')+'</div>'+(UI.exInfo&&EXINFO[UI.exInfo]?'<div class="infobox"><b>'+EXAMS[UI.exInfo].n+':</b> '+EXINFO[UI.exInfo]+' <button class="btn paper" data-a="exinfo:">Fechar</button></div>':'')+[EXGROUPS[UI.exTab||0]].map(([gn,L])=>'<div class="grid" style="margin-top:8px">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
       const st=o?(o.bad&&o.done?'problema · pedir de novo':o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível · '+G.off[k].why:(UI.urg&&E.t>=20?Math.ceil(E.t/2)+' min (urgência) · custo '+(E.c+1):E.t+' min · custo '+E.c);
       return'<div class="exw"><button class="btn paper opt'+(o?' on':'')+(off&&!o?' unav':'')+'" data-a="ord:'+k+'"'+((o&&!(o.bad&&o.done))||off?' disabled':'')+(off&&!o?' title="'+esc(G.off[k].why)+'"':'')+'>'+E.n+'<small>'+st+'</small></button>'+(EXINFO[k]?'<button class="ibtn" data-a="exinfo:'+k+'" aria-label="O que é '+esc(E.n)+'">i</button>':'')+'</div>'}).join('')+'</div>').join('')
-     +'<p class="sub">Resultados</p>'+(res.length?'<ul class="qa">'+res.map(k=>'<li><b>'+EXAMS[k].n+(P.ord[k].urg?' (urgência)':'')+'</b><br>'+(P.ord[k].bad?'<span class="warn">PROBLEMA: '+esc(P.ord[k].bad)+'</span>':esc(P.c.res[k]||'Sem alterações relevantes.'))+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhum resultado disponível.</p>');
+     +'<div class="row"><button class="btn paper" data-a="tab:res">Ver resultados ('+res.length+' pronto'+(res.length===1?'':'s')+(P.newRes>0?', novos':'')+')</button></div>';
   }
+  if(UI.tab==='res')return resultsHtml(P);
   if(UI.tab==='proc'){const done=id=>P.rx.some(r=>r.id===id);
     return'<h3>Procedimentos <span>tempo de execução realista</span></h3><div class="grid">'+PROCS.map(([id,n,t])=>'<button class="btn paper opt'+(done(id)?' on':'')+'" data-a="proc:'+id+'"'+(done(id)?' disabled':'')+'>'+n+'<small>'+(done(id)?'feito':t+' min')+'</small></button>').join('')+'</div>'
      +'<p class="sub">Pedidos a outros serviços (1 min cada; pedir não garante que aconteça)</p><div class="grid">'+REQS.map(([id,n])=>'<button class="btn paper opt'+(done(id)?' on':'')+'" data-a="req:'+id+'"'+(done(id)?' disabled':'')+'>'+n+'<small>'+(done(id)?'pedido feito':'1 min')+'</small></button>').join('')+'</div>'
@@ -1936,11 +2231,13 @@ function tabHtml(P){
        +(isEVrx(D,F.via)?'<label>Diluição<select data-s="dil">'+Object.keys(DIL).map(k=>'<option value="'+k+'"'+(F.dil===k?' selected':'')+'>'+DIL[k]+'</option>').join('')+'</select></label><label>Tempo de infusão<select data-s="inf">'+Object.keys(INF).map(k=>'<option value="'+k+'"'+(F.inf===k?' selected':'')+'>'+INF[k]+'</option>').join('')+'</select></label>':'');
     }
     h+='</div>'+(D&&['hemac','plaq','pfc','crio'].includes(F.drug)?'<p class="infobox">'+HEMOREF+'</p>':'')+(UI.msg?'<p class="warn">'+esc(UI.msg)+'</p>':'')+'<div class="row"><button class="btn paper" data-a="rxgo"'+(D?'':' disabled')+'>Prescrever (1 min)</button></div>';
-    h+='<p class="sub">Prescrições ativas</p>'+(P.rx.length?'<ul class="rxl">'+P.rx.map(r=>{const d=DRUGS[r.id];return'<li><b>'+d.n+'</b> · '+esc(d.d[r.i])+' · '+d.v[r.via||0]+' · '+FREQ[r.freq]+' · '+DUR[r.dur]+(r.dil?' · '+DIL[r.dil]+' · '+INF[r.inf]:'')+' <small>('+fmt(r.t)+')</small></li>'}).join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhuma prescrição.</p>');
+    const rxLine=r=>{const d=DRUGS[r.id];if(d.v[0]==='Solicitação')return'<b>'+d.n+'</b> · pedido feito <small>('+fmt(r.t)+')</small>';return'<b>'+d.n+'</b> · '+esc(d.d[r.i])+' · '+d.v[r.via||0]+' · '+FREQ[r.freq]+' · '+DUR[r.dur]+(r.dil?' · '+DIL[r.dil]+' · '+INF[r.inf]:'')+(r.ccih?' · <span class="warn">aguardando CCIH</span>':'')+' <small>('+(r.carry?'prescrição anterior':fmt(r.t))+')</small>'};
+    h+='<p class="sub">Prescrições ativas</p>'+(P.rx.length?'<ul class="rxl">'+P.rx.map((r,i)=>'<li>'+rxLine(r)+' <button class="btn paper sm" data-a="susp:'+i+'">Suspender</button></li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhuma prescrição.</p>')
+     +(P.rxOff&&P.rxOff.length?'<p class="sub">Suspensas</p><ul class="rxl off">'+P.rxOff.map(r=>'<li>'+rxLine(r)+' <small>suspenso às '+fmt(r.off)+'</small></li>').join('')+'</ul>':'');
     return h;
   }
   const log=P.log.slice().reverse();
-  return'<h3>Prontuário <span>hipótese e evolução</span></h3><div class="form"><label>Hipótese principal<select data-s="hyp"><option value="">Ainda sem hipótese</option>'+dxOpts(P)+'</select></label></div>'
+  return'<h3>Prontuário <span>hipótese e evolução</span></h3><div class="form"><label>Buscar hipótese<input type="search" data-s="dxq" value="'+esc(UI.dxq||'')+'" placeholder="digite parte do nome, ex.: leish"></label><label>Hipótese principal<select data-s="hyp"><option value="">'+(P.hyp?'Ainda sem hipótese':'Escolha na lista')+'</option>'+dxOpts(P,UI.dxq)+'</select></label></div>'+(P.hyp?'<p style="margin:4px 0;font-size:18px">Registrada: <b>'+esc((DXS.find(x=>x[0]===P.hyp)||[0,''])[1])+'</b></p>':'')
    +'<p class="sub">Nota de evolução</p><textarea id="note" data-s="note" placeholder="Registre sua evolução e raciocínio clínico.">'+esc(P.note)+'</textarea>'
    +'<p class="sub">Linha do tempo</p>'+(log.length?'<ul class="qa">'+log.map(x=>'<li><b>'+fmt(x.t)+' · '+esc(x.q)+'</b><br>'+esc(x.a)+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Sem registros.</p>');
 }
@@ -1949,9 +2246,15 @@ function renderDecide(P){
   const info=k=>k==='UTI'?bedFree('uti')+' livres':k==='ENF'?bedFree('enf')+' livres':k==='OBS'?bedFree('obs')+' livres':k==='AMA'?bedFree('ama')+' livres':k==='ALTA'?'liberar o paciente':k==='EMG'?'manter monitorizado':'regulação ~60-100 min';
   d.innerHTML='<h4>CARIMBO DE DESTINO</h4>'+visitHint(P)+'<div class="dests">'+DESTS.map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0)||(k==='AMA'&&bedFree('ama')<=0);
     return'<button class="dest" data-a="dest:'+k+'" aria-pressed="'+(UI.destSel===k)+'"'+(dis?' disabled':'')+'>'+n+'<small>'+(dis?'lotado':info(k))+'</small></button>'}).join('')+'</div>'
-   +(UI.destSel==='ALTA'?'<div class="orient">'+ORIENT.map(([k,n])=>'<label><input type="checkbox" data-s="or" value="'+k+'"'+(P.orient.has(k)?' checked':'')+'> '+n+'</label>').join('')+'</div>':'')
+   +(UI.destSel==='ALTA'?'<div class="orient">'+ORIENT.map(([k,n])=>'<label><input type="checkbox" data-s="or" value="'+k+'"'+(P.orient.has(k)?' checked':'')+'> '+n+'</label>').join('')+'</div>'+altaHtml(P):'')
    +(UI.msg2?'<p class="warn" style="color:#f0a79b;margin:0">'+esc(UI.msg2)+'</p>':'')
    +'<div class="row" style="margin:0"><button class="btn red" data-a="commit"'+(UI.destSel?'':' disabled')+'>Carimbar e despachar</button><button class="btn amber" data-a="wait:5">Aguardar 5 min</button></div>';
+}
+function altaHtml(P){
+  const home=P.rx.filter(r=>{const D=DRUGS[r.id];return D&&D.v[0]!=='Solicitação'&&!isEVrx(D,r.via)&&!['IM'].includes(D.v[r.via||0])&&r.id!=='o2'&&(r.dur!=='u'||r.freq==='u')}),ev=P.rx.filter(r=>{const D=DRUGS[r.id];return D&&isEVrx(D,r.via)&&r.freq!=='u'&&!['u','h24'].includes(r.dur)});
+  return'<div class="receita"><label>Retorno<select data-s="ret"><option value="">— escolha —</option>'+RET.map(([k,n])=>'<option value="'+k+'"'+(P.ret===k?' selected':'')+'>'+n+'</option>').join('')+'</select></label>'
+   +'<p><b>Receita de alta (uso em casa):</b> '+(home.length?home.map(r=>DRUGS[r.id].n+' '+DRUGS[r.id].d[r.i]+' '+DRUGS[r.id].v[r.via||0]+' '+FREQ[r.freq].toLowerCase()+' por '+DUR[r.dur].toLowerCase()).map(esc).join('; '):'nenhum remédio por via oral. Para incluir, prescreva VO com duração em dias na aba Prescrição.')+'</p>'
+   +(ev.length?'<p class="warn">Em uso EV contínuo: '+ev.map(r=>esc(DRUGS[r.id].n)).join(', ')+'. Em casa não há acesso venoso: suspenda e troque por VO.</p>':'')+'</div>';
 }
 function renderVeil(){
   const v=$('#veil');
@@ -1971,7 +2274,7 @@ function renderVeil(){
      +'<p>Média dos atendimentos: <b>'+F.avg+'</b>. Óbitos: <b>'+F.dead+'</b>. Altas inseguras: <b>'+F.unsafe+'</b>. Exames desnecessários: <b>'+F.exams+'</b>. Prescrições inadequadas: <b>'+F.rx+'</b>. Diagnósticos perdidos: <b>'+F.missed+'</b>. Decisões corretas: <b>'+F.right+'</b>.</p>'
      +'<p>Reputação '+Math.round(G.rep)+' · Confiança da equipe '+Math.round(G.eq)+' · Insumos restantes '+G.ins+'. A nota prioriza segurança e raciocínio clínico, não a rapidez.</p>'
      +(G.news.length?'<p class="sub">Recados dos setores</p><ul class="qa">'+G.news.slice().reverse().map(n=>'<li><b>'+fmt(n.t)+' · '+esc(n.title)+'</b><br>'+esc(n.txt)+'</li>').join('')+'</ul>':'')
-     +'<div class="rep">'+G.pts.map(P=>{const r=P.res;return'<div class="rp"><h4><span>'+esc(P.c.nome)+', '+P.c.idade+'</span><span class="tag t-'+r.cls+'">'+({otimo:'ÓTIMO',bom:'BOM',parcial:'PARCIAL',ruim:'RUIM',obito:'ÓBITO',pend:'PENDENTE'})[r.cls]+' · '+r.score+'</span></h4>'
+     +(window.shiftOutcomes?shiftOutcomes():'')+'<p class="sub">Atendimentos deste turno</p><div class="rep">'+G.pts.map(P=>{const r=P.res;return'<div class="rp"><h4><span>'+esc(P.c.nome)+', '+P.c.idade+'</span><span class="tag t-'+r.cls+'">'+({otimo:'ÓTIMO',bom:'BOM',parcial:'PARCIAL',ruim:'RUIM',obito:'ÓBITO',pend:'PENDENTE'})[r.cls]+' · '+r.score+'</span></h4>'
       +'<div>'+esc(r.txt)+'</div>'+(r.errs.length?'<ul class="warn">'+r.errs.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')+(r.goods.length?'<ul class="good">'+r.goods.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')
       +'<div style="font-size:18px"><b>O que estava indicado:</b> '+esc(idealFor(P.c).join(' · '))+'</div><div style="color:var(--ink2);font-size:18px">'+esc(P.c.ensina)+'</div></div>'}).join('')+'</div>'
      +'<div class="row">'+nextBtns()+'</div></article>';return;
@@ -2015,7 +2318,9 @@ document.addEventListener('click',e=>{
   if(G.modal)return;
   UI.msg='';UI.msg2='';
   if(k==='pick'){pick(v);UI.destSel=null;UI.tab='anam'}
-  else if(k==='tab'){UI.tab=v;if(P&&v==='ex')P.newRes=0}
+  else if(k==='tab'){UI.tab=v;if(P&&v==='res')P.newRes=0}
+  else if(k==='restab'){UI.resTab=+v}
+  else if(k==='susp'&&P){UI.msg=suspRx(P,+v)||''}
   else if(k==='extab'){UI.exTab=+v;UI.exInfo=null}
   else if(k==='exinfo'){UI.exInfo=v||null}
   else if(k==='moreq'){UI.moreQ=!UI.moreQ}
@@ -2045,10 +2350,13 @@ document.addEventListener('change',e=>{
   if(n==='drug'){F.drug=s.value;F.dose=0;F.via=0;const D=DRUGS[F.drug];if(D){F.freq=D.f.split(' ')[0];F.dur=D.dr.split(' ')[0];const dd=dlDefault(F.drug);F.dil=dd.dil;F.inf=dd.inf}}
   else if(n==='dose')F.dose=+s.value;else if(n==='via')F.via=+s.value;else if(n==='freq')F.freq=s.value;else if(n==='dur')F.dur=s.value;else if(n==='dil')F.dil=s.value;else if(n==='inf')F.inf=s.value;
   else if(n==='hyp'&&P)setHyp(P,s.value);
+  else if(n==='ret'&&P){P.ret=s.value;return}
+  else if(n==='dxq')return;
   else if(n==='or'&&P){s.checked?P.orient.add(s.value):P.orient.delete(s.value);return}
-  if(n!=='hyp')renderWork();
+  if(n!=='hyp')renderWork();else renderWork();
 });
-document.addEventListener('input',e=>{const s=e.target.closest('[data-s=note]');if(s&&G&&cur()){cur().note=s.value;saveGame()}});
+document.addEventListener('input',e=>{const s=e.target.closest('[data-s=note]');if(s&&G&&cur()){cur().note=s.value;saveGame()}
+  const q=e.target.closest('[data-s=dxq]');if(q&&G&&cur()){UI.dxq=q.value;const sel=document.querySelector('[data-s=hyp]');if(sel)sel.innerHTML='<option value="">'+(dxOpts(cur(),UI.dxq)?'Escolha na lista':'Nada encontrado')+'</option>'+dxOpts(cur(),UI.dxq)}});
 /* animação do paciente na mesa: piscar, respirar, desconforto */
 setInterval(()=>{
   if(!G||G.over)return;const P=cur(),cv=$('#scene');if(!P||!cv)return;

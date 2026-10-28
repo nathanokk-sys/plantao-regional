@@ -49,7 +49,9 @@ function mkEvs(mode,posto){
   {at:150,run:()=>{G.beds.enf.used=Math.max(0,G.beds.enf.used-2);alert_(fmt(G.t)+' Enfermaria: duas altas, dois leitos liberados.')}},
   {at:250,run:()=>{G.beds.enf.used=Math.max(0,G.beds.enf.used-2);if(G.beds.ama)G.beds.ama.used=Math.max(0,G.beds.ama.used-1);alert_(fmt(G.t)+' Enfermaria e sala amarela liberaram leitos.')}}];
   if(posto==='porta'||posto==='sala')[45,170,290].forEach(at=>L.push({at,run:()=>{
-    const m=pickOf(COLMSG[posto]);if(m[1])m[1](G);addNews('Colega · '+(posto==='porta'?'Sala vermelha':'Porta'),COLEGA[posto]+': "'+m[0]+'"',false)}}));
+    const from=posto==='porta'?'Sala vermelha':'Porta';
+    if(Math.random()<.4&&window.extraPt){const N=extraPt(posto);if(N){addNews('Colega · '+from,COLEGA[posto]+': "'+(posto==='porta'?'A recepção mandou '+N+' para a sala vermelha, mas é caso seu. Devolvi para a sua fila.':N+' estava na cadeira da porta e piorou. Te mandei; já está na sua fila.')+'"',true);return}}
+    const m=pickOf(COLMSG[posto]);if(m[1])m[1](G);addNews('Colega · '+from,COLEGA[posto]+': "'+m[0]+'"',false)}}));
   return L;
 }
 /* ===== desfechos de cada plantão para a semana ===== */
@@ -57,7 +59,7 @@ function wkRec(P,sector,extra){
   const c=P.c,r=P.res||{};
   return Object.assign({uid:c.id,nome:c.nome,idade:c.idade,sexo:c.sexo,look:c.look||P.look,c:JSON.parse(JSON.stringify(c)),sector,hd:1,trend:0,
     need:(c.dest.best.includes('UTI')||c.dest.best.includes('EMG')?4:c.dest.best.includes('ENF')?3:2)+rnd(0,1),
-    hyp:P.hyp,ksMiss:c.key.filter((k,i)=>P.ks[i]==null).map(k=>k.lb),jej:P.mov&&P.mov.jej!=null,reqs:Object.assign({},P.reqSt||{}),
+    hyp:P.hyp,ksMiss:c.key.filter((k,i)=>P.ks[i]==null).map(k=>k.lb),jej:P.mov&&P.mov.jej!=null,iso:P.mov&&P.mov.iso,rx:P.rx.filter(r=>r.freq!=='u'&&DRUGS[r.id]&&DRUGS[r.id].v[0]!=='Solicitação').map(r=>Object.assign({},r)),reqs:Object.assign({},P.reqSt||{}),
     adm:{day:W.day,cls:r.cls||'pend',score:r.score||0,stage:P.stage},destOk:c.dest.best.includes(sector)||c.dest.ok.includes(sector),
     path:['Noite '+W.day+': '+POSTOS[W.posto][0].toLowerCase()+' → '+SECN[sector]],could:[]},extra||{});
 }
@@ -89,9 +91,10 @@ function weekAfter(){
     G.pts.forEach(P=>{
       const R=W.inp.find(x=>x.uid===P.c.uid);if(!R)return;const c0=R.c;
       R.hyp=P.hyp||R.hyp;R.jej=P.mov.jej!=null;
-      P.rx.forEach(x=>{const D=DRUGS[x.id];if(D&&D.v[0]==='Solicitação'&&R.reqs[x.id]!=='ok')R.reqs[x.id]='pend'});
+      P.rx.forEach(x=>{const D=DRUGS[x.id];if(D&&D.v[0]==='Solicitação'&&x.id!=='ccih'&&R.reqs[x.id]!=='ok')R.reqs[x.id]='pend'});
+      R.rx=P.rx.filter(r=>r.freq!=='u'&&DRUGS[r.id]&&DRUGS[r.id].v[0]!=='Solicitação').map(r=>Object.assign({},r));R.iso=P.mov.iso;
       /* ajuste de prescrição: retomou uma conduta do caso com dose correta */
-      R.adjust=P.rx.some(x=>c0.key.some(k=>k.ids.includes(x.id)&&okIdx(k,x.id).includes(x.i)));
+      R.adjust=P.rx.some(x=>!x.carry&&c0.key.some(k=>k.ids.includes(x.id)&&okIdx(k,x.id).includes(x.i)));
       if(R.ksMiss.length&&R.adjust)R.ksMiss=[];
       R.missedVisit=P.st==='handoff';
       const d=P.dest,lb='Visita D'+R.hd+': ';
@@ -159,7 +162,9 @@ function visitCase(R){
     ['Quer ir para casa?',ready?'Quero sim, me sinto bem para ir.':st<0?'Agora não tenho condição, doutor.':'Queria, mas ainda não me sinto bem.']];
   const ex={};SYS.forEach(([k])=>{const a=c0.ex[k];ex[k]=k==='geral'?(c0.reav[st]||c0.ex.geral):st>=1?'Sem alterações novas; melhor que na admissão.':a?(st<0?a+' Pior que na admissão.':a):'Sem alterações dignas de nota.'});c.ex=ex;
   const suf={1:' Controle de hoje: em melhora.',0:' Controle de hoje: sem mudança.','-1':' Controle de hoje: pior.','-2':' Controle de hoje: pior.'}[st];
-  Object.keys(c.res).forEach(k=>{c.res[k]=c.res[k]+suf});
+  Object.keys(c.res).forEach(k=>{if(k!=='hemoc')c.res[k]=c.res[k]+suf});
+  if(c.res.hemoc&&R.hd>=3)c.res.hemoc=HEMOC[c0.base||c0.id]||'Sem crescimento bacteriano em 48 h.';
+  c.secLbl=SECN[sec]+' · D'+R.hd;
   const b=c0.base||c0.id,crit=CRIT[b];
   c.key=crit&&R.reqs[crit]!=='ok'&&R.reqs[crit]!=='pend'?[{ids:[crit],ok:[0],by:9999,lb:'Pedir: '+DRUGS[crit].n.replace(/^Solicitar /,'')}]:[];
   c.allowed=[...new Set([...c0.allowed,...c0.key.flatMap(k=>k.ids),...(REQIND[b]||[]),'jej'])];
@@ -183,14 +188,15 @@ function visitPen(P,d,pen,goods){
 }
 /* ===== fluxo ===== */
 function startNight(){
+  W.mark=W.done.length;
   newShift(nextN(),'proc',W.posto);G.rep=W.rep;G.eq=W.eq;G.week=1;W.phase='night';saveWeek();
 }
 function startWeek(posto,len){
-  W={v:1,posto,len,day:1,phase:'night',inp:[],done:[],days:[],pendRet:[],rep:50,eq:50,morning:[]};
+  W={v:1,d0:Date.now(),posto,len,day:1,phase:'night',inp:[],done:[],days:[],pendRet:[],rep:50,eq:50,morning:[]};
   startNight();
 }
 function goVisit(){
-  const news=[];
+  const news=[];W.mark=W.done.length;
   /* altas que voltaram */
   (W.pendRet||[]).forEach(x=>{const R=x.rec,N=firstN(R);
     if(x.unsafe&&Math.random()<.6){R.trend=-2;R.hd=1;R.adm={day:W.day,cls:'ruim',score:0,stage:-1};R.destOk=true;R.ksMiss=[];R.path.push('Madrugada: voltou em piora e foi internado pelo colega');R.could.push('Não dar alta antes da estabilização.');R.night=['Voltou ao pronto-socorro às '+pad(rnd(1,5))+':'+pad(rnd(0,59))+' em piora, depois da alta.'];R.returned=1;W.inp.push(R);
@@ -218,7 +224,7 @@ function goVisit(){
     pts:[],mode:'visit',posto:W.posto,week:1,slots:[],filled:0,no:0,stock:{sorobot:6,hemac:8},off:{},
     beds:{emg:{cap:6,bg:2},obs:{cap:10,used:4},ama:{cap:8,used:4},enf:{cap:20,used:10},uti:{cap:5,used:3}},evs:[]};
   mine.forEach(R=>{const c=visitCase(R),P=mkPt(c);P.no=++G.no;P.off=sprite(P);P.st='queue';P.hyp=R.hyp;P.mov={ace:0};if(R.sector==='UTI')P.mov.mon=0;if(R.jej)P.mov.jej=0;
-    P.stage=wkStage(R.trend);P.worst=0;P.lv={t:0,v:c.vit[P.stage]};G.pts.push(P);G.slots.push(0);G.filled++});
+    P.stage=wkStage(R.trend);P.worst=0;P.rx=(R.rx||[]).map(r=>Object.assign({},r,{t:0,carry:1}));if(R.iso)P.mov.iso=R.iso;P.lv={t:0,v:c.vit[P.stage]};G.pts.push(P);G.slots.push(0);G.filled++});
   news.forEach(x=>addNews(x[0],x[1],x[2]));
   if(!n)addNews('Visita da manhã','Nenhum paciente seu na enfermaria esta manhã.',false);
   alert_(fmt(0)+' Visita da manhã: '+n+' paciente'+(n===1?'':'s')+' internado'+(n===1?'':'s')+'.');
@@ -286,7 +292,7 @@ function introHtml(){
     +'<div class="row"><button class="btn paper'+on(L,7)+'" data-a="wk:len:7">Semana (7 noites)</button><button class="btn paper'+on(L,30)+'" data-a="wk:len:30">Mês (30 noites)</button><button class="btn paper'+on(L,1)+'" data-a="wk:len:1">Plantão avulso</button></div>'
     +'<div class="row"><button class="btn'+(sv||mid||wk?'':' red')+'" data-a="wk:start">Começar '+(L===1?'o plantão':L===7?'a semana':'o mês')+'</button></div>';
   const conf=UI.confirmReset?'<div class="doc" style="border:3px double #9c2a1a;margin-top:10px"><p class="warn"><b>Começar do zero apaga tudo:</b> o plantão e a semana em andamento, as notas e o histórico de pacientes e quadros já vistos. A trilha sonora escolhida continua.</p><div class="row"><button class="btn red" data-a="resetok">Apagar tudo e começar do zero</button><button class="btn paper" data-a="resetno">Cancelar</button></div></div>':'';
-  return'<article class="doc px card"><h3>Hospital Regional <span>'+(mid?'Menu':'Parte 9 do protótipo')+'</span></h3><div class="big">PLANTÃO<br>REGIONAL</div>'
+  return'<article class="doc px card"><h3>Hospital Regional <span>'+(mid?'Menu':'Parte 10 do protótipo')+'</span></h3><div class="big">PLANTÃO<br>REGIONAL</div>'
    +(mid?'':'<p>Você é o médico de Clínica Médica de um hospital regional do SUS no Vale do São Francisco. A noite é de superlotação, poucos leitos e decisões rápidas. Todos os pacientes têm 16 anos ou mais.</p>'
    +'<ul><li><b>Noite (19:00 à 01:00):</b> você fica num posto. O colega do outro posto manda recados.</li><li><b>Manhã (07:00):</b> visita aos seus internados. Revise exames, ajuste a prescrição, programe procedimentos (dieta zero na véspera!), dê alta ou mude de setor.</li><li>Quem você interna continua no jogo nos dias seguintes: melhora, piora, volta ou morre conforme o que foi feito.</li><li>O básico (monitor, acesso, O2) é feito pela enfermagem, sem custo. O diagnóstico nunca é revelado.</li></ul>'
    +'<p>'+CASES.length+' quadros clínicos; as pessoas são sempre novas. Tudo roda no seu navegador, sem usar o Claude.</p>')
