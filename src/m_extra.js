@@ -24,7 +24,7 @@ function genAns(P,g){
 }
 /* ===== NOTÍCIAS DOS SETORES E DEVOLUÇÕES ===== */
 const SECDOC={UTI:'Dra. Helena Marques, plantonista da UTI',ENF:'Dr. Rogério Sampaio, plantonista da enfermaria de Clínica Médica',OBS:'Dra. Patrícia Leal, médica da sala de observação',AMA:'Dra. Lívia Andrade, plantonista da sala amarela',EMG:'Dr. Ícaro Freire, plantonista da sala vermelha',TRANS:'Dr. Fábio Moura, médico do hospital de referência'};
-const SECN={UTI:'UTI',ENF:'Enfermaria',OBS:'Observação',AMA:'Sala amarela',EMG:'Sala vermelha',TRANS:'Hospital de referência'};
+const SECN={UTI:'UTI',ENF:'Enfermaria',OBS:'Observação (sala verde)',AMA:'Sala amarela',EMG:'Sala vermelha',TRANS:'Hospital de referência'};
 function addNews(title,txt,hot){G.news.unshift({t:G.t,title,txt,hot:!!hot});G.unread++;alert_(fmt(G.t)+' Recado: '+title+'.',hot)}
 function scheduleFate(P,d){
   const c=P.c,first=c.nome.split(' ')[0],inOK=c.dest.best.includes(d)||c.dest.ok.includes(d);

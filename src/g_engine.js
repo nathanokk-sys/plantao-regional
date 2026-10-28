@@ -15,11 +15,11 @@ function admit(c,slot){
 const pt=id=>G.pts.find(p=>p.id===id);
 const cur=()=>G&&G.act?pt(G.act):null;
 const active=()=>G.pts.filter(p=>ACTIVE.includes(p.st));
-function alert_(txt,hot){G.al.unshift({t:G.t,txt,hot:!!hot});G.al.length=Math.min(G.al.length,30);if(window.sfx)sfx(hot?'alarm':'blip')}
+function alert_(txt,hot){G.al.unshift({t:G.t,txt,hot:!!hot});G.al.length=Math.min(G.al.length,400);if(window.sfx)sfx(hot?'alarm':'blip')}
 function bedFree(k){const b=G.beds[k];return b.cap-(k==='emg'?b.bg+active().length:b.used)}
 function newShift(n,mode){
   G={n,t:0,end:SHIFT,act:null,ins:100,rep:50,eq:50,al:[],over:false,modal:null,chefia:0,unsafe:0,news:[],sched:[],unread:0,
-    pts:[],mode:mode||'local',slots:mode==='local'?CASES.map(c=>c.arr):SLOTS.slice(),filled:0,no:0,stock:{sorobot:6,hemac:3},off:Math.random()<.3?{tc:{until:9999,why:'Tomógrafo em manutenção neste plantão. Só por regulação.'}}:{},
+    pts:[],mode:mode||'local',slots:mode==='local'?CASES.map(c=>c.arr):SLOTS.slice(),filled:0,no:0,stock:{sorobot:6,hemac:8},off:Math.random()<.3?{tc:{until:9999,why:'Tomógrafo em manutenção neste plantão. Só por regulação.'}}:{},
     beds:{emg:{cap:6,bg:2},obs:{cap:10,used:6},ama:{cap:8,used:5},enf:{cap:20,used:14},uti:{cap:5,used:4}},
     evs:mkEvs()};
   if(G.mode==='local')CASES.forEach((c,i)=>admit(JSON.parse(JSON.stringify(c)),i));else procStart();
@@ -75,13 +75,13 @@ function askQ(P,key){ /* key: 'g:comorb' | 'p:3' */
 function exam(P,s){if(P.examined.has(s))return;P.examined.add(s);P.log.push({t:G.t,k:'x',q:SYS.find(x=>x[0]===s)[1],a:P.c.ex[s]||'Sem alterações dignas de nota.',fresh:1});adv(1)}
 function vitals(P){adv(1);P.lv={t:G.t,v:P.c.vit[P.stage]}}
 function reassess(P){adv(3);P.lv={t:G.t,v:P.c.vit[P.stage]};P.log.push({t:G.t,k:'r',q:'Reavaliação',a:P.c.reav[P.stage]||'Sem mudanças.',fresh:1})}
-function order(P,id,free){
-  const E=EXAMS[id];if(P.ord[id])return'Já solicitado.';
+function order(P,id,free,urg){
+  const E=EXAMS[id],U=!!urg&&E.t>=20,tt=U?Math.ceil(E.t/2):E.t,cc=E.c+(U?1:0);if(P.ord[id])return'Já solicitado.';
   const off=G.off[id];if(off&&G.t<off.until)return off.why;
-  if(G.ins<E.c){if(P.c.tri==='VERMELHO'||P.c.tri==='LARANJA'){G.overCota=(G.overCota||0)+(E.c-G.ins);G.rep=clamp(G.rep-1);alert_(fmt(G.t)+' Direção: exame liberado como urgência acima da cota de insumos.')}else return'Cota de insumos esgotada: agora só há exames de urgência para pacientes vermelhos e laranjas (e os exames sem custo).'}
-  G.ins=Math.max(0,G.ins-E.c);P.ord[id]={t0:G.t,due:G.t+E.t,done:E.t<=1};
+  if(G.ins<cc){if(P.c.tri==='VERMELHO'||P.c.tri==='LARANJA'){G.overCota=(G.overCota||0)+(cc-G.ins);G.rep=clamp(G.rep-1);alert_(fmt(G.t)+' Direção: exame liberado como urgência acima da cota de insumos.')}else return'Cota de insumos esgotada: agora só há exames de urgência para pacientes vermelhos e laranjas (e os exames sem custo).'}
+  G.ins=Math.max(0,G.ins-cc);P.ord[id]={t0:G.t,due:G.t+tt,done:tt<=1,urg:U};
   if(!P.c.util.includes(id)&&id!=='glic'&&id!=='ecg'){P.pen.push([2,'Exame sem indicação: '+E.n+'.']);if(window.rqe)rqe('ex',.35)}
-  if(E.t<=1)P.newRes++;
+  if(tt<=1)P.newRes++;
   adv(free?0:.5);return null;
 }
 function addAE(P,txt,pen,why){P.adv.push(G.t);P.pen.push([pen,why||txt]);P.log.push({t:G.t,k:'ae',q:'Evento adverso',a:txt,fresh:1});alert_(fmt(G.t)+' Evento adverso em '+P.c.nome.split(' ')[0]+'.',true);if(window.rqe)rqe('ae',.75)}
@@ -90,7 +90,7 @@ function rxAdd(P,f,free){
   if(!D)return'Escolha um medicamento.';
   if(id==='o2')P.rx=P.rx.filter(r=>r.id!=='o2');else if(P.rx.some(r=>r.id===id))return'Já prescrito para este paciente.';
   if(c.stock&&c.stock[id]!=null||G.stock[id]!=null){
-    const need=id==='sorobot'?[2,4,8,12][i]:id==='hemac'?[1,2,4][i]:0;
+    const need=id==='sorobot'?[2,4,8,12][i]:id==='hemac'?[1,2,3,4][i]:0;
     if(G.stock[id]!=null&&need>G.stock[id])return'Estoque insuficiente: restam '+G.stock[id]+' unidades. Escolha uma dose menor ou solicite reposição pela regulação.';
     if(G.stock[id]!=null)G.stock[id]-=need;
   }

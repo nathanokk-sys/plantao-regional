@@ -129,6 +129,15 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .btn.paper.unav{background:repeating-linear-gradient(135deg,#dcb6aa 0 6px,#d0a598 6px 12px);color:#7a2a1a;border-color:#7a2a1a;box-shadow:3px 3px 0 #7a2a1a}
 .btn.paper.unav small{color:#7a2a1a}
 .btn.unav:disabled{opacity:1;cursor:not-allowed}
+.exw{position:relative;display:grid}
+.ibtn{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);color:var(--ink);font-family:var(--hd);font-size:10px;line-height:1;padding:0;cursor:pointer}
+.ibtn:hover{background:var(--ink);color:var(--paper)}
+.exw .opt{padding-right:30px}
+.infobox{background:#efe9d1;border:2px solid var(--ink);padding:6px 8px;margin:8px 0;font-size:18px}
+.btn.paper.on:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.grid.drugs{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin:8px 0}
+.drugs .opt{font-size:18px;min-height:40px}
+.subt{gap:3px}
 .grid.mov{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
 .grid.mov .opt{overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
