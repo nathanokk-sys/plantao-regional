@@ -94,20 +94,21 @@ function addAE(P,txt,pen,why){P.adv.push(G.t);P.pen.push([pen,why||txt]);P.log.p
 function rxAdd(P,f,free){
   const id=f.drug,D=DRUGS[id],c=P.c,i=f.dose;
   if(!D)return'Escolha um medicamento.';
-  if(id==='o2')P.rx=P.rx.filter(r=>r.id!=='o2');else if(P.rx.some(r=>r.id===id))return'Já prescrito para este paciente.';
+  if(id==='o2')P.rx=P.rx.filter(r=>r.id!=='o2');else if(window.dupCheck){const e=dupCheck(P,f);if(e)return e}else if(P.rx.some(r=>r.id===id))return'Já prescrito para este paciente.';
   if(c.stock&&c.stock[id]!=null||G.stock[id]!=null){
     const need=id==='sorobot'?[2,4,8,12][i]:id==='hemac'?[1,2,3,4][i]:0;
     if(G.stock[id]!=null&&need>G.stock[id])return'Estoque insuficiente: restam '+G.stock[id]+' unidades. Escolha uma dose menor ou solicite reposição pela regulação.';
     if(G.stock[id]!=null)G.stock[id]-=need;
   }
   const rx={id,i,via:f.via,freq:f.freq,dur:f.dur,t:G.t,day:window.dayIdx?dayIdx():1};
+  if(window.rxInit)rxInit(P,rx,f);
   /* alergia */
   if(D.al&&c.alergia.includes(D.al))addAE(P,c.alergiaMsg||'Reação alérgica grave.',40,(c.alOmit&&!P.asked.has('g:alerg')?'Alergia omitida na triagem e não reconfirmada na anamnese: ':'Medicação da classe a que o paciente tem alergia grave: ')+D.n+'.'),P.adv.push(G.t);
   let handled=false;const ct=c.contra[id];
   if(ct){const from=typeof ct==='string'?0:ct.from,t=typeof ct==='string'?ct:ct.t;if(i>=from){addAE(P,t,20,'Medicação contraindicada ou perigosa neste caso: '+D.n+'.');handled=true}}
   (c.seq||[]).forEach(s=>{if(id===s.then&&!P.rx.some(r=>r.id===s.first)){addAE(P,s.t,20,'Ordem errada de condutas: '+D.n+' antes de '+DRUGS[s.first].n+'.');handled=true}});
   const ev=isEVrx(D,f.via);
-  if(ev){const dd=dlDefault(id);rx.dil=f.dil||dd.dil;rx.inf=f.inf||dd.inf;const R=DL[id];
+  if(ev){const dd=dlDefault(id);rx.dil=f.dil||dd.dil;rx.inf=f.inf||dd.inf;const R=f.freq==='ic'?null:DL[id];
     if(R){if(R.bad&&R.bad[rx.dil]){if(!handled)addAE(P,R.bad[rx.dil],20,'Diluição perigosa: '+D.n+' em '+DIL[rx.dil]+'.');handled=true}
       else if(R.ok&&!R.ok.includes(rx.dil))P.pen.push([3,'Diluição inadequada: '+D.n+' ('+DIL[rx.dil]+').']);
       if(R.ibad&&R.ibad[rx.inf]){if(!handled)addAE(P,R.ibad[rx.inf],20,'Velocidade de infusão perigosa: '+D.n+'.');handled=true}
@@ -118,7 +119,7 @@ function rxAdd(P,f,free){
   c.key.forEach((k,ki)=>{
     if(!k.ids.includes(id))return;isKey=true;
     const ok=okIdx(k,id);
-    if(ok.includes(i)){if(P.ks[ki]==null&&!handled){if(RESTR.includes(id)&&!P.rx.some(r=>r.id==='ccih')){P.ksPend=(P.ksPend||[]).concat([{ki,at:1e9,ccih:1}])}else if(isEVrx(D,f.via)&&Math.random()<.01*(window.difOf?difOf().errF:1)){P.ksPend=(P.ksPend||[]).concat([{ki,at:G.t+30}]);P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'A medicação foi trocada com a do leito vizinho; o erro foi percebido a tempo e a dose certa atrasou 30 min.',fresh:1});alert_(fmt(G.t)+' Enfermagem: troca de medicação com o leito vizinho percebida a tempo; '+D.n+' atrasou 30 min.',true)}else P.ks[ki]=G.t}}
+    if(ok.includes(i)){if(P.ks[ki]==null&&!handled){if(RESTR.includes(id)&&!P.rx.some(r=>r.id==='ccih')){rx.keyCred=1;P.ksPend=(P.ksPend||[]).concat([{ki,at:1e9,ccih:1}])}else if(isEVrx(D,f.via)&&Math.random()<.01*(window.difOf?difOf().errF:1)){rx.keyCred=1;P.ksPend=(P.ksPend||[]).concat([{ki,at:(rx.adm==null?G.t:rx.adm)+30}]);P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'A medicação foi trocada com a do leito vizinho; o erro foi percebido a tempo e a dose certa atrasou 30 min.',fresh:1});alert_(fmt(G.t)+' Enfermagem: troca de medicação com o leito vizinho percebida a tempo; '+D.n+' atrasou 30 min.',true)}else{rx.keyCred=1;const at=rx.adm;if(at==null)P.ksPend=(P.ksPend||[]).concat([{ki,at:1e9,waitAcc:1}]);else if(at<=G.t)P.ks[ki]=G.t;else P.ksPend=(P.ksPend||[]).concat([{ki,at}])}}}
     else if(i>Math.max(...ok)){if(!handled){addAE(P,D.ae||'Dose acima da recomendada.',12,'Dose acima da recomendada: '+D.n+'.');handled=true}}
     else if(id!=='o2')P.pen.push([6,'Dose insuficiente: '+D.n+'.']);
   });
@@ -126,11 +127,11 @@ function rxAdd(P,f,free){
     if(c.allowed.includes(id)||id==='o2'||id==='ccih'){if(D.tox!=null&&i>=D.tox)addAE(P,D.ae,12,'Dose acima da recomendada: '+D.n+'.')}
     else if(['iot','cvc','dreno','parac','cardiov','desfib'].includes(id))addAE(P,'Procedimento invasivo sem indicação: '+D.n.toLowerCase()+' com complicação (sangramento, pneumotórax, infecção ou lesão de via aérea).',20,'Procedimento invasivo sem indicação: '+D.n+'.');
     else if(D.v[0]==='Solicitação'){P.pen.push([3,'Solicitação sem indicação: '+D.n+'.']);if(window.rqe)rqe('ex',.5)}
-    else{P.pen.push([6,'Prescrição sem indicação: '+D.n+'.']);G.ins=Math.max(0,G.ins-1)}
+    else{P.pen.push([6,(c.soft&&c.soft[id])||'Prescrição sem indicação: '+D.n+'.']);G.ins=Math.max(0,G.ins-1)}
   }
-  if(!D.f.split(' ').includes(f.freq)||!D.dr.split(' ').includes(f.dur))P.pen.push([3,'Frequência ou duração inadequada: '+D.n+'.']);
+  if(f.freq!=='u'&&(!D.f.split(' ').includes(f.freq)||!D.dr.split(' ').includes(f.dur)))P.pen.push([3,'Frequência ou duração inadequada: '+D.n+'.']);
   P.rx.push(rx);
-  if(RESTR.includes(id)&&!P.rx.some(r=>r.id==='ccih')){rx.ccih=1;P.log.push({t:G.t,k:'m',q:'Farmácia',a:D.n+' é antimicrobiano de uso restrito: só é dispensado com a ficha de solicitação à CCIH (aba Procedimentos e pedidos).',fresh:1});alert_(fmt(G.t)+' Farmácia: '+D.n+' aguardando a ficha da CCIH.',true)}
+  if(RESTR.includes(id)&&!P.rx.some(r=>r.id==='ccih')){rx.ccih=1;P.log.push({t:G.t,k:'m',q:'Farmácia',a:D.n+' é antimicrobiano de uso restrito: só é dispensado com a ficha de solicitação à CCIH (guia ATB / CCIH).',fresh:1});alert_(fmt(G.t)+' Farmácia: '+D.n+' aguardando a ficha da CCIH.',true)}
   let aceT=0;if(/EV/.test(D.v[f.via||0])&&P.mov.ace==null){P.mov.ace=G.t;G.ins=Math.max(0,G.ins-1);aceT=2;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Acesso venoso puncionado para a medicação EV (2 min, 1 insumo).',fresh:1})}
   adv((free?0:1)+aceT);return null;
 }
@@ -153,7 +154,7 @@ function commit(P,d){
 }
 function depart(P){P.depT=G.t;finalize(P,'TRANS',true);alert_(fmt(G.t)+' '+P.c.nome.split(' ')[0]+' saiu em transferência regulada.');if(G.act===P.id)G.act=null}
 function finalize(P,d,fromReg){
-  const c=P.c;
+  const c=P.c;if(window.pendFinal)pendFinal(P);
   if(!fromReg){ if(d==='UTI')G.beds.uti.used++;if(d==='ENF')G.beds.enf.used++;if(d==='OBS')G.beds.obs.used++;if(d==='AMA')G.beds.ama.used++ }
   const pen=P.pen.slice(),good=P.good.slice(),goods=[];
   const best=c.dest.best.includes(d),okd=c.dest.ok.includes(d);

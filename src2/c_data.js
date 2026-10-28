@@ -1,6 +1,6 @@
 /* ===== DADOS: catálogos clínicos (separados da lógica e da interface) ===== */
 const T0=19*60,SHIFT=720;
-const FREQ={u:'Dose única / agora',s4:'4/4 h',s6:'6/6 h',s8:'8/8 h',s12:'12/12 h',s24:'1x ao dia',ic:'Infusão contínua',sn:'Se necessário'};
+const FREQ={u:'AGORA (dose única)',s4:'4/4 h',s6:'6/6 h',s8:'8/8 h',s12:'12/12 h',s24:'1x ao dia',ic:'Bomba de infusão contínua (BIC)',sn:'Se necessário'};
 const DUR={u:'Dose única',h24:'24 h',d3:'3 dias',d5:'5 dias',d7:'7 dias',d10:'10 a 14 dias',ct:'Até a reavaliação'};
 /* d: doses em ordem crescente; tox: primeiro índice com dose insegura; f/dr: frequências e durações aceitas (a primeira é o padrão); al: classe de alergia */
 const DRUGS={

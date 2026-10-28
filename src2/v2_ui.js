@@ -99,8 +99,9 @@ function comHtml(){
    +'</div></div></section>';
 }
 /* ---------- tela: central de assistência ---------- */
-const GUIAS=[['leito','Beira-leito'],['adm','Admissão'],['evo','Evolução'],['rx','Prescrição'],['sv','Sinais vitais'],['sol','Pedir exames'],['lau','Laudos'],['par','Pareceres'],['atb','ATB (CCIH)'],['tra','Transfusão'],['ter','Termos'],['rec','Receitas'],['aju','Ajuda'],['des','Destino']];
+const GUIAS=[['leito','Beira-leito'],['mon','Monitor'],['adm','Admissão'],['evo','Evolução'],['rx','Prescrição'],['sv','Sinais vitais'],['sol','Pedir exames'],['lau','Laudos'],['par','Pareceres'],['atb','ATB (CCIH)'],['tra','Transfusão'],['ter','Termos'],['rec','Receitas'],['aju','Ajuda'],['des','Destino']];
 function badge(P,k){
+  if(k==='mon'&&P.acc&&P.acc.st!=='pérvio')return'<span class="bd hot">!</span>';if(k==='mon'&&P.mov&&P.mov.mon!=null)return'<span class="bd">♥</span>';
   if(k==='lau'&&P.newRes>0)return'<span class="bd">'+P.newRes+'</span>';if(k==='par'&&P.newPar>0)return'<span class="bd">'+P.newPar+'</span>';
   if(k==='evo'&&!(P.evos||[]).some(e=>!P.c.visit||e.type==='dia'||e.type==='alta'))return'<span class="bd hot">!</span>';
   if(k==='atb'&&P.rx.some(r=>r.ccih))return'<span class="bd hot">!</span>';if(k==='sol'&&(P.cart||{items:[]}).items.length)return'<span class="bd">'+P.cart.items.length+'</span>';return'';
@@ -115,7 +116,7 @@ function assistHtml(){
    +'<div class="gbody" id="gbody">'+guiaHtml(P)+'</div></section>';
 }
 function guiaHtml(P){
-  const f={leito:leitoHtml,adm:admHtml,evo:evoHtml,rx:rxHtml,sv:svHtml,sol:solHtml,lau:lauHtml,par:parHtml,atb:atbHtml,tra:traHtml,ter:terHtml,rec:recHtml,aju:ajuHtml,des:desHtml}[UI.tab]||leitoHtml;
+  const f={mon:monHtml,leito:leitoHtml,adm:admHtml,evo:evoHtml,rx:rxHtml,sv:svHtml,sol:solHtml,lau:lauHtml,par:parHtml,atb:atbHtml,tra:traHtml,ter:terHtml,rec:recHtml,aju:ajuHtml,des:desHtml}[UI.tab]||leitoHtml;
   return f(P);
 }
 const subT=(k,L)=>'<div class="secs">'+L.map(([v,n])=>'<button class="btn'+((UI.sub[k]||L[0][0])===v?' on':'')+'" data-a="sub:'+k+':'+v+'">'+n+'</button>').join('')+'</div>';
@@ -123,8 +124,8 @@ const subV=(k,d)=>UI.sub[k]||d;
 const logL=(P,kinds,empty)=>{const L=P.log.filter(x=>kinds.includes(x.k));return L.length?'<ul class="qa">'+L.slice().reverse().map(x=>'<li class="'+(x.fresh?'new':'')+'"><b>'+fmt(x.t)+' · '+esc(x.q)+'</b><br>'+esc(x.a)+'</li>').join('')+'</ul>':'<p style="color:#3b5a73;margin:4px 0">'+(empty||'Nada registrado ainda.')+'</p>'};
 /* beira-leito */
 function vitHtml(P){
-  const mon=P.mov&&P.mov.mon!=null,v=mon?P.c.vit[P.stage]:P.lv.v,vs=[['PA','mmHg'],['FC','bpm'],['FR','irpm'],['SatO2','%'],['Tax','°C']];
-  return'<div class="card2"><h4>Sinais vitais · '+(mon?'monitor contínuo':'aferidos às '+fmt(P.lv.t))+'</h4><div class="vit2">'+vs.map((x,i)=>'<div class="'+(vAbn(i,v[i])?'abn':'')+'"><label>'+x[0]+'</label><b>'+v[i]+'</b></div>').join('')+'</div>'
+  const mon=P.mov&&P.mov.mon!=null,v=mon?vitNow(P).map((x,i)=>i===0&&P.nibp?P.nibp.v:x):P.lv.v,vs=[['PA','mmHg'],['FC','bpm'],['FR','irpm'],['SatO2','%'],['Tax','°C']];
+  return'<div class="card2"><h4>Sinais vitais · '+(mon?'monitor contínuo (PA de '+(P.nibp?fmt(P.nibp.t):'agora')+')':'aferidos às '+fmt(P.lv.t))+'</h4><div class="vit2">'+vs.map((x,i)=>'<div class="'+(vAbn(i,v[i])?'abn':'')+'"><label>'+x[0]+'</label><b>'+v[i]+'</b></div>').join('')+'</div>'
    +'<div class="row"><button class="btn" data-a="vit">Aferir de novo '+tm(1)+'</button><button class="btn" data-a="reav">Reavaliar '+tm(3)+'</button></div></div>';
 }
 function leitoHtml(P){
@@ -170,7 +171,8 @@ function evoHtml(P){
 /* prescrição médica */
 function rxLine(P,r){const d=DRUGS[r.id];if(d.v[0]==='Solicitação')return'<b>'+d.n+'</b> · pedido feito';
   const D=ABX.has(r.id)?' · <b>ATB D'+(dayIdx()-(r.day||dayIdx())+1)+'</b>':'';
-  return'<b>'+d.n+'</b> · '+esc(d.d[r.i])+' · '+d.v[r.via||0]+' · '+FREQ[r.freq]+' · '+DUR[r.dur]+(r.dil?' · '+DIL[r.dil]+' · '+INF[r.inf]:'')+D+(r.home?' · receita domiciliar':'')+(r.ccih?' · <span class="warn">aguardando CCIH</span>':'')+' <small>('+(r.carry?'prescrição anterior':gameDate(r.t)+' '+fmt(r.t))+')</small>'}
+  const ap=window.aprz?aprz(r):'';
+  return'<b>'+d.n+'</b> · '+esc(d.d[r.i])+' · '+d.v[r.via||0]+' · '+FREQ[r.freq]+(r.freq==='u'?'':' · '+DUR[r.dur])+(ap?' · <i>'+esc(ap)+'</i>':'')+(r.dil?' · '+DIL[r.dil]+' · '+INF[r.inf]:'')+D+(r.home?' · receita domiciliar':'')+(r.ccih?' · <span class="warn">aguardando CCIH</span>':'')+' <small>('+(r.carry?'prescrição anterior':gameDate(r.t)+' '+fmt(r.t))+')</small>'}
 function rxHtml(P){
   const F=UI.F,D=DRUGS[F.drug],nz=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(),q=nz(UI.rxq||'');
   const ci=Math.min(UI.rxCat||0,CATS.length-1);
@@ -178,15 +180,18 @@ function rxHtml(P){
   lst.sort((a,b)=>DRUGS[a].n.localeCompare(DRUGS[b].n,'pt'));
   let h='<div class="card2"><h4>Nova prescrição · '+gameDate(G.t)+'</h4><label class="f">Buscar medicamento<input type="search" data-s="rxq" value="'+esc(UI.rxq||'')+'" placeholder="ex.: ceftriaxona, dipirona"></label>'
    +(q?'':'<div class="secs" style="margin-top:6px">'+CATS.map((c,i)=>'<button class="btn'+(ci===i?' on':'')+'" data-a="rxcat:'+i+'">'+c[0]+'</button>').join('')+'</div>')
-   +'<div class="grid" style="margin-top:6px">'+lst.map(k=>{const dis=k!=='o2'&&P.rx.some(r=>r.id===k);return'<button class="opt'+(F.drug===k?' on':'')+'" data-a="drug:'+k+'"'+(dis?' disabled':'')+'>'+DRUGS[k].n+(dis?'<small>já prescrito</small>':'')+'</button>'}).join('')+(lst.length?'':'<p>Nenhum medicamento encontrado.</p>')+'</div>'
+   +'<div class="grid" style="margin-top:6px">'+lst.map(k=>{const n=P.rx.filter(r=>r.id===k).length;return'<button class="opt'+(F.drug===k?' on':'')+'" data-a="drug:'+k+'">'+DRUGS[k].n+(n?'<small>já prescrito'+(n>1?' ('+n+'x)':'')+'</small>':'')+'</button>'}).join('')+(lst.length?'':'<p>Nenhum medicamento encontrado.</p>')+'</div>'
    +(HEMO.some(x=>q&&nz(DRUGS[x].n).includes(q))?'<p class="msg">Hemocomponentes são pedidos na guia Transfusão.</p>':'');
   if(D){const fs=Object.keys(FREQ),dr=Object.keys(DUR);
     h+='<p style="margin:8px 0 2px;font-size:21px">'+D.n+'</p><div class="fgrid"><label class="f">Dose<select data-s="dose">'+D.d.map((d,i)=>'<option value="'+i+'"'+(F.dose===i?' selected':'')+'>'+esc(d)+'</option>').join('')+'</select></label>'
      +'<label class="f">Via<select data-s="via">'+D.v.map((d,i)=>'<option value="'+i+'"'+(F.via===i?' selected':'')+'>'+d+'</option>').join('')+'</select></label>'
      +'<label class="f">Frequência<select data-s="freq">'+fs.map(k=>'<option value="'+k+'"'+(F.freq===k?' selected':'')+'>'+FREQ[k]+'</option>').join('')+'</select></label>'
-     +'<label class="f">Duração<select data-s="dur">'+dr.map(k=>'<option value="'+k+'"'+(F.dur===k?' selected':'')+'>'+DUR[k]+'</option>').join('')+'</select></label>'
-     +(isEVrx(D,F.via)?'<label class="f">Diluição<select data-s="dil">'+Object.keys(DIL).map(k=>'<option value="'+k+'"'+(F.dil===k?' selected':'')+'>'+DIL[k]+'</option>').join('')+'</select></label><label class="f">Tempo de infusão<select data-s="inf">'+Object.keys(INF).map(k=>'<option value="'+k+'"'+(F.inf===k?' selected':'')+'>'+INF[k]+'</option>').join('')+'</select></label>':'')+'</div>'}
-  h+=msgHtml()+'<div class="row"><button class="btn red" data-a="rxgo"'+(D?'':' disabled')+'>Prescrever '+tm(1)+'</button></div></div>';
+     +(F.freq==='u'?'':'<label class="f">Duração<select data-s="dur">'+dr.map(k=>'<option value="'+k+'"'+(F.dur===k?' selected':'')+'>'+DUR[k]+'</option>').join('')+'</select></label>')
+     +(F.freq==='ic'?'<label class="f">Vazão inicial (mL/h)<select data-s="rate">'+BICRATES.map(x=>'<option value="'+x+'"'+(+F.rate===x?' selected':'')+'>'+x+' mL/h</option>').join('')+'</select></label><label class="f">Correr por<select data-s="hrs">'+BICHRS.map(([k,n])=>'<option value="'+k+'"'+(String(F.hrs)===k?' selected':'')+'>'+n+'</option>').join('')+'</select></label>':'')
+     +(isEVrx(D,F.via)&&F.freq!=='ic'?'<label class="f">Diluição<select data-s="dil">'+Object.keys(DIL).map(k=>'<option value="'+k+'"'+(F.dil===k?' selected':'')+'>'+DIL[k]+'</option>').join('')+'</select></label><label class="f">Tempo de infusão<select data-s="inf">'+Object.keys(INF).map(k=>'<option value="'+k+'"'+(F.inf===k?' selected':'')+'>'+INF[k]+'</option>').join('')+'</select></label>':'')+'</div>'}
+  if(D){const at=F.freq==='u'||F.freq==='sn'?'a enfermagem administra em até '+({mf:2,f:4,m:5,d:8,md:10,inf:15}[difOf().id]||5)+' min':F.freq==='ic'?'a enfermagem instala a bomba em até 8 min, já programada'+(BICSTD[F.drug]?' ('+BICSTD[F.drug][1]+')':''):HSTEP[F.freq]?'aprazado em horário cheio: '+aprz({id:F.drug,freq:F.freq,adm:admAt(P,F,F.drug)||G.t}).replace('aprazado: ',''):'';
+    if(at)h+='<p style="margin:6px 0 0;color:#3b5a73">Administração: '+esc(at)+'.</p>'}
+  h+=msgHtml()+'<div class="row"><button class="btn red" data-a="rxgo"'+(D?'':' disabled')+'>Prescrever '+tm(1)+'</button><span style="color:#3b5a73">Dá para prescrever o mesmo remédio de novo: AGORA mais a manutenção.</span></div></div>';
   const m=P.mov||{};
   h+='<div class="card2"><h4>Dieta e cuidados</h4><div class="grid"><button class="opt'+(m.jej!=null?' on':'')+'" data-a="mov:jej">'+(m.jej!=null?'Dieta zero (ativa)':'Dieta liberada')+'<small>toque para '+(m.jej!=null?'liberar':'prescrever dieta zero')+' '+tm(.5)+'</small></button>'
    +'<button class="opt'+(m.cab!=null?' on':'')+'" data-a="mov:cab"'+(m.cab!=null?' disabled':'')+'>Cabeceira elevada 45°<small>'+(m.cab!=null?'prescrito':tm(.5))+'</small></button>'
@@ -344,3 +349,44 @@ function desHtml(P){
     +(home.length?'<p style="margin:4px 0 0">Para casa: '+home.map(r=>esc(DRUGS[r.id].n)).join(', ')+'</p>':'')+'</div>'}
   return h+msgHtml()+'<div class="row"><button class="btn red" data-a="commit"'+(UI.destSel?'':' disabled')+'>Carimbar e despachar</button><button class="btn amber" data-a="wait:5">Aguardar 5 min</button></div>';
 }
+
+/* ---------- guia Monitor: monitor multiparamétrico e dispositivos ---------- */
+function monHtml(P){
+  const mon=P.mov&&P.mov.mon!=null,v=vitNow(P),pa=P.nibp?P.nibp.v:v[0],ab=(i,x)=>vAbn(i,x)?' alarm':'';
+  let h='<div class="monx"><div class="mwave"><div class="mlab">II</div><canvas id="ecgc" width="600" height="110"></canvas><div class="mlab c2">Pleth</div><canvas id="plc" width="600" height="60"></canvas><div class="mlab c3">Resp</div><canvas id="rsc" width="600" height="46"></canvas></div>'
+   +'<div class="mnum">'+(mon?'<div class="mn g'+ab(1,v[1])+'"><span>FC</span><b>'+v[1]+'</b><small>bpm</small></div><div class="mn c'+ab(3,v[3])+'"><span>SpO2</span><b>'+v[3]+'</b><small>%</small></div>'
+     +'<div class="mn w'+ab(0,pa)+'"><span>PNI '+(P.nibp?fmt(P.nibp.t):'')+'</span><b class="pa">'+pa+'</b><small>mmHg · ciclo 15 min</small></div><div class="mn y'+ab(2,v[2])+'"><span>FR</span><b>'+v[2]+'</b><small>irpm</small></div><div class="mn o'+ab(4,v[4])+'"><span>Temp</span><b>'+v[4]+'</b><small>°C</small></div>'
+     :'<div class="mn off"><b>MONITOR DESLIGADO</b><small>Monitorize na Beira-leito (2 min) para ver as curvas e os números em tempo real.</small></div>')+'</div></div>';
+  if(mon)h+='<div class="row" style="margin:0"><button class="btn" data-a="nibp">Medir PA agora '+tm(.5)+'</button><span style="color:#3b5a73">Os números mudam com o tempo e com o efeito das medicações.</span></div>';
+  else h+='<div class="row" style="margin:0"><button class="btn" data-a="mov:mon">Monitorizar '+tm(2)+'</button></div>';
+  const A=P.acc;
+  h+='<div class="two even"><div class="card2"><h4>Acesso venoso</h4>'+(A?'<p style="margin:0">'+A.tipo+' '+A.cal+' em '+A.local+', puncionado às '+fmt(A.t)+'.</p><p style="margin:4px 0">Estado: <b class="'+(A.st==='pérvio'?'good':'warn')+'">'+A.st.toUpperCase()+'</b>'+(A.st==='flebite'?' (dor e hiperemia: trocar)':A.st==='perdido'?' (bombas e medicações EV paradas)':'')+'</p>':'<p style="margin:0">Sem acesso venoso.</p>')
+   +(P.rx.some(r=>r.id==='cvc')?'<p style="margin:4px 0">Cateter venoso central em veia jugular interna direita: pérvio.</p>':'')
+   +'<div class="row" style="margin:4px 0 0"><button class="btn" data-a="acc">'+(A?'Puncionar novo acesso':'Puncionar acesso')+' '+tm(3)+'</button></div></div>';
+  const o2=P.rx.find(r=>r.id==='o2'),sv=P.rx.some(r=>r.id==='svd'||r.id==='sonda'),sng=P.rx.some(r=>r.id==='sne'||r.id==='sne2'),d=P.diu||[];
+  const lastH=d.filter(x=>x[0]>G.t-60).reduce((a,x)=>a+x[1],0),tot=d.reduce((a,x)=>a+x[1],0);
+  h+='<div class="card2"><h4>Outros dispositivos</h4><ul class="cart">'
+   +'<li><span>Oxigênio</span><span>'+(o2?esc(DRUGS.o2.d[o2.i]):'ar ambiente')+'</span></li>'
+   +'<li><span>Sonda vesical</span><span>'+(sv?'SVD em sistema fechado · diurese '+Math.round(lastH)+' mL na última hora ('+Math.round(tot)+' mL desde a passagem)':'não')+'</span></li>'
+   +'<li><span>Sonda gástrica ou enteral</span><span>'+(sng?'posicionada, aberta em frasco':'não')+'</span></li>'
+   +'<li><span>Isolamento</span><span>'+(P.mov&&P.mov.iso?ISO.find(x=>x[0]===P.mov.iso)[1]:'não')+'</span></li>'
+   +'<li><span>Dieta</span><span>'+(P.mov&&P.mov.jej!=null?'zero':'liberada')+'</span></li></ul></div></div>';
+  const B=P.rx.map((r,i)=>[r,i]).filter(([r])=>r.bic&&!FLUID.includes(r.id));
+  h+='<div class="card2"><h4>Bombas de infusão (programadas pela enfermagem ao instalar)</h4>'+(B.length?B.map(([r,i])=>{const st=r.adm>G.t?'instalando até '+fmt(r.adm):r.bic.done?'terminou':!accOk(P)?'PARADA: sem acesso':r.ccih?'aguardando CCIH':r.bic.run?'infundindo':'PAUSADA';
+    return'<div class="bic"><div class="bicl"><b>'+DRUGS[r.id].n+'</b><small>'+esc(r.bic.sol)+'</small><small>'+st+' · infundido '+Math.round(r.bic.vol)+' mL'+(+r.bic.hrs?' · por '+r.bic.hrs+' h':' · contínuo')+'</small></div><div class="bicr"><button class="btn sm" data-a="bic:'+i+':-1" aria-label="Diminuir vazão">−</button><span class="lcd2">'+r.bic.rate+'<small>mL/h</small></span><button class="btn sm" data-a="bic:'+i+':1" aria-label="Aumentar vazão">+</button><button class="btn sm" data-a="bict:'+i+'">'+(r.bic.run?'Pausar':'Retomar')+'</button></div></div>'}).join(''):'<p style="margin:0">Nenhuma bomba. Prescreva com frequência "Bomba de infusão contínua (BIC)".</p>')+'</div>';
+  const F=P.rx.map((r,i)=>[r,i]).filter(([r])=>r.flu||(r.bic&&FLUID.includes(r.id)));
+  h+='<div class="card2"><h4>Soros</h4>'+(F.length?'<div class="bottles">'+F.map(([r,i])=>{const isB=!!r.bic,vol=isB?500:r.flu.vol,inf=isB?r.bic.vol%500:r.flu.inf,left=Math.max(0,Math.round(vol-inf)),rate=isB?r.bic.rate:r.flu.rate,done=!isB&&r.flu.inf>=r.flu.vol;
+    const end=rate?G.t+left/rate*60:G.t;return'<div class="btl"><div class="glass"><i style="height:'+Math.round(left/vol*100)+'%"></i></div><div><b>'+DRUGS[r.id].n+'</b><small>'+(done?'terminou ('+vol+' mL infundidos)':'restam '+left+' de '+vol+' mL · '+rate+' mL/h'+(r.adm>G.t?' · instalando':'')+(!accOk(P)?' · PARADO (sem acesso)':' · termina ~'+fmt(end)))+(isB?' · '+((r.bic.fr||0)+1)+'º frasco':'')+'</small>'+(isB?'<div class="row" style="margin:2px 0 0"><button class="btn sm" data-a="bic:'+i+':-1">−</button><button class="btn sm" data-a="bic:'+i+':1">+</button></div>':'')+'</div></div>'}).join('')+'</div>':'<p style="margin:0">Nenhum soro correndo.</p>')+'</div>'+msgHtml();
+  return h;
+}
+/* curvas do monitor (animação contínua; os números mudam só com o tempo do jogo) */
+function drawMon(){
+  const P=cur(),a=$('#ecgc'),b=$('#plc'),c=$('#rsc');if(!P||!a)return;const mon=P.mov&&P.mov.mon!=null,v=vitNow(P),now=performance.now();
+  const draw=(cv,col,per,shape,amp)=>{const X=cv.getContext('2d');if(!X)return;const W=cv.width,H=cv.height;X.fillStyle='#050a07';X.fillRect(0,0,W,H);X.strokeStyle=col;X.lineWidth=2;X.beginPath();
+    for(let x=0;x<W;x++){const tau=now-(W-x)*8,ph=((tau%per)+per)%per/per,y=mon?shape(ph):0;const yy=H/2-y*amp;x?X.lineTo(x,yy):X.moveTo(x,yy)}X.stroke()};
+  const ecg=p=>p<.08?Math.sin(p/.08*Math.PI)*.12:p<.14?0:p<.16?-.15:p<.19?1:p<.22?-.35:p<.3?0:p<.45?Math.sin((p-.3)/.15*Math.PI)*.25:0;
+  const ple=p=>p<.25?Math.sin(p/.25*Math.PI/2):p<.45?1-(p-.25)/.2*.55+(p>.35&&p<.42?.12:0):.45*(1-(p-.45)/.55);
+  const rsp=p=>Math.sin(p*2*Math.PI)*.8;
+  draw(a,'#3ef07a',60000/Math.max(20,v[1]),ecg,42);draw(b,'#39d4f0',60000/Math.max(20,v[1]),ple,24);draw(c,'#f0d23a',60000/Math.max(4,v[2]),rsp,18);
+}
+setInterval(drawMon,80);

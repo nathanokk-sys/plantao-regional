@@ -95,7 +95,7 @@ document.addEventListener('click',e=>{
   else if(k==='exinfo')UI.exInfo=v||null;
   else if(k==='moreq')UI.moreQ=!UI.moreQ;
   else if(k==='rxcat')UI.rxCat=+v;
-  else if(k==='drug'){const F=UI.F;F.drug=v;F.dose=0;F.via=0;const D=DRUGS[v];if(D){F.freq=D.f.split(' ')[0];F.dur=D.dr.split(' ')[0];const dd=dlDefault(v);F.dil=dd.dil;F.inf=dd.inf}}
+  else if(k==='drug'){const F=UI.F;F.drug=v;F.dose=0;F.via=0;const D=DRUGS[v];if(D){F.freq=D.f.split(' ')[0];F.dur=F.freq==='u'?'u':D.dr.split(' ')[0];const dd=dlDefault(v);F.dil=dd.dil;F.inf=F.freq==='ic'?'cont':dd.inf;if(F.freq==='ic')F.dil='bic';F.rate=(BICSTD[v]||[20])[0];F.hrs='0'}}
   else if(k==='comsend'){const C=UI.com,T=pt(C.pid);setMsg(sendGroup(T,C.para,C,!!C.paste),'Mensagem enviada para o grupo.');if(!UI.err){C.paste=0;C.nome=C.cps=C.leito=0}}
   else if(!P)return;
   else if(k==='ask')askQ(P,v);
@@ -103,7 +103,7 @@ document.addEventListener('click',e=>{
   else if(k==='vit')vitals(P);
   else if(k==='reav')reassess(P);
   else if(k==='mov')setMsg(doMov(P,v));
-  else if(k==='rxgo'){const F=UI.F;setMsg(rxAdd(P,{drug:F.drug,dose:F.dose,via:F.via,freq:F.freq,dur:F.dur,dil:F.dil,inf:F.inf}),'Prescrito.');if(!UI.err)UI.F={drug:'',dose:0,via:0,freq:'',dur:''}}
+  else if(k==='rxgo'){const F=UI.F;setMsg(rxAdd(P,{drug:F.drug,dose:F.dose,via:F.via,freq:F.freq,dur:F.freq==='u'?'u':F.dur,dil:F.dil,inf:F.inf,rate:F.rate,hrs:F.hrs}),'Prescrito.');if(!UI.err)UI.F={drug:'',dose:0,via:0,freq:'',dur:''}}
   else if(k==='susp')setMsg(suspRx(P,+v),'Suspenso.');
   else if(k==='evo'){
     if(v==='new'||v==='dup'){setMsg(evoNew(P,v==='dup'));UI.dxq=''}
@@ -131,6 +131,10 @@ document.addEventListener('click',e=>{
   else if(k==='rrem')UI.doc.items.splice(+v,1);
   else if(k==='docsave'){setMsg(saveDoc(P,UI.doc),'Documento salvo e carimbado.');if(!UI.err)UI.doc={type:UI.doc.type,items:[],dias:'',dest:''}}
   else if(k==='help')setMsg(askHelp(P,v));
+  else if(k==='bic'){const [i,d]=v.split(':');setMsg(bicAdj(P,+i,+d))}
+  else if(k==='bict')setMsg(bicToggle(P,+v));
+  else if(k==='acc')setMsg(newAccess(P),'Novo acesso puncionado.');
+  else if(k==='nibp')setMsg(nibpNow(P));
   else if(k==='dest')UI.destSel=v;
   else if(k==='commit'){const r=commit(P,UI.destSel);if(r)setMsg(r);else{UI.destSel=null;sfx('stamp');UI.scr='pac'}}
   render();
@@ -140,7 +144,7 @@ document.addEventListener('change',e=>{
   if(n==='trk'){musSelect(s.value);renderTop();return}
   if(!G)return;
   const [g,f]=n.split(':');
-  if(['dose','via','freq','dur','dil','inf'].includes(n))F[n]=['dose','via'].includes(n)?+val:val;
+  if(['dose','via','freq','dur','dil','inf','rate','hrs'].includes(n)){F[n]=['dose','via','rate'].includes(n)?+val:val;if(n==='freq'){if(val==='u')F.dur='u';else if(F.dur==='u'&&DRUGS[F.drug])F.dur=DRUGS[F.drug].dr.split(' ').find(x=>x!=='u')||'ct';if(val==='ic'){F.inf='cont';F.dil='bic';F.rate=F.rate||(BICSTD[F.drug]||[20])[0]}}}
   else if(g==='com'){UI.com[f]=val;if(f==='pid'){UI.com.nome=UI.com.cps=UI.com.leito=0}}
   else if(g==='par'){UI.par[f]=val;return}
   else if(g==='atb')UI.atb[f]=val;

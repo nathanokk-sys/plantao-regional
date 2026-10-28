@@ -71,9 +71,13 @@ function tcCheck(P,f){
 }
 
 /* ---------- sinais vitais registrados ao longo da noite ---------- */
-function vrec(P,by,t){(P.vs=P.vs||[]).push({t:t!=null?t:G.t,dt:gameDate(t!=null?t:G.t)+' '+fmt(t!=null?t:G.t),v:(P.c.vit[P.stage]||P.c.vit[0]).slice(),by})}
-function vitals(P){adv(1);P.lv={t:G.t,v:P.c.vit[P.stage]};vrec(P,'Médico')}
-function reassess(P){adv(3);P.lv={t:G.t,v:P.c.vit[P.stage]};vrec(P,'Médico (reavaliação)');lg(P,'r','Reavaliação',P.c.reav[P.stage]||'Sem mudanças.')}
+function vrec(P,by,t){const tt=t!=null?t:G.t;(P.vs=P.vs||[]).push({t:tt,dt:gameDate(tt)+' '+fmt(tt),v:window.vitNow?vitNow(P,Math.max(tt,G.t)):(P.c.vit[P.stage]||P.c.vit[0]).slice(),by})}
+function vitals(P){adv(1);P.lv={t:G.t,v:vitNow(P)};vrec(P,'Médico')}
+function reassess(P){const prev=P.lv;adv(3);const v=vitNow(P);P.lv={t:G.t,v};vrec(P,'Médico (reavaliação)');
+  const tr=prev&&prev.v?' Desde '+fmt(prev.t)+': PA '+prev.v[0]+' → '+v[0]+', FC '+prev.v[1]+' → '+v[1]+', FR '+prev.v[2]+' → '+v[2]+', SatO2 '+prev.v[3]+' → '+v[3]+'%, Tax '+prev.v[4]+' → '+v[4]+'.':'';
+  const txt=(P.c.reav[P.stage]||'Sem mudanças.').replace(/\b(PA|FC|FR|Sat ?O2|SatO2|SpO2|Tax|Temp)\s*(de\s*)?[\d,./]+\s*(mmHg|bpm|irpm|%|°C)?(\s*(e|,))?\s*/gi,'').replace(/^[,.;\s]+/,'').replace(/\s+([,.])/g,'$1');
+  const ae=P.log.filter(x=>x.k==='ae').slice(-1)[0];if(ae&&G.t-ae.t<60&&P.stage<0){lg(P,'r','Reavaliação','Após o evento adverso das '+fmt(ae.t)+': '+ae.a+tr);return}
+  lg(P,'r','Reavaliação',(txt?txt.charAt(0).toUpperCase()+txt.slice(1):'Sem mudanças.')+tr)}
 
 /* ---------- pareceres e comunicação interna ---------- */
 function saveParecer(P,id,txt){
@@ -189,6 +193,7 @@ function pendList(P){
 
 /* ---------- a cada minuto (chamado pelo motor) ---------- */
 function v2Tick(P,t){
+  if(window.pharmTick)pharmTick(P,t);
   Object.entries(P.ord).forEach(([k,o])=>{if(o.done&&o.sys===false&&t>=o.sysAt){o.sys=true;P.newRes++;alert_(fmt(t)+' Resultado liberado no sistema: '+EXAMS[k].n+' de '+first(P)+'.')}});
   ['r1','enf','tec'].forEach(w=>{const H=(P.help||{})[w];if(H&&!H.done&&t>=H.at)deliverHelp(P,w)});
   broncaTick(P);
