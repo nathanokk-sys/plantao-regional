@@ -35,7 +35,7 @@ const DRUGS={
 };
 /* c: custo em insumos · t: minutos até o resultado */
 const EXAMS={
- glic:{n:'Glicemia capilar',t:1,c:0},ecg:{n:'ECG de 12 derivações',t:8,c:1},cet:{n:'Cetonemia / cetonúria',t:10,c:1},
+ glic:{n:'Glicemia capilar',t:1,c:1},ecg:{n:'ECG de 12 derivações',t:8,c:1},cet:{n:'Cetonemia / cetonúria',t:10,c:1},
  lact:{n:'Lactato',t:15,c:2},gaso:{n:'Gasometria arterial',t:20,c:3},hemo:{n:'Hemograma',t:45,c:2},
  trop:{n:'Troponina',t:60,c:4},eletr:{n:'Sódio e potássio',t:40,c:2},cr:{n:'Ureia e creatinina',t:40,c:2},
  coag:{n:'Coagulograma (TC/INR)',t:50,c:3},urina:{n:'Urina tipo I',t:35,c:2},hemoc:{n:'Hemoculturas',t:30,c:3},

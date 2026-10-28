@@ -70,22 +70,33 @@ function emgCheck(P){
 }
 /* ===== MEDIDAS INICIAIS (MOV e cuidados básicos) ===== */
 const MOV=[['pac','Pacote MOV',0],['mon','Monitorizar',0],['ace','Acesso venoso',0],['o2c','O2 cateter nasal',0],['o2v','Máscara de Venturi',0],['o2m','Máscara não reinalante',0],['vni','VNI / CPAP',0],['cab','Cabeceira 45°',0],['jej','Dieta zero',0],['glic','Glicemia capilar',0],['ecg','ECG',0]];
-/* medidas básicas: a enfermagem executa em paralelo, sem custo de tempo e sem penalidade por excesso */
+/* medidas básicas: custam tempo (prescrever, conferir) e insumos (eletrodos, cateter, máscara, fita); sem penalidade por excesso, o custo é a consequência */
+const MOVC={mon:[1,1],ace:[2,1],o2c:[1,1],o2v:[1,1],o2m:[1,2],vni:[5,3],cab:[.5,0],jej:[.5,0],isoc:[1,1],isog:[1,1],isoa:[1,2],isop:[1,1]};
+function payMov(P,k){
+  const m=MOVC[k];if(!m)return null;const[t,c]=m;
+  if(c&&G.ins<c){if(P.c.tri==='VERMELHO'||P.c.tri==='LARANJA'){G.overCota=(G.overCota||0)+(c-G.ins);G.rep=clamp(G.rep-1);alert_(fmt(G.t)+' Direção: insumo liberado acima da cota para paciente grave.')}
+    else return'Insumos esgotados: agora só há material para vermelhos e laranjas.'}
+  G.ins=Math.max(0,G.ins-c);if(t)adv(t);return null;
+}
+const movCostTxt=k=>{if(k==='pac')return'4 min · 4 insumos';if(k==='glic')return'30 s · 1 insumo';if(k==='ecg')return'30 s · 1 insumo (laudo em 8 min)';const m=MOVC[k];if(!m)return'';return(m[0]<1?'30 s':m[0]+' min')+(m[1]?' · '+m[1]+' insumo'+(m[1]>1?'s':''):' · sem insumo')};
 function doMov(P,k){
   P.mov=P.mov||{};
-  if(/^iso[cgap]$/.test(k))return doIso(P,k);
-  if(k==='pac'){['mon','ace'].forEach(x=>doMov(P,x));['glic','ecg'].forEach(x=>{if(!P.ord[x])order(P,x,true)});return null}
-  if(k==='glic'||k==='ecg')return P.ord[k]?null:order(P,k,true);
-  if(k==='o2c'||k==='o2v'||k==='o2m'||k==='vni')return rxAdd(P,{drug:'o2',dose:{o2c:0,o2v:1,o2m:2,vni:3}[k],via:0,freq:'ic',dur:'ct'},true);
-  if(k==='jej'&&P.mov.jej!=null){delete P.mov.jej;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Dieta liberada.',fresh:1});return null}
-  if(P.mov[k]!=null)return null;const it=MOV.find(x=>x[0]===k);P.mov[k]=G.t;
+  if(/^iso[cgap]$/.test(k)){if(P.mov.iso===k)return doIso(P,k);const e=payMov(P,k);return e||doIso(P,k)}
+  if(k==='pac'){let e=null;['mon','ace'].forEach(x=>{if(!e)e=doMov(P,x)});['glic','ecg'].forEach(x=>{if(!e&&!P.ord[x])e=order(P,x,false)});return e}
+  if(k==='glic'||k==='ecg')return P.ord[k]?null:order(P,k,false);
+  if(k==='o2c'||k==='o2v'||k==='o2m'||k==='vni'){const o=P.rx.find(r=>r.id==='o2'),i={o2c:0,o2v:1,o2m:2,vni:3}[k];if(o&&o.i===i)return null;
+    if(MOVC[k][1]&&G.ins<MOVC[k][1]&&!(P.c.tri==='VERMELHO'||P.c.tri==='LARANJA'))return'Insumos esgotados: agora só há material para vermelhos e laranjas.';
+    const e=rxAdd(P,{drug:'o2',dose:i,via:0,freq:'ic',dur:'ct'},true);return e||payMov(P,k)}
+  if(k==='jej'&&P.mov.jej!=null){delete P.mov.jej;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Dieta liberada.',fresh:1});adv(.5);return null}
+  if(P.mov[k]!=null)return null;const it=MOV.find(x=>x[0]===k);
+  const e=payMov(P,k);if(e)return e;P.mov[k]=G.t;
   P.log.push({t:G.t,k:'m',q:'Enfermagem',a:it[1]+': feito.',fresh:1});return null;
 }
 function movHtml(P){
   const m=P.mov||{},o2r=P.rx.find(r=>r.id==='o2'),o2=o2r?o2r.i:-1;
   const on=k=>k==='pac'?(m.mon!=null&&m.ace!=null&&!!P.ord.glic&&!!P.ord.ecg):k==='glic'||k==='ecg'?!!P.ord[k]:k==='o2c'?o2===0:k==='o2v'?o2===1:k==='o2m'?o2===2:k==='vni'?o2===3:m[k]!=null;
-  return'<div class="doc px"><h3>Medidas iniciais <span>enfermagem executa, sem custo de tempo</span></h3><div class="grid mov">'+MOV.map(([k,n,t])=>{const d=on(k);
-    return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d&&k!=='jej'?' disabled':'')+'>'+n+'<small>'+(d&&k==='jej'?'ativa · toque para liberar':d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG':'imediato')+'</small></button>'}).join('')+'</div>'+(window.isoHtml?isoHtml(P):'')+'</div>';
+  return'<div class="doc px"><h3>Medidas iniciais <span>gastam tempo e insumos</span></h3><div class="grid mov">'+MOV.map(([k,n,t])=>{const d=on(k);
+    return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d&&k!=='jej'?' disabled':'')+'>'+n+'<small>'+(d&&k==='jej'?'ativa · toque para liberar':d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG · '+movCostTxt(k):movCostTxt(k))+'</small></button>'}).join('')+'</div>'+(UI.movMsg?'<p class="warn" style="margin:6px 0 0">'+esc(UI.movMsg)+'</p>':'')+(window.isoHtml?isoHtml(P):'')+'</div>';
 }
 /* ===== procedimentos e lista de medicamentos por classe ===== */
 function doProc(P,id){

@@ -128,8 +128,8 @@ function rxAdd(P,f,free){
   if(!D.f.split(' ').includes(f.freq)||!D.dr.split(' ').includes(f.dur))P.pen.push([3,'Frequência ou duração inadequada: '+D.n+'.']);
   P.rx.push(rx);
   if(RESTR.includes(id)&&!P.rx.some(r=>r.id==='ccih')){rx.ccih=1;P.log.push({t:G.t,k:'m',q:'Farmácia',a:D.n+' é antimicrobiano de uso restrito: só é dispensado com a ficha de solicitação à CCIH (aba Procedimentos e pedidos).',fresh:1});alert_(fmt(G.t)+' Farmácia: '+D.n+' aguardando a ficha da CCIH.',true)}
-  if(/EV/.test(D.v[f.via||0])&&P.mov.ace==null){P.mov.ace=G.t;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Acesso venoso puncionado para a medicação EV.',fresh:1})}
-  adv(free?0:1);return null;
+  let aceT=0;if(/EV/.test(D.v[f.via||0])&&P.mov.ace==null){P.mov.ace=G.t;G.ins=Math.max(0,G.ins-1);aceT=2;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Acesso venoso puncionado para a medicação EV (2 min, 1 insumo).',fresh:1})}
+  adv((free?0:1)+aceT);return null;
 }
 function setHyp(P,h){P.hyp=h}
 /* ===== destino ===== */

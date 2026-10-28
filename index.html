@@ -216,7 +216,7 @@ const DRUGS={
 };
 /* c: custo em insumos · t: minutos até o resultado */
 const EXAMS={
- glic:{n:'Glicemia capilar',t:1,c:0},ecg:{n:'ECG de 12 derivações',t:8,c:1},cet:{n:'Cetonemia / cetonúria',t:10,c:1},
+ glic:{n:'Glicemia capilar',t:1,c:1},ecg:{n:'ECG de 12 derivações',t:8,c:1},cet:{n:'Cetonemia / cetonúria',t:10,c:1},
  lact:{n:'Lactato',t:15,c:2},gaso:{n:'Gasometria arterial',t:20,c:3},hemo:{n:'Hemograma',t:45,c:2},
  trop:{n:'Troponina',t:60,c:4},eletr:{n:'Sódio e potássio',t:40,c:2},cr:{n:'Ureia e creatinina',t:40,c:2},
  coag:{n:'Coagulograma (TC/INR)',t:50,c:3},urina:{n:'Urina tipo I',t:35,c:2},hemoc:{n:'Hemoculturas',t:30,c:3},
@@ -1360,8 +1360,8 @@ function rxAdd(P,f,free){
   if(!D.f.split(' ').includes(f.freq)||!D.dr.split(' ').includes(f.dur))P.pen.push([3,'Frequência ou duração inadequada: '+D.n+'.']);
   P.rx.push(rx);
   if(RESTR.includes(id)&&!P.rx.some(r=>r.id==='ccih')){rx.ccih=1;P.log.push({t:G.t,k:'m',q:'Farmácia',a:D.n+' é antimicrobiano de uso restrito: só é dispensado com a ficha de solicitação à CCIH (aba Procedimentos e pedidos).',fresh:1});alert_(fmt(G.t)+' Farmácia: '+D.n+' aguardando a ficha da CCIH.',true)}
-  if(/EV/.test(D.v[f.via||0])&&P.mov.ace==null){P.mov.ace=G.t;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Acesso venoso puncionado para a medicação EV.',fresh:1})}
-  adv(free?0:1);return null;
+  let aceT=0;if(/EV/.test(D.v[f.via||0])&&P.mov.ace==null){P.mov.ace=G.t;G.ins=Math.max(0,G.ins-1);aceT=2;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Acesso venoso puncionado para a medicação EV (2 min, 1 insumo).',fresh:1})}
+  adv((free?0:1)+aceT);return null;
 }
 function setHyp(P,h){P.hyp=h}
 /* ===== destino ===== */
@@ -1518,22 +1518,33 @@ function emgCheck(P){
 }
 /* ===== MEDIDAS INICIAIS (MOV e cuidados básicos) ===== */
 const MOV=[['pac','Pacote MOV',0],['mon','Monitorizar',0],['ace','Acesso venoso',0],['o2c','O2 cateter nasal',0],['o2v','Máscara de Venturi',0],['o2m','Máscara não reinalante',0],['vni','VNI / CPAP',0],['cab','Cabeceira 45°',0],['jej','Dieta zero',0],['glic','Glicemia capilar',0],['ecg','ECG',0]];
-/* medidas básicas: a enfermagem executa em paralelo, sem custo de tempo e sem penalidade por excesso */
+/* medidas básicas: custam tempo (prescrever, conferir) e insumos (eletrodos, cateter, máscara, fita); sem penalidade por excesso, o custo é a consequência */
+const MOVC={mon:[1,1],ace:[2,1],o2c:[1,1],o2v:[1,1],o2m:[1,2],vni:[5,3],cab:[.5,0],jej:[.5,0],isoc:[1,1],isog:[1,1],isoa:[1,2],isop:[1,1]};
+function payMov(P,k){
+  const m=MOVC[k];if(!m)return null;const[t,c]=m;
+  if(c&&G.ins<c){if(P.c.tri==='VERMELHO'||P.c.tri==='LARANJA'){G.overCota=(G.overCota||0)+(c-G.ins);G.rep=clamp(G.rep-1);alert_(fmt(G.t)+' Direção: insumo liberado acima da cota para paciente grave.')}
+    else return'Insumos esgotados: agora só há material para vermelhos e laranjas.'}
+  G.ins=Math.max(0,G.ins-c);if(t)adv(t);return null;
+}
+const movCostTxt=k=>{if(k==='pac')return'4 min · 4 insumos';if(k==='glic')return'30 s · 1 insumo';if(k==='ecg')return'30 s · 1 insumo (laudo em 8 min)';const m=MOVC[k];if(!m)return'';return(m[0]<1?'30 s':m[0]+' min')+(m[1]?' · '+m[1]+' insumo'+(m[1]>1?'s':''):' · sem insumo')};
 function doMov(P,k){
   P.mov=P.mov||{};
-  if(/^iso[cgap]$/.test(k))return doIso(P,k);
-  if(k==='pac'){['mon','ace'].forEach(x=>doMov(P,x));['glic','ecg'].forEach(x=>{if(!P.ord[x])order(P,x,true)});return null}
-  if(k==='glic'||k==='ecg')return P.ord[k]?null:order(P,k,true);
-  if(k==='o2c'||k==='o2v'||k==='o2m'||k==='vni')return rxAdd(P,{drug:'o2',dose:{o2c:0,o2v:1,o2m:2,vni:3}[k],via:0,freq:'ic',dur:'ct'},true);
-  if(k==='jej'&&P.mov.jej!=null){delete P.mov.jej;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Dieta liberada.',fresh:1});return null}
-  if(P.mov[k]!=null)return null;const it=MOV.find(x=>x[0]===k);P.mov[k]=G.t;
+  if(/^iso[cgap]$/.test(k)){if(P.mov.iso===k)return doIso(P,k);const e=payMov(P,k);return e||doIso(P,k)}
+  if(k==='pac'){let e=null;['mon','ace'].forEach(x=>{if(!e)e=doMov(P,x)});['glic','ecg'].forEach(x=>{if(!e&&!P.ord[x])e=order(P,x,false)});return e}
+  if(k==='glic'||k==='ecg')return P.ord[k]?null:order(P,k,false);
+  if(k==='o2c'||k==='o2v'||k==='o2m'||k==='vni'){const o=P.rx.find(r=>r.id==='o2'),i={o2c:0,o2v:1,o2m:2,vni:3}[k];if(o&&o.i===i)return null;
+    if(MOVC[k][1]&&G.ins<MOVC[k][1]&&!(P.c.tri==='VERMELHO'||P.c.tri==='LARANJA'))return'Insumos esgotados: agora só há material para vermelhos e laranjas.';
+    const e=rxAdd(P,{drug:'o2',dose:i,via:0,freq:'ic',dur:'ct'},true);return e||payMov(P,k)}
+  if(k==='jej'&&P.mov.jej!=null){delete P.mov.jej;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Dieta liberada.',fresh:1});adv(.5);return null}
+  if(P.mov[k]!=null)return null;const it=MOV.find(x=>x[0]===k);
+  const e=payMov(P,k);if(e)return e;P.mov[k]=G.t;
   P.log.push({t:G.t,k:'m',q:'Enfermagem',a:it[1]+': feito.',fresh:1});return null;
 }
 function movHtml(P){
   const m=P.mov||{},o2r=P.rx.find(r=>r.id==='o2'),o2=o2r?o2r.i:-1;
   const on=k=>k==='pac'?(m.mon!=null&&m.ace!=null&&!!P.ord.glic&&!!P.ord.ecg):k==='glic'||k==='ecg'?!!P.ord[k]:k==='o2c'?o2===0:k==='o2v'?o2===1:k==='o2m'?o2===2:k==='vni'?o2===3:m[k]!=null;
-  return'<div class="doc px"><h3>Medidas iniciais <span>enfermagem executa, sem custo de tempo</span></h3><div class="grid mov">'+MOV.map(([k,n,t])=>{const d=on(k);
-    return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d&&k!=='jej'?' disabled':'')+'>'+n+'<small>'+(d&&k==='jej'?'ativa · toque para liberar':d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG':'imediato')+'</small></button>'}).join('')+'</div>'+(window.isoHtml?isoHtml(P):'')+'</div>';
+  return'<div class="doc px"><h3>Medidas iniciais <span>gastam tempo e insumos</span></h3><div class="grid mov">'+MOV.map(([k,n,t])=>{const d=on(k);
+    return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d&&k!=='jej'?' disabled':'')+'>'+n+'<small>'+(d&&k==='jej'?'ativa · toque para liberar':d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG · '+movCostTxt(k):movCostTxt(k))+'</small></button>'}).join('')+'</div>'+(UI.movMsg?'<p class="warn" style="margin:6px 0 0">'+esc(UI.movMsg)+'</p>':'')+(window.isoHtml?isoHtml(P):'')+'</div>';
 }
 /* ===== procedimentos e lista de medicamentos por classe ===== */
 function doProc(P,id){
@@ -2090,7 +2101,7 @@ function introHtml(){
   const conf=UI.confirmReset?'<div class="doc" style="border:3px double #9c2a1a;margin-top:10px"><p class="warn"><b>Começar do zero apaga tudo:</b> o plantão e a semana em andamento, as notas e o histórico de pacientes e quadros já vistos. A trilha sonora escolhida continua.</p><div class="row"><button class="btn red" data-a="resetok">Apagar tudo e começar do zero</button><button class="btn paper" data-a="resetno">Cancelar</button></div></div>':'';
   return'<article class="doc px card"><h3>Hospital Regional <span>'+(mid?'Menu':'Parte 10 do protótipo')+'</span></h3><div class="big">PLANTÃO<br>REGIONAL</div>'
    +(mid?'':'<p>Você é o médico de Clínica Médica de um hospital regional do SUS no Vale do São Francisco. A noite é de superlotação, poucos leitos e decisões rápidas. Todos os pacientes têm 16 anos ou mais.</p>'
-   +'<ul><li><b>Noite (19:00 à 01:00):</b> você fica num posto. O colega do outro posto manda recados.</li><li><b>Manhã (07:00):</b> visita aos seus internados. Revise exames, ajuste a prescrição, programe procedimentos (dieta zero na véspera!), dê alta ou mude de setor.</li><li>Quem você interna continua no jogo nos dias seguintes: melhora, piora, volta ou morre conforme o que foi feito.</li><li>O básico (monitor, acesso, O2) é feito pela enfermagem, sem custo. O diagnóstico nunca é revelado.</li></ul>'
+   +'<ul><li><b>Noite (19:00 à 01:00):</b> você fica num posto. O colega do outro posto manda recados.</li><li><b>Manhã (07:00):</b> visita aos seus internados. Revise exames, ajuste a prescrição, programe procedimentos (dieta zero na véspera!), dê alta ou mude de setor.</li><li>Quem você interna continua no jogo nos dias seguintes: melhora, piora, volta ou morre conforme o que foi feito.</li><li>As medidas iniciais (monitor, acesso, O2, glicemia, ECG) custam tempo e insumos, como tudo no plantão. O diagnóstico nunca é revelado.</li></ul>'
    +'<p>'+CASES.length+' quadros clínicos; as pessoas são sempre novas. Tudo roda no seu navegador, sem usar o Claude.</p>')
    +hist+(sv?'<p>Salvo: <b>'+esc(sv)+'</b>. O jogo salva sozinho a cada ação.</p>':'')
    +(btns?'<div class="row">'+btns+'</div>':'')+(mid?'':pick)+'<div class="row"><button class="btn" data-a="reset">Começar do zero</button></div>'+conf+'</article>';
@@ -2112,7 +2123,7 @@ function doIso(P,k){
 }
 function isoHtml(P){
   const m=P.mov||{};
-  return'<p class="sub" style="margin:8px 0 4px">Isolamento (sem custo de tempo; toque de novo para suspender)</p><div class="grid mov">'+ISO.map(([k,n])=>'<button class="btn paper opt'+(m.iso===k?' on':'')+'" data-a="mov:'+k+'">'+n[0].toUpperCase()+n.slice(1)+'<small>'+(m.iso===k?'ativo':'isolar')+'</small></button>').join('')+'</div>';
+  return'<p class="sub" style="margin:8px 0 4px">Isolamento (1 min e EPI; toque de novo para suspender)</p><div class="grid mov">'+ISO.map(([k,n])=>'<button class="btn paper opt'+(m.iso===k?' on':'')+'" data-a="mov:'+k+'">'+n[0].toUpperCase()+n.slice(1)+'<small>'+(m.iso===k?'ativo':movCostTxt(k))+'</small></button>').join('')+'</div>';
 }
 /* o colega do outro posto manda um paciente de verdade para a sua fila */
 function extraPt(posto){
@@ -2205,7 +2216,7 @@ function tabHtml(P){
   if(UI.tab==='ex'){
     const ids=Object.keys(EXAMS);
     const res=ids.filter(k=>P.ord[k]&&P.ord[k].done);
-    return'<h3>Exames <span>insumos: '+G.ins+' de 100 · gastos '+(100-G.ins+(G.overCota||0))+'</span></h3><p style="margin:0 0 8px;color:var(--ink2);font-size:17px">Os insumos são a cota de exames do plantão. Se acabarem, ninguém morre por isso: ficam liberados só os exames de urgência para vermelhos e laranjas. Medicações e medidas iniciais não gastam insumos.</p><div class="row" style="margin:0 0 8px"><button class="btn paper'+(UI.urg?' on':'')+'" data-a="urg" aria-pressed="'+!!UI.urg+'">'+(UI.urg?'URGÊNCIA ligada: metade do tempo, +1 insumo':'Solicitar com URGÊNCIA')+'</button></div><div class="tabs subt">'+EXGROUPS.map((g,i)=>'<button class="tab" data-a="extab:'+i+'" aria-selected="'+((UI.exTab||0)===i)+'">'+g[0]+(g[1].some(k=>P.ord[k]&&P.ord[k].done)?' ·':'')+'</button>').join('')+'</div>'+(UI.exInfo&&EXINFO[UI.exInfo]?'<div class="infobox"><b>'+EXAMS[UI.exInfo].n+':</b> '+EXINFO[UI.exInfo]+' <button class="btn paper" data-a="exinfo:">Fechar</button></div>':'')+[EXGROUPS[UI.exTab||0]].map(([gn,L])=>'<div class="grid" style="margin-top:8px">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
+    return'<h3>Exames <span>insumos: '+G.ins+' de 100 · gastos '+(100-G.ins+(G.overCota||0))+'</span></h3><p style="margin:0 0 8px;color:var(--ink2);font-size:17px">Os insumos são a cota de exames do plantão. Se acabarem, ninguém morre por isso: ficam liberados só os exames de urgência para vermelhos e laranjas. Medidas iniciais (monitor, acesso, O2, glicemia, ECG, isolamento) também gastam insumos; medicações, não.</p><div class="row" style="margin:0 0 8px"><button class="btn paper'+(UI.urg?' on':'')+'" data-a="urg" aria-pressed="'+!!UI.urg+'">'+(UI.urg?'URGÊNCIA ligada: metade do tempo, +1 insumo':'Solicitar com URGÊNCIA')+'</button></div><div class="tabs subt">'+EXGROUPS.map((g,i)=>'<button class="tab" data-a="extab:'+i+'" aria-selected="'+((UI.exTab||0)===i)+'">'+g[0]+(g[1].some(k=>P.ord[k]&&P.ord[k].done)?' ·':'')+'</button>').join('')+'</div>'+(UI.exInfo&&EXINFO[UI.exInfo]?'<div class="infobox"><b>'+EXAMS[UI.exInfo].n+':</b> '+EXINFO[UI.exInfo]+' <button class="btn paper" data-a="exinfo:">Fechar</button></div>':'')+[EXGROUPS[UI.exTab||0]].map(([gn,L])=>'<div class="grid" style="margin-top:8px">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
       const st=o?(o.bad&&o.done?'problema · pedir de novo':o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível · '+G.off[k].why:(UI.urg&&E.t>=20?Math.ceil(E.t/2)+' min (urgência) · custo '+(E.c+1):E.t+' min · custo '+E.c);
       return'<div class="exw"><button class="btn paper opt'+(o?' on':'')+(off&&!o?' unav':'')+'" data-a="ord:'+k+'"'+((o&&!(o.bad&&o.done))||off?' disabled':'')+(off&&!o?' title="'+esc(G.off[k].why)+'"':'')+'>'+E.n+'<small>'+st+'</small></button>'+(EXINFO[k]?'<button class="ibtn" data-a="exinfo:'+k+'" aria-label="O que é '+esc(E.n)+'">i</button>':'')+'</div>'}).join('')+'</div>').join('')
      +'<div class="row"><button class="btn paper" data-a="tab:res">Ver resultados ('+res.length+' pronto'+(res.length===1?'':'s')+(P.newRes>0?', novos':'')+')</button></div>';
@@ -2316,7 +2327,7 @@ document.addEventListener('click',e=>{
   const P=cur();
   if(k==='dil'){resolveDil(+v);render();return}
   if(G.modal)return;
-  UI.msg='';UI.msg2='';
+  UI.msg='';UI.msg2='';UI.movMsg='';
   if(k==='pick'){pick(v);UI.destSel=null;UI.tab='anam'}
   else if(k==='tab'){UI.tab=v;if(P&&v==='res')P.newRes=0}
   else if(k==='restab'){UI.resTab=+v}
@@ -2333,7 +2344,7 @@ document.addEventListener('click',e=>{
   else if(k==='ask')askQ(P,v);
   else if(k==='proc'){UI.msg=doProc(P,v)||''}
   else if(k==='req'){UI.msg=doReq(P,v)||''}
-  else if(k==='mov'){UI.msg2=doMov(P,v)||''}
+  else if(k==='mov'){UI.movMsg=doMov(P,v)||''}
   else if(k==='sys')exam(P,v);
   else if(k==='vit')vitals(P);
   else if(k==='reav')reassess(P);

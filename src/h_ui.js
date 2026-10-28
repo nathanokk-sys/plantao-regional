@@ -69,7 +69,7 @@ function tabHtml(P){
   if(UI.tab==='ex'){
     const ids=Object.keys(EXAMS);
     const res=ids.filter(k=>P.ord[k]&&P.ord[k].done);
-    return'<h3>Exames <span>insumos: '+G.ins+' de 100 · gastos '+(100-G.ins+(G.overCota||0))+'</span></h3><p style="margin:0 0 8px;color:var(--ink2);font-size:17px">Os insumos são a cota de exames do plantão. Se acabarem, ninguém morre por isso: ficam liberados só os exames de urgência para vermelhos e laranjas. Medicações e medidas iniciais não gastam insumos.</p><div class="row" style="margin:0 0 8px"><button class="btn paper'+(UI.urg?' on':'')+'" data-a="urg" aria-pressed="'+!!UI.urg+'">'+(UI.urg?'URGÊNCIA ligada: metade do tempo, +1 insumo':'Solicitar com URGÊNCIA')+'</button></div><div class="tabs subt">'+EXGROUPS.map((g,i)=>'<button class="tab" data-a="extab:'+i+'" aria-selected="'+((UI.exTab||0)===i)+'">'+g[0]+(g[1].some(k=>P.ord[k]&&P.ord[k].done)?' ·':'')+'</button>').join('')+'</div>'+(UI.exInfo&&EXINFO[UI.exInfo]?'<div class="infobox"><b>'+EXAMS[UI.exInfo].n+':</b> '+EXINFO[UI.exInfo]+' <button class="btn paper" data-a="exinfo:">Fechar</button></div>':'')+[EXGROUPS[UI.exTab||0]].map(([gn,L])=>'<div class="grid" style="margin-top:8px">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
+    return'<h3>Exames <span>insumos: '+G.ins+' de 100 · gastos '+(100-G.ins+(G.overCota||0))+'</span></h3><p style="margin:0 0 8px;color:var(--ink2);font-size:17px">Os insumos são a cota de exames do plantão. Se acabarem, ninguém morre por isso: ficam liberados só os exames de urgência para vermelhos e laranjas. Medidas iniciais (monitor, acesso, O2, glicemia, ECG, isolamento) também gastam insumos; medicações, não.</p><div class="row" style="margin:0 0 8px"><button class="btn paper'+(UI.urg?' on':'')+'" data-a="urg" aria-pressed="'+!!UI.urg+'">'+(UI.urg?'URGÊNCIA ligada: metade do tempo, +1 insumo':'Solicitar com URGÊNCIA')+'</button></div><div class="tabs subt">'+EXGROUPS.map((g,i)=>'<button class="tab" data-a="extab:'+i+'" aria-selected="'+((UI.exTab||0)===i)+'">'+g[0]+(g[1].some(k=>P.ord[k]&&P.ord[k].done)?' ·':'')+'</button>').join('')+'</div>'+(UI.exInfo&&EXINFO[UI.exInfo]?'<div class="infobox"><b>'+EXAMS[UI.exInfo].n+':</b> '+EXINFO[UI.exInfo]+' <button class="btn paper" data-a="exinfo:">Fechar</button></div>':'')+[EXGROUPS[UI.exTab||0]].map(([gn,L])=>'<div class="grid" style="margin-top:8px">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
       const st=o?(o.bad&&o.done?'problema · pedir de novo':o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível · '+G.off[k].why:(UI.urg&&E.t>=20?Math.ceil(E.t/2)+' min (urgência) · custo '+(E.c+1):E.t+' min · custo '+E.c);
       return'<div class="exw"><button class="btn paper opt'+(o?' on':'')+(off&&!o?' unav':'')+'" data-a="ord:'+k+'"'+((o&&!(o.bad&&o.done))||off?' disabled':'')+(off&&!o?' title="'+esc(G.off[k].why)+'"':'')+'>'+E.n+'<small>'+st+'</small></button>'+(EXINFO[k]?'<button class="ibtn" data-a="exinfo:'+k+'" aria-label="O que é '+esc(E.n)+'">i</button>':'')+'</div>'}).join('')+'</div>').join('')
      +'<div class="row"><button class="btn paper" data-a="tab:res">Ver resultados ('+res.length+' pronto'+(res.length===1?'':'s')+(P.newRes>0?', novos':'')+')</button></div>';
@@ -180,7 +180,7 @@ document.addEventListener('click',e=>{
   const P=cur();
   if(k==='dil'){resolveDil(+v);render();return}
   if(G.modal)return;
-  UI.msg='';UI.msg2='';
+  UI.msg='';UI.msg2='';UI.movMsg='';
   if(k==='pick'){pick(v);UI.destSel=null;UI.tab='anam'}
   else if(k==='tab'){UI.tab=v;if(P&&v==='res')P.newRes=0}
   else if(k==='restab'){UI.resTab=+v}
@@ -197,7 +197,7 @@ document.addEventListener('click',e=>{
   else if(k==='ask')askQ(P,v);
   else if(k==='proc'){UI.msg=doProc(P,v)||''}
   else if(k==='req'){UI.msg=doReq(P,v)||''}
-  else if(k==='mov'){UI.msg2=doMov(P,v)||''}
+  else if(k==='mov'){UI.movMsg=doMov(P,v)||''}
   else if(k==='sys')exam(P,v);
   else if(k==='vit')vitals(P);
   else if(k==='reav')reassess(P);

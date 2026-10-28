@@ -15,7 +15,7 @@ function doIso(P,k){
 }
 function isoHtml(P){
   const m=P.mov||{};
-  return'<p class="sub" style="margin:8px 0 4px">Isolamento (sem custo de tempo; toque de novo para suspender)</p><div class="grid mov">'+ISO.map(([k,n])=>'<button class="btn paper opt'+(m.iso===k?' on':'')+'" data-a="mov:'+k+'">'+n[0].toUpperCase()+n.slice(1)+'<small>'+(m.iso===k?'ativo':'isolar')+'</small></button>').join('')+'</div>';
+  return'<p class="sub" style="margin:8px 0 4px">Isolamento (1 min e EPI; toque de novo para suspender)</p><div class="grid mov">'+ISO.map(([k,n])=>'<button class="btn paper opt'+(m.iso===k?' on':'')+'" data-a="mov:'+k+'">'+n[0].toUpperCase()+n.slice(1)+'<small>'+(m.iso===k?'ativo':movCostTxt(k))+'</small></button>').join('')+'</div>';
 }
 /* o colega do outro posto manda um paciente de verdade para a sua fila */
 function extraPt(posto){
