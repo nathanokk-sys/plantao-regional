@@ -57,6 +57,7 @@ function deliver(it,final){
     const remark=r.cls==='otimo'||r.cls==='bom'?'Chegou bem conduzido da emergência.':r.cls==='parcial'?'Completamos aqui'+(P.missAtDest.length?': '+P.missAtDest.join(', '):' alguns ajustes de prescrição')+'.':'Chegou com condução incompleta e deu trabalho para estabilizar.';
     txt=SECDOC[it.sec]+': "'+r.txt+' '+remark+' Diagnóstico confirmado no setor: '+dx+'."';
   }
+  txt+=reqNews(P);
   addNews(SECN[it.sec]+' · '+first,txt,r.cls==='obito');
 }
 function emgCheck(P){

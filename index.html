@@ -880,6 +880,48 @@ DESTS.find(d=>d[0]==='OBS')[1]='Observação (sala verde)';
 const ESSQ=['comorb','uso','alerg','drogas','dor'];
 /* laboratório lento, com a cara do hospital regional (urgência corta o tempo pela metade) */
 Object.entries({hemo:60,eletr:60,cr:60,calc:60,coag:60,hepat:75,amil:60,pcr:60,dimero:60,trop:60,ck:60,tsh:90,tipag:45,urina:60,tox:90,hemoc:30,escarro:90,bacil:120,gota:60,sorol:30,lcr:90,rx:30,us:20,tc:70,gaso:20,lact:20,cet:15}).forEach(([k,t])=>{if(EXAMS[k])EXAMS[k].t=t});
+/* ===== Parte 8: pedidos a outros serviços, erros do sistema e "o que estava indicado" ===== */
+const REQS=[['eda','Solicitar endoscopia digestiva alta (EDA)'],['eco','Solicitar ecocardiograma'],['hd','Solicitar hemodiálise (nefrologia)'],['pcir','Parecer da cirurgia geral'],['pcard','Parecer da cardiologia'],['pneuro','Parecer da neurologia'],['pgastro','Parecer da gastroenterologia'],['pinfec','Parecer da infectologia'],['fisio','Fisioterapia respiratória'],['nutri','Avaliação da nutrição'],['social','Serviço social']];
+REQS.forEach(([id,n])=>{DRUGS[id]={n,v:['Solicitação'],d:['Pedido'],f:'u',dr:'u'}});
+const REQIND={hda:['eda','pgastro','pcir'],iam:['pcard','eco'],eap:['eco','pcard','fisio'],hiperk:['hd'],dpoc:['fisio'],estmal:['pneuro'],neutro:['pinfec'],lv:['pinfec'],tep:['eco'],sepse:['pinfec'],ofid:['pcir'],tireo:['pcard'],cad:['nutri','social'],eh:['pgastro','nutri'],absti:['social'],hiposu:['nutri','social'],organo:['social'],has:['social']};
+CASES.forEach(c=>{(REQIND[c.id]||[]).forEach(r=>c.allowed.push(r));c.allowed.push('jej')});
+const REQOK={eda:'EDA realizada: ',eco:'Ecocardiograma realizado sem intercorrências.',hd:'Hemodiálise de urgência realizada; potássio normalizado.',pcir:'A cirurgia geral avaliou e acompanha o caso.',pcard:'A cardiologia avaliou e concordou com a conduta.',pneuro:'A neurologia avaliou e ajustou os anticonvulsivantes.',pgastro:'A gastroenterologia avaliou e acompanha o caso.',pinfec:'A infectologia avaliou e ajustou o esquema.',fisio:'A fisioterapia acompanhou a ventilação.',nutri:'A nutrição ajustou a dieta.',social:'O serviço social organizou o acesso aos remédios e o retorno.'};
+function reqNews(P){
+  const c=P.c,b=c.base||c.id,ind=REQIND[b]||[],out=[];
+  P.rx.filter(r=>DRUGS[r.id]&&DRUGS[r.id].v[0]==='Solicitação').forEach(r=>{
+    const n=DRUGS[r.id].n;
+    if(!ind.includes(r.id)){out.push(n+': "Sem indicação de avaliação neste caso."');return}
+    if(r.id==='eda'){
+      if(P.mov.jej==null)out.push('EDA suspensa: o paciente não estava em dieta zero e tomou café da manhã.');
+      else if(Math.random()<.05)out.push('A requisição da EDA não chegou ao serviço de endoscopia; remarcada para amanhã.');
+      else if(Math.random()<.08)out.push('EDA perdida: o paciente ficou com fome e comeu escondido o lanche do acompanhante.');
+      else out.push(REQOK.eda+(b==='hda'?'varizes de esôfago de grosso calibre com sinal de sangramento recente; feita ligadura elástica.':'sem alterações significativas.'));
+      return}
+    out.push(Math.random()<.03?n+': o pedido ficou esquecido no posto e só foi visto pelo plantão seguinte.':REQOK[r.id]||n+': realizado.');
+  });
+  return out.length?' Pedidos: '+out.join(' '):'';
+}
+function doReq(P,id){
+  const r=rxAdd(P,{drug:id,dose:0,via:0,freq:'u',dur:'u'},true);if(r)return r;
+  P.log.push({t:G.t,k:'p',q:'Solicitação',a:DRUGS[id].n+': pedido feito.',fresh:1});adv(1);return null;
+}
+/* erros de interno (baixa, mas presente: 10%), de aparelho (5%) e de laboratório/técnicos (3%) */
+const LABERR=['Amostra hemolisada. Peça de novo.','A requisição não desceu para o laboratório (ficou esquecida no posto). Peça de novo.','Amostra coagulada no tubo. Peça de novo.'];
+const LABSET=['hemo','eletr','cr','calc','coag','hepat','amil','pcr','dimero','trop','ck','tsh','tipag','lact'];
+function examErr(id){
+  const r=Math.random();
+  if(id==='gaso'&&r<.10)return{bad:'O interno colheu sangue venoso: pO2 e saturação sem valor. Peça de novo.'};
+  if(id==='ecg'){if(r<.10)return{bad:'O interno posicionou mal os eletrodos (braços trocados): traçado não confiável. Peça de novo.'};if(r<.15)return{extra:20,note:'Eletrocardiógrafo com defeito; buscaram outro aparelho na enfermaria (+20 min).'}}
+  if(LABSET.includes(id)&&r<.03)return{bad:LABERR[Math.floor(Math.random()*LABERR.length)]};
+  return null;
+}
+/* o que estava indicado, para o relatório */
+function idealFor(c){
+  const b=c.base||c.id;
+  return[...c.key.map(k=>k.lb),'Destino: '+c.dest.best.map(d=>(DESTS.find(x=>x[0]===d)||[0,d])[1]).join(' ou '),
+    ...(c.evid.length?['Confirmar com: '+c.evid.map(e=>EXAMS[e]?EXAMS[e].n:e).join(' ou ')]:[]),
+    ...(REQIND[b]||[]).slice(0,2).map(r=>DRUGS[r].n)];
+}
 /* ===== PIXEL ART: cada paciente é desenhado em 160x120 e ampliado sem suavização ===== */
 const SKIN=['#f1cfa8','#e2b085','#cb915f','#a9693f','#85502f','#5f3a22'];
 const sh=(h,k)=>{const n=parseInt(h.slice(1),16),f=x=>Math.max(0,Math.min(255,Math.round(x*k)));return'#'+[n>>16,(n>>8)&255,n&255].map(x=>f(x).toString(16).padStart(2,'0')).join('')};
@@ -1014,6 +1056,7 @@ function setStage(P,ns){
   P.stage=ns;P.worst=Math.min(P.worst,ns);
 }
 function evolve(P){
+  if(P.ksPend&&P.ksPend.length)P.ksPend=P.ksPend.filter(x=>{if(G.t>=x.at){if(P.ks[x.ki]==null)P.ks[x.ki]=x.at;return false}return true});
   const c=P.c,t=G.t;let lag=0;
   c.key.forEach((k,i)=>{if(P.ks[i]==null&&t-c.arr>k.by)lag++});
   lag+=P.adv.filter(x=>t-x<45).length;
@@ -1033,7 +1076,7 @@ function tickMin(){
   G.pts.forEach(P=>{
     if(P.st==='wait'&&P.c.arr<=t){P.st='queue';alert_(fmt(t)+' Chegou '+P.c.nome.split(' ')[0]+' ('+P.c.tri.toLowerCase()+').',P.c.tri==='VERMELHO')}
     if(!ACTIVE.includes(P.st))return;
-    Object.entries(P.ord).forEach(([k,o])=>{if(!o.done&&t>=o.due){o.done=true;P.newRes++;alert_(fmt(t)+' Resultado pronto: '+EXAMS[k].n+' de '+P.c.nome.split(' ')[0]+'.')}});
+    Object.entries(P.ord).forEach(([k,o])=>{if(!o.done&&t>=o.due){o.done=true;P.newRes++;if(o.bad)alert_(fmt(t)+' Problema no exame '+EXAMS[k].n+' de '+P.c.nome.split(' ')[0]+': '+o.bad,true);else alert_(fmt(t)+' Resultado pronto: '+EXAMS[k].n+' de '+P.c.nome.split(' ')[0]+'.')}});
     evolve(P);if(P.st==='emg')emgCheck(P);
     if(P.st==='reg'&&t>=P.reg.at)depart(P);
   });
@@ -1059,10 +1102,11 @@ function exam(P,s){if(P.examined.has(s))return;P.examined.add(s);P.log.push({t:G
 function vitals(P){adv(1);P.lv={t:G.t,v:P.c.vit[P.stage]}}
 function reassess(P){adv(3);P.lv={t:G.t,v:P.c.vit[P.stage]};P.log.push({t:G.t,k:'r',q:'Reavaliação',a:P.c.reav[P.stage]||'Sem mudanças.',fresh:1})}
 function order(P,id,free,urg){
-  const E=EXAMS[id],U=!!urg&&E.t>=20,tt=U?Math.ceil(E.t/2):E.t,cc=E.c+(U?1:0);if(P.ord[id])return'Já solicitado.';
+  const E=EXAMS[id],U=!!urg&&E.t>=20,tt=U?Math.ceil(E.t/2):E.t,cc=E.c+(U?1:0);if(P.ord[id]&&!P.ord[id].bad)return'Já solicitado.';
   const off=G.off[id];if(off&&G.t<off.until)return off.why;
   if(G.ins<cc){if(P.c.tri==='VERMELHO'||P.c.tri==='LARANJA'){G.overCota=(G.overCota||0)+(cc-G.ins);G.rep=clamp(G.rep-1);alert_(fmt(G.t)+' Direção: exame liberado como urgência acima da cota de insumos.')}else return'Cota de insumos esgotada: agora só há exames de urgência para pacientes vermelhos e laranjas (e os exames sem custo).'}
   G.ins=Math.max(0,G.ins-cc);P.ord[id]={t0:G.t,due:G.t+tt,done:tt<=1,urg:U};
+  const er=examErr(id);if(er){if(er.bad)P.ord[id].bad=er.bad;if(er.extra){P.ord[id].due+=er.extra;P.ord[id].done=false;alert_(fmt(G.t)+' '+er.note)}}
   if(!P.c.util.includes(id)&&id!=='glic'&&id!=='ecg'){P.pen.push([2,'Exame sem indicação: '+E.n+'.']);if(window.rqe)rqe('ex',.35)}
   if(tt<=1)P.newRes++;
   adv(free?0:.5);return null;
@@ -1095,13 +1139,14 @@ function rxAdd(P,f,free){
   c.key.forEach((k,ki)=>{
     if(!k.ids.includes(id))return;isKey=true;
     const ok=okIdx(k,id);
-    if(ok.includes(i)){if(P.ks[ki]==null&&!handled)P.ks[ki]=G.t}
+    if(ok.includes(i)){if(P.ks[ki]==null&&!handled){if(isEVrx(D,f.via)&&Math.random()<.01){P.ksPend=(P.ksPend||[]).concat([{ki,at:G.t+30}]);P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'A medicação foi trocada com a do leito vizinho; o erro foi percebido a tempo e a dose certa atrasou 30 min.',fresh:1});alert_(fmt(G.t)+' Enfermagem: troca de medicação com o leito vizinho percebida a tempo; '+D.n+' atrasou 30 min.',true)}else P.ks[ki]=G.t}}
     else if(i>Math.max(...ok)){if(!handled){addAE(P,D.ae||'Dose acima da recomendada.',12,'Dose acima da recomendada: '+D.n+'.');handled=true}}
     else if(id!=='o2')P.pen.push([6,'Dose insuficiente: '+D.n+'.']);
   });
   if(!isKey&&!handled){
     if(c.allowed.includes(id)||id==='o2'){if(D.tox!=null&&i>=D.tox)addAE(P,D.ae,12,'Dose acima da recomendada: '+D.n+'.')}
     else if(['iot','cvc','dreno','parac','cardiov','desfib'].includes(id))addAE(P,'Procedimento invasivo sem indicação: '+D.n.toLowerCase()+' com complicação (sangramento, pneumotórax, infecção ou lesão de via aérea).',20,'Procedimento invasivo sem indicação: '+D.n+'.');
+    else if(D.v[0]==='Solicitação'){P.pen.push([3,'Solicitação sem indicação: '+D.n+'.']);if(window.rqe)rqe('ex',.5)}
     else{P.pen.push([6,'Prescrição sem indicação: '+D.n+'.']);G.ins=Math.max(0,G.ins-1)}
   }
   if(!D.f.split(' ').includes(f.freq)||!D.dr.split(' ').includes(f.dur))P.pen.push([3,'Frequência ou duração inadequada: '+D.n+'.']);
@@ -1138,7 +1183,7 @@ function finalize(P,d,fromReg){
   c.key.forEach((k,i)=>{if(P.ks[i]==null)pen.push([15,'Faltou: '+k.lb+'.']);else goods.push('Feito: '+k.lb+'.')});
   if(!P.hyp)pen.push([15,'Hipótese diagnóstica não registrada.']);
   else if(P.hyp!==c.hyp)pen.push([15,'Diagnóstico perdido: a hipótese registrada foi "'+DXS.find(x=>x[0]===P.hyp)[1]+'".']);
-  else if(c.evid.length&&!c.evid.some(e=>P.ord[e]&&P.ord[e].done))pen.push([5,'Diagnóstico correto, mas empírico, sem exame que o confirmasse.']);
+  else if(c.evid.length&&!c.evid.some(e=>P.ord[e]&&P.ord[e].done&&!P.ord[e].bad))pen.push([5,'Diagnóstico correto, mas empírico, sem exame que o confirmasse.']);
   else goods.push('Diagnóstico correto: '+DXS.find(x=>x[0]===c.hyp)[1]+'.');
   if(P.asked.size>=4)goods.push('Anamnese dirigida.');
   if(P.seen!=null){const w=Math.round(P.seen-c.arr);if(c.tri==='VERMELHO'&&w>12)pen.push([10,'Atendimento tardio de paciente vermelho (espera de '+w+' min).']);else if(c.tri==='LARANJA'&&w>25)pen.push([5,'Atendimento tardio de paciente laranja (espera de '+w+' min).'])}
@@ -1240,6 +1285,7 @@ function deliver(it,final){
     const remark=r.cls==='otimo'||r.cls==='bom'?'Chegou bem conduzido da emergência.':r.cls==='parcial'?'Completamos aqui'+(P.missAtDest.length?': '+P.missAtDest.join(', '):' alguns ajustes de prescrição')+'.':'Chegou com condução incompleta e deu trabalho para estabilizar.';
     txt=SECDOC[it.sec]+': "'+r.txt+' '+remark+' Diagnóstico confirmado no setor: '+dx+'."';
   }
+  txt+=reqNews(P);
   addNews(SECN[it.sec]+' · '+first,txt,r.cls==='obito');
 }
 function emgCheck(P){
@@ -1469,7 +1515,7 @@ function renderWork(){
    +vs.map((x,i)=>'<div class="v'+(vAbn(i,v[i])?' abn':'')+'"><label>'+x[0]+'</label><b>'+v[i]+'</b> <small>'+x[1]+'</small></div>').join('')+'</div>'
    +'<div class="row"><button class="btn paper" data-a="vit">Aferir de novo (1 min)</button><button class="btn paper" data-a="reav">Reavaliar (3 min)</button></div></div>'+movHtml(P)+'</div>';
   w.innerHTML=left+'<div class="right"><div class="tabs" role="tablist">'
-   +[['anam','Anamnese'],['fis','Exame físico'],['ex','Exames'],['rx','Prescrição'],['proc','Procedimentos'],['pront','Prontuário']].map(([k,n])=>'<button class="tab" role="tab" data-a="tab:'+k+'" aria-selected="'+(UI.tab===k)+'">'+n+(k==='ex'&&P.newRes>0?' *':'')+'</button>').join('')
+   +[['anam','Anamnese'],['fis','Exame físico'],['ex','Exames'],['rx','Prescrição'],['proc','Procedimentos e pedidos'],['pront','Prontuário']].map(([k,n])=>'<button class="tab" role="tab" data-a="tab:'+k+'" aria-selected="'+(UI.tab===k)+'">'+n+(k==='ex'&&P.newRes>0?' *':'')+'</button>').join('')
    +'</div><div class="doc sheet px" id="sheet">'+tabHtml(P)+'</div></div>';
   renderDecide(P);
 }
@@ -1489,12 +1535,13 @@ function tabHtml(P){
     const ids=Object.keys(EXAMS);
     const res=ids.filter(k=>P.ord[k]&&P.ord[k].done);
     return'<h3>Exames <span>insumos: '+G.ins+' de 100 · gastos '+(100-G.ins+(G.overCota||0))+'</span></h3><p style="margin:0 0 8px;color:var(--ink2);font-size:17px">Os insumos são a cota de exames do plantão. Se acabarem, ninguém morre por isso: ficam liberados só os exames de urgência para vermelhos e laranjas. Medicações e medidas iniciais não gastam insumos.</p><div class="row" style="margin:0 0 8px"><button class="btn paper'+(UI.urg?' on':'')+'" data-a="urg" aria-pressed="'+!!UI.urg+'">'+(UI.urg?'URGÊNCIA ligada: metade do tempo, +1 insumo':'Solicitar com URGÊNCIA')+'</button></div><div class="tabs subt">'+EXGROUPS.map((g,i)=>'<button class="tab" data-a="extab:'+i+'" aria-selected="'+((UI.exTab||0)===i)+'">'+g[0]+(g[1].some(k=>P.ord[k]&&P.ord[k].done)?' ·':'')+'</button>').join('')+'</div>'+(UI.exInfo&&EXINFO[UI.exInfo]?'<div class="infobox"><b>'+EXAMS[UI.exInfo].n+':</b> '+EXINFO[UI.exInfo]+' <button class="btn paper" data-a="exinfo:">Fechar</button></div>':'')+[EXGROUPS[UI.exTab||0]].map(([gn,L])=>'<div class="grid" style="margin-top:8px">'+L.filter(k=>EXAMS[k]).map(k=>{const o=P.ord[k],E=EXAMS[k],off=G.off[k]&&G.t<G.off[k].until;
-      const st=o?(o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível · '+G.off[k].why:(UI.urg&&E.t>=20?Math.ceil(E.t/2)+' min (urgência) · custo '+(E.c+1):E.t+' min · custo '+E.c);
-      return'<div class="exw"><button class="btn paper opt'+(o?' on':'')+(off&&!o?' unav':'')+'" data-a="ord:'+k+'"'+(o||off?' disabled':'')+(off&&!o?' title="'+esc(G.off[k].why)+'"':'')+'>'+E.n+'<small>'+st+'</small></button>'+(EXINFO[k]?'<button class="ibtn" data-a="exinfo:'+k+'" aria-label="O que é '+esc(E.n)+'">i</button>':'')+'</div>'}).join('')+'</div>').join('')
-     +'<p class="sub">Resultados</p>'+(res.length?'<ul class="qa">'+res.map(k=>'<li><b>'+EXAMS[k].n+(P.ord[k].urg?' (urgência)':'')+'</b><br>'+esc(P.c.res[k]||'Sem alterações relevantes.')+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhum resultado disponível.</p>');
+      const st=o?(o.bad&&o.done?'problema · pedir de novo':o.done?'pronto':'pronto às '+fmt(o.due)):off?'indisponível · '+G.off[k].why:(UI.urg&&E.t>=20?Math.ceil(E.t/2)+' min (urgência) · custo '+(E.c+1):E.t+' min · custo '+E.c);
+      return'<div class="exw"><button class="btn paper opt'+(o?' on':'')+(off&&!o?' unav':'')+'" data-a="ord:'+k+'"'+((o&&!(o.bad&&o.done))||off?' disabled':'')+(off&&!o?' title="'+esc(G.off[k].why)+'"':'')+'>'+E.n+'<small>'+st+'</small></button>'+(EXINFO[k]?'<button class="ibtn" data-a="exinfo:'+k+'" aria-label="O que é '+esc(E.n)+'">i</button>':'')+'</div>'}).join('')+'</div>').join('')
+     +'<p class="sub">Resultados</p>'+(res.length?'<ul class="qa">'+res.map(k=>'<li><b>'+EXAMS[k].n+(P.ord[k].urg?' (urgência)':'')+'</b><br>'+(P.ord[k].bad?'<span class="warn">PROBLEMA: '+esc(P.ord[k].bad)+'</span>':esc(P.c.res[k]||'Sem alterações relevantes.'))+'</li>').join('')+'</ul>':'<p class="hint" style="padding:6px 0;color:var(--ink2)">Nenhum resultado disponível.</p>');
   }
   if(UI.tab==='proc'){const done=id=>P.rx.some(r=>r.id===id);
     return'<h3>Procedimentos <span>tempo de execução realista</span></h3><div class="grid">'+PROCS.map(([id,n,t])=>'<button class="btn paper opt'+(done(id)?' on':'')+'" data-a="proc:'+id+'"'+(done(id)?' disabled':'')+'>'+n+'<small>'+(done(id)?'feito':t+' min')+'</small></button>').join('')+'</div>'
+     +'<p class="sub">Pedidos a outros serviços (1 min cada; pedir não garante que aconteça)</p><div class="grid">'+REQS.map(([id,n])=>'<button class="btn paper opt'+(done(id)?' on':'')+'" data-a="req:'+id+'"'+(done(id)?' disabled':'')+'>'+n+'<small>'+(done(id)?'pedido feito':'1 min')+'</small></button>').join('')+'</div>'
      +(UI.msg?'<p class="warn">'+esc(UI.msg)+'</p>':'')+'<p class="sub">Registro</p>'+logList(P,['p']);
   }
   if(UI.tab==='rx'){
@@ -1548,7 +1595,7 @@ function renderVeil(){
      +(G.news.length?'<p class="sub">Recados dos setores</p><ul class="qa">'+G.news.slice().reverse().map(n=>'<li><b>'+fmt(n.t)+' · '+esc(n.title)+'</b><br>'+esc(n.txt)+'</li>').join('')+'</ul>':'')
      +'<div class="rep">'+G.pts.map(P=>{const r=P.res;return'<div class="rp"><h4><span>'+esc(P.c.nome)+', '+P.c.idade+'</span><span class="tag t-'+r.cls+'">'+({otimo:'ÓTIMO',bom:'BOM',parcial:'PARCIAL',ruim:'RUIM',obito:'ÓBITO',pend:'PENDENTE'})[r.cls]+' · '+r.score+'</span></h4>'
       +'<div>'+esc(r.txt)+'</div>'+(r.errs.length?'<ul class="warn">'+r.errs.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')+(r.goods.length?'<ul class="good">'+r.goods.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')
-      +'<div style="color:var(--ink2);font-size:18px">'+esc(P.c.ensina)+'</div></div>'}).join('')+'</div>'
+      +'<div style="font-size:18px"><b>O que estava indicado:</b> '+esc(idealFor(P.c).join(' · '))+'</div><div style="color:var(--ink2);font-size:18px">'+esc(P.c.ensina)+'</div></div>'}).join('')+'</div>'
      +'<div class="row"><button class="btn red" data-a="start:'+G.mode+'">Novo plantão</button></div></article>';return;
   }
   if(!G){v.hidden=false;v.innerHTML=introHtml();return}
@@ -1601,6 +1648,7 @@ document.addEventListener('click',e=>{
   else if(!P)return;
   else if(k==='ask')askQ(P,v);
   else if(k==='proc'){UI.msg=doProc(P,v)||''}
+  else if(k==='req'){UI.msg=doReq(P,v)||''}
   else if(k==='mov'){UI.msg2=doMov(P,v)||''}
   else if(k==='sys')exam(P,v);
   else if(k==='vit')vitals(P);

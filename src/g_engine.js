@@ -31,6 +31,7 @@ function setStage(P,ns){
   P.stage=ns;P.worst=Math.min(P.worst,ns);
 }
 function evolve(P){
+  if(P.ksPend&&P.ksPend.length)P.ksPend=P.ksPend.filter(x=>{if(G.t>=x.at){if(P.ks[x.ki]==null)P.ks[x.ki]=x.at;return false}return true});
   const c=P.c,t=G.t;let lag=0;
   c.key.forEach((k,i)=>{if(P.ks[i]==null&&t-c.arr>k.by)lag++});
   lag+=P.adv.filter(x=>t-x<45).length;
@@ -50,7 +51,7 @@ function tickMin(){
   G.pts.forEach(P=>{
     if(P.st==='wait'&&P.c.arr<=t){P.st='queue';alert_(fmt(t)+' Chegou '+P.c.nome.split(' ')[0]+' ('+P.c.tri.toLowerCase()+').',P.c.tri==='VERMELHO')}
     if(!ACTIVE.includes(P.st))return;
-    Object.entries(P.ord).forEach(([k,o])=>{if(!o.done&&t>=o.due){o.done=true;P.newRes++;alert_(fmt(t)+' Resultado pronto: '+EXAMS[k].n+' de '+P.c.nome.split(' ')[0]+'.')}});
+    Object.entries(P.ord).forEach(([k,o])=>{if(!o.done&&t>=o.due){o.done=true;P.newRes++;if(o.bad)alert_(fmt(t)+' Problema no exame '+EXAMS[k].n+' de '+P.c.nome.split(' ')[0]+': '+o.bad,true);else alert_(fmt(t)+' Resultado pronto: '+EXAMS[k].n+' de '+P.c.nome.split(' ')[0]+'.')}});
     evolve(P);if(P.st==='emg')emgCheck(P);
     if(P.st==='reg'&&t>=P.reg.at)depart(P);
   });
@@ -76,10 +77,11 @@ function exam(P,s){if(P.examined.has(s))return;P.examined.add(s);P.log.push({t:G
 function vitals(P){adv(1);P.lv={t:G.t,v:P.c.vit[P.stage]}}
 function reassess(P){adv(3);P.lv={t:G.t,v:P.c.vit[P.stage]};P.log.push({t:G.t,k:'r',q:'Reavaliação',a:P.c.reav[P.stage]||'Sem mudanças.',fresh:1})}
 function order(P,id,free,urg){
-  const E=EXAMS[id],U=!!urg&&E.t>=20,tt=U?Math.ceil(E.t/2):E.t,cc=E.c+(U?1:0);if(P.ord[id])return'Já solicitado.';
+  const E=EXAMS[id],U=!!urg&&E.t>=20,tt=U?Math.ceil(E.t/2):E.t,cc=E.c+(U?1:0);if(P.ord[id]&&!P.ord[id].bad)return'Já solicitado.';
   const off=G.off[id];if(off&&G.t<off.until)return off.why;
   if(G.ins<cc){if(P.c.tri==='VERMELHO'||P.c.tri==='LARANJA'){G.overCota=(G.overCota||0)+(cc-G.ins);G.rep=clamp(G.rep-1);alert_(fmt(G.t)+' Direção: exame liberado como urgência acima da cota de insumos.')}else return'Cota de insumos esgotada: agora só há exames de urgência para pacientes vermelhos e laranjas (e os exames sem custo).'}
   G.ins=Math.max(0,G.ins-cc);P.ord[id]={t0:G.t,due:G.t+tt,done:tt<=1,urg:U};
+  const er=examErr(id);if(er){if(er.bad)P.ord[id].bad=er.bad;if(er.extra){P.ord[id].due+=er.extra;P.ord[id].done=false;alert_(fmt(G.t)+' '+er.note)}}
   if(!P.c.util.includes(id)&&id!=='glic'&&id!=='ecg'){P.pen.push([2,'Exame sem indicação: '+E.n+'.']);if(window.rqe)rqe('ex',.35)}
   if(tt<=1)P.newRes++;
   adv(free?0:.5);return null;
@@ -112,13 +114,14 @@ function rxAdd(P,f,free){
   c.key.forEach((k,ki)=>{
     if(!k.ids.includes(id))return;isKey=true;
     const ok=okIdx(k,id);
-    if(ok.includes(i)){if(P.ks[ki]==null&&!handled)P.ks[ki]=G.t}
+    if(ok.includes(i)){if(P.ks[ki]==null&&!handled){if(isEVrx(D,f.via)&&Math.random()<.01){P.ksPend=(P.ksPend||[]).concat([{ki,at:G.t+30}]);P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'A medicação foi trocada com a do leito vizinho; o erro foi percebido a tempo e a dose certa atrasou 30 min.',fresh:1});alert_(fmt(G.t)+' Enfermagem: troca de medicação com o leito vizinho percebida a tempo; '+D.n+' atrasou 30 min.',true)}else P.ks[ki]=G.t}}
     else if(i>Math.max(...ok)){if(!handled){addAE(P,D.ae||'Dose acima da recomendada.',12,'Dose acima da recomendada: '+D.n+'.');handled=true}}
     else if(id!=='o2')P.pen.push([6,'Dose insuficiente: '+D.n+'.']);
   });
   if(!isKey&&!handled){
     if(c.allowed.includes(id)||id==='o2'){if(D.tox!=null&&i>=D.tox)addAE(P,D.ae,12,'Dose acima da recomendada: '+D.n+'.')}
     else if(['iot','cvc','dreno','parac','cardiov','desfib'].includes(id))addAE(P,'Procedimento invasivo sem indicação: '+D.n.toLowerCase()+' com complicação (sangramento, pneumotórax, infecção ou lesão de via aérea).',20,'Procedimento invasivo sem indicação: '+D.n+'.');
+    else if(D.v[0]==='Solicitação'){P.pen.push([3,'Solicitação sem indicação: '+D.n+'.']);if(window.rqe)rqe('ex',.5)}
     else{P.pen.push([6,'Prescrição sem indicação: '+D.n+'.']);G.ins=Math.max(0,G.ins-1)}
   }
   if(!D.f.split(' ').includes(f.freq)||!D.dr.split(' ').includes(f.dur))P.pen.push([3,'Frequência ou duração inadequada: '+D.n+'.']);
@@ -155,7 +158,7 @@ function finalize(P,d,fromReg){
   c.key.forEach((k,i)=>{if(P.ks[i]==null)pen.push([15,'Faltou: '+k.lb+'.']);else goods.push('Feito: '+k.lb+'.')});
   if(!P.hyp)pen.push([15,'Hipótese diagnóstica não registrada.']);
   else if(P.hyp!==c.hyp)pen.push([15,'Diagnóstico perdido: a hipótese registrada foi "'+DXS.find(x=>x[0]===P.hyp)[1]+'".']);
-  else if(c.evid.length&&!c.evid.some(e=>P.ord[e]&&P.ord[e].done))pen.push([5,'Diagnóstico correto, mas empírico, sem exame que o confirmasse.']);
+  else if(c.evid.length&&!c.evid.some(e=>P.ord[e]&&P.ord[e].done&&!P.ord[e].bad))pen.push([5,'Diagnóstico correto, mas empírico, sem exame que o confirmasse.']);
   else goods.push('Diagnóstico correto: '+DXS.find(x=>x[0]===c.hyp)[1]+'.');
   if(P.asked.size>=4)goods.push('Anamnese dirigida.');
   if(P.seen!=null){const w=Math.round(P.seen-c.arr);if(c.tri==='VERMELHO'&&w>12)pen.push([10,'Atendimento tardio de paciente vermelho (espera de '+w+' min).']);else if(c.tri==='LARANJA'&&w>25)pen.push([5,'Atendimento tardio de paciente laranja (espera de '+w+' min).'])}
