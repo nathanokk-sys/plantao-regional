@@ -57,7 +57,8 @@ function profile(P,r,pd,t){
 }
 function effects(P,t){
   const e=[0,0,0,0,0,0],b=P.c.base||P.c.id,L=[...P.rx,...(P.rxOff||[])];
-  L.forEach(r=>{if(r.keyCred||(P.c.visit&&r.carry))return;
+  L.forEach(r=>{if(r.carry&&r.bic&&PD[r.id]&&r.bic.rate0!=null){const pd=PD[r.id],S=(BICSTD[r.id]||[r.bic.rate0])[0]||1,run=r.bic.run&&accOk(P),f=((run?r.bic.rate:0)-r.bic.rate0)/S;['s','d','fc','fr','sat','t'].forEach((k,j)=>{e[j]+=(pd[k]||0)*f});return}
+    if(r.keyCred||(P.c.visit&&r.carry))return;
     if(r.id==='o2'&&r.off==null){e[4]+=[4,6,10,12][r.i]||0;return}
     const pd=PD[r.id];
     if(pd){const f=profile(P,r,pd,t);if(!f)return;const add=(o)=>{if(!o)return;e[0]+=(o.s||0)*f;e[1]+=(o.d||0)*f;e[2]+=(o.fc||0)*f;e[3]+=(o.fr||0)*f;e[4]+=(o.sat||0)*f;e[5]+=(o.t||0)*f};
@@ -69,6 +70,7 @@ function effects(P,t){
 function vitNow(P,t){
   t=t==null?G.t:t;if(!P.vb)P.vb=parseV(P.c.vit[P.stage]||P.c.vit[0]);
   const e=effects(P,t),a=P.vb.map((x,i)=>x+e[i]);
+  if(P.icAdd&&P.interc&&P.interc.fired!=null&&t>=P.interc.fired){const fx=P.ks[P.c.key.length-1];let f=clamp((t-P.interc.fired)/10,0,1);if(fx!=null&&t>=fx)f*=Math.max(0,1-(t-fx)/30);Object.entries(P.icAdd).forEach(([k,v])=>{a[{s:0,d:1,fc:2,fr:3,sat:4,t:5}[k]]+=v*f})}
   let h=0;for(const ch of P.id)h=(h*31+ch.charCodeAt(0))%9973;const n=k=>Math.round(Math.sin((Math.floor(t/3)+h)*(k+1.7))*([3,2,2,1,1,0][k]||0));
   const o=[clamp(a[0]+n(0),50,260),clamp(a[1]+n(1),25,150),clamp(a[2]+n(2),28,210),clamp(a[3]+n(3),5,50),clamp(a[4]+n(4),45,100),clamp(a[5],33.5,42)];
   if(o[1]>=o[0]-10)o[1]=o[0]-15;return fmtVit(o);

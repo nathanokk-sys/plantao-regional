@@ -10,7 +10,7 @@ function mkPt(c){const P={id:c.id,c,look:mkLook(c),st:'wait',stage:0,worst:0,ks:
 function admit(c,slot){
   c.arr=Math.max(G.slots[slot]!=null?G.slots[slot]:c.arr,G.t);
   const P=mkPt(c);P.no=++G.no;P.off=sprite(P);G.pts.push(P);G.filled++;
-  if(c.arr<=G.t){P.st='queue';if(window.vrec)vrec(P,'Triagem',c.arr);alert_(fmt(G.t)+' Chegou '+c.nome.split(' ')[0]+' ('+c.tri.toLowerCase()+').',c.tri==='VERMELHO')}
+  if(c.arr<=G.t){P.st='queue';if(window.onArrive)onArrive(P);if(window.vrec)vrec(P,'Triagem',c.arr);alert_(fmt(G.t)+' Chegou '+c.nome.split(' ')[0]+' ('+c.tri.toLowerCase()+').',c.tri==='VERMELHO')}
 }
 const pt=id=>G.pts.find(p=>p.id===id);
 const cur=()=>G&&G.act?pt(G.act):null;
@@ -52,7 +52,7 @@ function die(P){
 function tickMin(){
   const t=G.t;
   G.pts.forEach(P=>{
-    if(P.st==='wait'&&P.c.arr<=t){P.st='queue';if(window.vrec&&!(P.vs&&P.vs.length))vrec(P,'Triagem',P.c.arr);alert_(fmt(t)+' Chegou '+P.c.nome.split(' ')[0]+' ('+P.c.tri.toLowerCase()+').',P.c.tri==='VERMELHO')}
+    if(P.st==='wait'&&P.c.arr<=t){P.st='queue';if(window.onArrive)onArrive(P);if(window.vrec&&!(P.vs&&P.vs.length))vrec(P,'Triagem',P.c.arr);alert_(fmt(t)+' Chegou '+P.c.nome.split(' ')[0]+' ('+P.c.tri.toLowerCase()+').',P.c.tri==='VERMELHO')}
     if(!ACTIVE.includes(P.st))return;
     Object.entries(P.ord).forEach(([k,o])=>{if(!o.done&&t>=o.due){o.done=true;if(window.ordDone)ordDone(P,k,o);else P.newRes++;if(o.sys===false);else if(o.bad)alert_(fmt(t)+' Problema no exame '+EXAMS[k].n+' de '+P.c.nome.split(' ')[0]+': '+o.bad,true);else alert_(fmt(t)+' Resultado pronto: '+EXAMS[k].n+' de '+P.c.nome.split(' ')[0]+'.')}});
     if(window.v2Tick)v2Tick(P,t);
@@ -146,16 +146,16 @@ function canGo(d){
   return null;
 }
 function commit(P,d){
-  const e=canGo(d);if(e)return e;
+  const e=(P.c.visit&&P.c.sec===d)?null:canGo(d);if(e)return e;
   if(d==='ALTA'&&P.orient.size===0)P.pen.push([6,'Alta sem orientações registradas.']);
-  if(d==='EMG'){P.st='emg';P.emgT=G.t;P.emgChk=0;P.log.push({t:G.t,k:'d',q:'Destino',a:'Mantido na sala de emergência, monitorizado.',fresh:1});adv(2);return null}
+  if(d==='EMG'&&G.posto!=='porta'){P.st='emg';P.emgT=G.t;P.emgChk=0;P.log.push({t:G.t,k:'d',q:'Destino',a:'Mantido na sala de emergência, monitorizado.',fresh:1});adv(2);return null}
   if(d==='TRANS'){P.st='reg';P.reg={at:G.t+rnd(60,100)};P.log.push({t:G.t,k:'d',q:'Destino',a:'Regulação acionada. Aguardando vaga e transporte.',fresh:1});adv(2);return null}
   finalize(P,d);if(G.act===P.id)G.act=null;adv(2);return null;
 }
 function depart(P){P.depT=G.t;finalize(P,'TRANS',true);alert_(fmt(G.t)+' '+P.c.nome.split(' ')[0]+' saiu em transferência regulada.');if(G.act===P.id)G.act=null}
 function finalize(P,d,fromReg){
   const c=P.c;if(window.pendFinal)pendFinal(P);
-  if(!fromReg){ if(d==='UTI')G.beds.uti.used++;if(d==='ENF')G.beds.enf.used++;if(d==='OBS')G.beds.obs.used++;if(d==='AMA')G.beds.ama.used++ }
+  if(!fromReg&&!(c.visit&&c.sec===d)){ if(d==='UTI')G.beds.uti.used++;if(d==='ENF')G.beds.enf.used++;if(d==='OBS')G.beds.obs.used++;if(d==='AMA')G.beds.ama.used++ }
   const pen=P.pen.slice(),good=P.good.slice(),goods=[];
   const best=c.dest.best.includes(d),okd=c.dest.ok.includes(d);
   if(best)goods.push('Destino adequado: '+DESTS.find(x=>x[0]===d)[1]+'.');else if(okd)pen.push([8,'Destino aceitável, mas não o melhor: '+DESTS.find(x=>x[0]===d)[1]+'.']);

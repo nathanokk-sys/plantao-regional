@@ -19,7 +19,7 @@ function renderVeil(){
      +'<button class="btn paper" data-a="dil:1">Dar alta ao paciente do leito 4, estável e com alta já planejada para amanhã.</button><button class="btn paper" data-a="dil:2">Liberar o leito 6, com PA ainda 170/100 e sem acompanhamento definido, para atender à direção.</button><button class="btn paper" data-a="dil:3">Recusar e justificar por escrito que não há paciente apto à alta segura.</button></div></article>';return}
   if(G&&G.over&&G.final){
     const F=G.final;
-    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>'+(G.mode==='visit'?'Fim da visita':'Passagem de plantão')+' <span>relatório · '+difOf().n+'</span></h3><div class="big">Nota '+F.score+'/100</div><p><b>Preceptor (RQE):</b> "'+esc(F.rqe||(F.rqe=rqeFinal(F.score)))+'"</p>'
+    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>'+(G.mode==='visit'?'Fim do turno':'Passagem de plantão')+' <span>relatório · '+difOf().n+'</span></h3><div class="big">Nota '+F.score+'/100</div><p><b>Preceptor (RQE):</b> "'+esc(F.rqe||(F.rqe=rqeFinal(F.score)))+'"</p>'
      +'<p>Média dos atendimentos: <b>'+F.avg+'</b>. Óbitos: <b>'+F.dead+'</b>. Altas inseguras: <b>'+F.unsafe+'</b>. Exames desnecessários: <b>'+F.exams+'</b>. Prescrições inadequadas: <b>'+F.rx+'</b>. Diagnósticos perdidos: <b>'+F.missed+'</b>. Decisões corretas: <b>'+F.right+'</b>.</p>'
      +'<p>Reputação '+Math.round(G.rep)+' · Confiança da equipe '+Math.round(G.eq)+' · Insumos restantes '+insTxt()+'.</p>'
      +(G.news.length?'<p class="sub">Recados</p><ul class="qa">'+G.news.slice().reverse().map(n=>'<li><b>'+fmt(n.t)+' · '+esc(n.title)+'</b><br>'+esc(n.txt)+'</li>').join('')+'</ul>':'')
@@ -35,23 +35,22 @@ function introHtml(){
   const sv=saveInfo(),mid=G&&!G.over,wk=W&&W.phase!=='end'?W:null;
   let hist='';try{const s=JSON.parse(localStorage.getItem('pr2_save')||'{"shifts":[]}');if(s.shifts.length){const l=s.shifts[s.shifts.length-1];hist='<p>Plantões concluídos: <b>'+s.shifts.length+'</b>. Último: nota <b>'+l.score+'</b>, reputação '+l.rep+'.</p>'}}catch(e){}
   let btns='';
-  if(mid)btns+='<button class="btn red" data-a="closemenu">Voltar '+(G.mode==='visit'?'à visita':'ao plantão')+'</button>';
-  else if(sv)btns+='<button class="btn red" data-a="cont">Continuar '+(sv.indexOf('Visita')===0?'a visita':'o plantão')+'</button>';
-  else if(wk)btns+='<button class="btn red" data-a="wk:resume">Continuar '+(W.len>7?'o mês':'a semana')+' ('+({visit:'visita da manhã',night:'noite '+(G&&G.over?W.day+1:W.day),visiting:'visita'}[W.phase]||'')+')</button>';
-  else if(W&&W.phase==='end')btns+='<button class="btn red" data-a="wk:resume">Ver o relatório da semana</button>';
+  if(mid)btns+='<button class="btn red" data-a="closemenu">Voltar ao turno</button>';
+  else if(sv)btns+='<button class="btn red" data-a="cont">Continuar o turno</button>';
+  else if(wk)btns+='<button class="btn red" data-a="wk:resume">Continuar '+(W.len>7?'o mês':W.len>1?'a semana':'o turno')+' (dia '+(W.phase==='next'?W.day+1:W.day)+')</button>';
+  else if(W&&W.phase==='end'&&W.len>1)btns+='<button class="btn red" data-a="wk:resume">Ver o relatório</button>';
   if(G&&G.over&&!mid)btns+='<button class="btn" data-a="closemenu">Voltar ao relatório</button>';
-  const P=UI.wkPosto||'porta',L=UI.wkLen||7,Df=UI.wkDif||'m',on=(a,b)=>a===b?' on':'';
-  const pick='<p class="sub">Novo jogo · seu posto</p><div class="row">'
-    +'<button class="btn paper'+on(P,'porta')+'" data-a="wk:posto:porta">Porta<br><small>amarelos, verdes e azuis</small></button>'
-    +'<button class="btn paper'+on(P,'sala')+'" data-a="wk:posto:sala">Sala vermelha + observação<br><small>vermelhos e laranjas</small></button>'
-    +'<button class="btn paper'+on(P,'misto')+'" data-a="wk:posto:misto">Os dois<br><small>todas as cores</small></button></div>'
-    +'<p class="sub">Duração</p><div class="row"><button class="btn paper'+on(L,7)+'" data-a="wk:len:7">Semana (7 noites)</button><button class="btn paper'+on(L,30)+'" data-a="wk:len:30">Mês (30 noites)</button><button class="btn paper'+on(L,1)+'" data-a="wk:len:1">Plantão avulso</button></div>'
+  const S=UI.wkSetor||'porta',M=UI.wkModo||'turno',Df=UI.wkDif||'m',on=(a,b)=>a===b?' on':'';
+  const pick='<p class="sub">Novo jogo · onde você está escalado</p><div class="diflist">'
+    +Object.entries(SETORES).map(([k,x])=>'<button class="btn paper'+on(S,k)+'" data-a="wk:setor:'+k+'"'+(M==='rodizio'?' disabled':'')+'><b style="font-weight:400;font-size:21px">'+x.n+'</b><small>'+x.h+' · '+x.d+'</small></button>').join('')+'</div>'
+    +'<p class="sub">Duração</p><div class="row">'+Object.entries(MODOS).map(([k,x])=>'<button class="btn paper'+on(M,k)+'" data-a="wk:modo:'+k+'">'+x[0]+'</button>').join('')+'</div>'
+    +'<p style="margin:4px 0;color:var(--ink2)">'+(M==='turno'?'Um turno de 12 h no setor escolhido.':M==='rodizio'?'Sete turnos alternando enfermaria, porta, sala vermelha e UTI; antes de cada turno dá para trocar com um colega.':'Todos os turnos no mesmo setor.'+(S==='enf'||S==='uti'?' Na enfermaria e na UTI, os mesmos pacientes continuam com você de um dia para o outro: você reavalia diariamente, vê os exames da manhã e decide alta, piora ou UTI.':' Quem você interna passa para a equipe da enfermaria; você recebe recados com o desfecho.'))+'</p>'
     +'<p class="sub">Dificuldade</p><div class="diflist">'+DIFS.map(d=>'<button class="btn paper'+on(Df,d.id)+'" data-a="wk:dif:'+d.id+'"><b style="font-weight:400;font-size:21px">'+d.n+'</b><small>'+d.d+'</small></button>').join('')+'</div>'
-    +'<div class="row"><button class="btn'+(sv||mid||wk?'':' red')+'" data-a="wk:start">Começar '+(L===1?'o plantão':L===7?'a semana':'o mês')+'</button></div>';
-  const conf=UI.confirmReset?'<div class="doc" style="border:3px double #9c2a1a;margin-top:10px"><p class="warn"><b>Começar do zero apaga tudo da v2:</b> plantão e semana em andamento, notas e histórico de pacientes. A v1 não é afetada.</p><div class="row"><button class="btn red" data-a="resetok">Apagar tudo e começar do zero</button><button class="btn paper" data-a="resetno">Cancelar</button></div></div>':'';
+    +'<div class="row"><button class="btn'+(sv||mid||wk?'':' red')+'" data-a="wk:start">Começar</button></div>';
+  const conf=UI.confirmReset?'<div class="doc" style="border:3px double #9c2a1a;margin-top:10px"><p class="warn"><b>Começar do zero apaga tudo da v2:</b> turno e semana em andamento, notas e histórico de pacientes. A v1 não é afetada.</p><div class="row"><button class="btn red" data-a="resetok">Apagar tudo e começar do zero</button><button class="btn paper" data-a="resetno">Cancelar</button></div></div>':'';
   return'<article class="doc px card"><h3>Hospital Regional <span>'+(mid?'Menu':'versão 2')+'</span></h3><div class="big">PLANTÃO<br>REGIONAL 2</div>'
-   +(mid?'':'<p>Você é interno de Clínica Médica num hospital regional do SUS no Vale do São Francisco, agora trabalhando dentro do prontuário eletrônico: lista de pacientes por setor, central de assistência com guias, evolução, prescrição, solicitação de exames, laudos, pareceres, transfusão, termos e receitas.</p>'
-   +'<ul><li><b>Noite (19:00 às 07:00):</b> você fica num posto; o colega do outro posto manda recados e às vezes pacientes.</li><li><b>Manhã:</b> visita aos seus internados, com checklist de pendências, evolução do dia e fluxo laboratorial.</li><li>Tudo custa tempo, inclusive as medidas iniciais. O residente carimba o que você imprime.</li><li>Regra de ouro: converse com o residente antes de procedimentos e documentos.</li></ul>'
+   +(mid?'':'<p>Você é <b>R1 de Clínica Médica</b> num hospital regional do SUS no Vale do São Francisco, trabalhando dentro do prontuário eletrônico. Cada turno você fica num setor só, como na escala real.</p>'
+   +'<ul><li><b>Porta do PS e sala vermelha (19:00 às 07:00):</b> admissões e emergências. O colega do outro posto manda recados e às vezes pacientes.</li><li><b>Enfermaria e UTI (07:00 às 19:00):</b> seus leitos, visita, evolução diária, exames da manhã, intercorrências e admissões que sobem do PS.</li><li>Tudo custa tempo. Você carimba e assina; os internos colhem exames (e às vezes erram). Discuta o que for maior com o staff.</li></ul>'
    +'<p>'+CASES.length+' quadros clínicos; as pessoas são sempre novas. O sistema PRONTO é fictício. Tudo roda no seu navegador, sem usar o Claude.</p>')
    +hist+(sv?'<p>Salvo: <b>'+esc(sv)+'</b>. O jogo salva sozinho a cada ação.</p>':'')
    +(btns?'<div class="row">'+btns+'</div>':'')+(mid?'':pick)+'<div class="row"><button class="btn" data-a="reset">Começar do zero</button></div>'+conf+'</article>';
@@ -79,7 +78,7 @@ document.addEventListener('click',e=>{
   if(k==='reset'){UI.confirmReset=true;render();return}
   if(k==='resetno'){UI.confirmReset=false;render();return}
   if(k==='resetok'){resetAll();render();return}
-  if(k==='wk'){wkAction(v);if(G&&!G.over&&['start','visit','night','again','resume'].includes(v.split(':')[0])){UI.scr='pac';UI.sec='todos'}render();return}
+  if(k==='wk'){wkAction(v);if(G&&!G.over&&['start','next','again','resume'].includes(v.split(':')[0])){UI.scr='pac';UI.sec='todos'}render();return}
   if(k==='ciente'){const P=pt(UI.pop&&UI.pop.id);if(P){P.ciente=1;P.log.push({t:G.t,k:'m',q:'Alerta',a:'Alergia registrada na triagem: ciente.',fresh:1})}UI.pop=null;render();return}
   if(!G||G.over)return;
   if(k==='dil'){resolveDil(+v);render();return}
@@ -142,6 +141,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   const s=e.target.closest('[data-s]');if(!s)return;const n=s.dataset.s,P=G&&cur(),F=UI.F,val=s.type==='checkbox'?(s.checked?1:0):s.value;
   if(n==='trk'){musSelect(s.value);renderTop();return}
+  if(n==='nextsec'){UI.nextSec=s.value;renderVeil();return}
   if(!G)return;
   const [g,f]=n.split(':');
   if(['dose','via','freq','dur','dil','inf','rate','hrs'].includes(n)){F[n]=['dose','via','rate'].includes(n)?+val:val;if(n==='freq'){if(val==='u')F.dur='u';else if(F.dur==='u'&&DRUGS[F.drug])F.dur=DRUGS[F.drug].dr.split(' ').find(x=>x!=='u')||'ct';if(val==='ic'){F.inf='cont';F.dil='bic';F.rate=F.rate||(BICSTD[F.drug]||[20])[0]}}}

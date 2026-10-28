@@ -105,7 +105,7 @@ function flag(v,ref,k,F){if(typeof v==='string')return /> |HI|incoag|Positivo|\+
   let r=ref;if(k==='hb')r=F?[12,16]:[13.5,17.5];if(k==='ht')r=F?[36,46]:[40,52];return v<r[0]?'L':v>r[1]?'H':''}
 /* data do jogo: a semana começa na data real em que foi iniciada */
 function gameDate(t){
-  const base=(W&&W.d0)||(G&&G.d0)||Date.now(),day0=(G&&G.mode==='visit'?1:0)+((W&&G&&G.week?W.day:1)-1);
+  const base=(W&&W.d0)||(G&&G.d0)||Date.now(),day0=(W&&G&&G.week?W.day:1)-1;
   const m=(G&&G.t0!=null?G.t0:T0)+t,d=new Date(base+(day0+Math.floor(m/1440))*864e5);
   return pad(d.getDate())+'/'+pad(d.getMonth()+1)}
 function stamp(o){return'Coleta '+gameDate(o.t0)+' '+fmt(o.t0)+' · liberado '+gameDate(o.due)+' '+fmt(o.due)+(o.urg?' · URGÊNCIA':'')}

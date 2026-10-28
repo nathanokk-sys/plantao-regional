@@ -23,7 +23,7 @@ function loadGame(){
 function saveInfo(){
   try{const S=JSON.parse(localStorage.getItem('pr_cur')||'null');if(!S||!S.G)return null;const g=S.G;
     const done=g.pts.filter(p=>p.st==='done'||p.st==='dead').length;
-    return(g.mode==='visit'?'Visita da manhã':'Plantão '+g.n)+' · '+fmt(g.t)+' · '+done+' de '+g.slots.length+' pacientes resolvidos'}catch(e){return null}
+    return(g.mode==='visit'?'Turno de '+(g.turn==='uti'?'UTI':'enfermaria'):'Plantão '+g.n)+' · '+fmt(g.t)+' · '+done+' de '+g.slots.length+' pacientes resolvidos'}catch(e){return null}
 }
 function nextN(){try{return(JSON.parse(localStorage.getItem('pr_save')||'{"shifts":[]}').shifts.length||0)+1}catch(e){return 1}}
 function resetAll(){['pr_cur','pr_save','pr_hist','pr_used','pr_week'].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});G=null;W=null;UI.menu=false;UI.confirmReset=false}

@@ -14,16 +14,15 @@ const ABX=new Set([...(CATS.find(c=>c[0]==='Antibióticos')||[0,[]])[1],...(CATS
 const msgHtml=()=>UI.msg?'<p class="msg'+(UI.err?' err':'')+'">'+esc(UI.msg)+'</p>':'';
 const tm=m=>m>=1?'('+(m%1?String(m).replace('.',','):m)+' min)':'('+Math.round(m*60)+' s)';
 /* ---------- setor, leito e estado ---------- */
-const SECS=[['todos','Todos'],['porta','Porta'],['sv','Sala vermelha'],['obs','Observação'],['ama','Sala amarela'],['enf','Enfermaria'],['uti','UTI'],['reg','Regulação'],['done','Atendidos']];
+const SECS_PS=[['todos','Todos'],['fila','Aguardando'],['atend','Em atendimento'],['done','Atendidos']],SECS_W=[['todos','Leitos'],['done','Concluídos']];
+const secsNow=()=>G.mode==='visit'?SECS_W:SECS_PS;
 function setorOf(P){
   if(['done','dead','handoff','skip'].includes(P.st))return'done';if(P.st==='wait')return'x';
-  if(P.c.visit)return({ENF:'enf',AMA:'ama',OBS:'obs',UTI:'uti'})[P.c.sec]||'enf';
-  if(P.st==='reg')return'reg';if(P.st==='emg')return'sv';
-  if(G.posto==='sala')return'sv';if(G.posto==='porta')return'porta';return SALA_TRI.includes(P.c.tri)?'sv':'porta';
+  if(G.mode==='visit')return'leito';return P.st==='queue'?'fila':'atend';
 }
-function leitoOf(P){if(!P.leito)P.leito=setorOf(P)==='sv'?'Maca '+(((P.no-1)%6)+1):'Cadeira '+pad(P.no);if(P.st==='emg'&&!/^Maca/.test(P.leito))P.leito='Maca '+(((P.no-1)%6)+1);return P.leito}
+function leitoOf(P){if(!P.leito&&P.c.fromPS)P.leito=freeBed(turnOf()==='uti'?'UTI':'ENF');if(!P.leito)P.leito=G.posto==='sala'?'Maca '+(((P.no-1)%6)+1):'Cadeira '+pad(P.no);if(P.st==='emg'&&!/^Maca/.test(P.leito))P.leito='Maca '+(((P.no-1)%6)+1);return P.leito}
 function statusOf(P){
-  if(P.st==='queue')return P.c.visit?'Visita pendente':'Aguardando · '+Math.max(0,Math.floor(G.t-P.c.arr))+' min';
+  if(P.st==='queue')return P.c.visit?'Visita pendente':P.c.fromPS?'Admissão do PS · aguardando':'Aguardando · '+Math.max(0,Math.floor(G.t-P.c.arr))+' min';
   if(P.st==='care')return P.c.visit?'Em visita':'Em atendimento';if(P.st==='emg')return'Monitorizado na sala vermelha';if(P.st==='reg')return'Aguardando regulação (até '+fmt(P.reg.at)+')';
   if(P.st==='dead')return'Óbito';if(P.st==='done')return'Destino: '+((DESTS.find(x=>x[0]===P.dest)||[0,P.dest])[1]);return'';
 }
@@ -62,8 +61,8 @@ function plistHtml(){
 function pacHtml(){
   const cnt=k=>G.pts.filter(P=>P.st!=='wait'&&P.st!=='skip'&&(k==='todos'?setorOf(P)!=='done':setorOf(P)===k)).length;
   const visit=G.mode==='visit',ck=visit?active().map(P=>{const L=pendList(P);return'<li><b>'+esc(P.c.nome.split(' ')[0])+' ('+esc(P.c.secLbl)+')</b>: '+(L.length?L.map(esc).join('; '):'sem pendências')+'</li>'}).join(''):'';
-  return'<section class="win"><h2 class="wt">Pacientes <span>'+(visit?'visita da manhã':'plantão')+' · selecione o setor</span></h2><div class="wb">'
-   +'<div class="secs">'+SECS.map(([k,n])=>{const c=cnt(k);return c||k==='todos'||UI.sec===k?'<button class="btn'+(UI.sec===k?' on':'')+'" data-a="sec:'+k+'">'+n+' ('+c+')</button>':''}).join('')+'</div>'
+  return'<section class="win"><h2 class="wt">Pacientes <span>'+esc(shiftLbl())+'</span></h2><div class="wb">'
+   +'<div class="secs">'+secsNow().map(([k,n])=>{const c=cnt(k);return c||k==='todos'||UI.sec===k?'<button class="btn'+(UI.sec===k?' on':'')+'" data-a="sec:'+k+'">'+n+' ('+c+')</button>':''}).join('')+'</div>'
    +'<label class="f">Buscar por nome ou CPS<input type="search" data-s="q" value="'+esc(UI.q||'')+'" placeholder="ex.: Maria ou 123456"></label>'
    +'<div class="plist" id="plist">'+plistHtml()+'</div>'+waitBtns()
    +(visit?'<div class="card2"><h4>Antes da visita: checklist</h4><p style="margin:0 0 4px">Veja os leitos, leia a admissão e a última evolução, confira pendências, sinais vitais das últimas 24 h, laudos, pareceres e a prescrição atual. Depois visite cada leito e registre a evolução do dia.</p><ul style="margin:0;padding-left:18px">'+ck+'</ul></div>':'')
@@ -227,9 +226,9 @@ function solHtml(P){
      +'<label class="f">Tipo<select data-s="tc:tipo"><option value="">—</option>'+[['cranio','Crânio'],['torax','Tórax'],['angio','Angiotomografia de tórax (TEP)'],['abdome','Abdome'],['coluna','Coluna lombar']].map(([k,n])=>'<option value="'+k+'"'+(C.tc.tipo===k?' selected':'')+'>'+n+'</option>').join('')+'</select></label>'
      +'<label class="f">Contraste<select data-s="tc:ctr"><option value="">—</option><option value="sim"'+(C.tc.ctr==='sim'?' selected':'')+'>Com contraste iodado</option><option value="nao"'+(C.tc.ctr==='nao'?' selected':'')+'>Sem contraste</option></select></label>'
      +'<label class="f">Nível de consciência<select data-s="tc:cons"><option value="">—</option>'+['Lúcido e orientado','Confuso','Rebaixado (Glasgow ≤ 12)'].map(x=>'<option'+(C.tc.cons===x?' selected':'')+'>'+x+'</option>').join('')+'</select></label></div></div>':'')
-   +'<div class="row"><label class="orient2"><input type="radio" name="urg" data-s="cart:urg" value="0"'+(C.urg?'':' checked')+'> Rotina</label><label class="orient2"><input type="radio" name="urg" data-s="cart:urg" value="1"'+(C.urg?' checked':'')+'> Imediato (metade do tempo, +1 insumo)</label></div>'
+   +'<div class="row"><label class="orient2"><input type="radio" name="urg" data-s="cart:urg" value="0"'+(C.urg?'':' checked')+'> Rotina'+(G.mode==='visit'?' (coleta amanhã 06:00)':'')+'</label><label class="orient2"><input type="radio" name="urg" data-s="cart:urg" value="1"'+(C.urg?' checked':'')+'> Imediato (metade do tempo, +1 insumo)</label></div>'
    +msgHtml()+'<div class="row"><button class="btn red" data-a="csend"'+(C.items.length?'':' disabled')+'>Imprimir, carimbar e enviar '+tm(1)+'</button></div>'
-   +'<p style="margin:4px 0 0;color:#3b5a73">Laboratório: caixa de coleta. Imagem: entregue à enfermeira do setor. O residente carimba (demora conforme a correria).</p></div></div>';
+   +'<p style="margin:4px 0 0;color:#3b5a73">Laboratório: caixa de coleta. Imagem: entregue à enfermeira do setor. Você carimba e assina.'+(G.mode==='visit'?' Na enfermaria e na UTI, a rotina é colhida amanhã às 06:00; imediato sai hoje.':'')+'</p></div></div>';
   const done=Object.entries(P.ord);
   h+='<div class="card2"><h4>Busca: exames já solicitados</h4>'+(done.length?'<div class="tscroll"><table class="tbl"><tr><th>Exame</th><th>Coleta</th><th>Situação</th></tr>'+done.map(([k,o])=>'<tr><td>'+EXAMS[k].n+(o.urg?' (imediato)':'')+'</td><td>'+esc(o.dt||fmt(o.t0))+'</td><td>'+(o.done?(o.sys===false?'realizado, ainda não consta no sistema':o.bad?'problema na amostra':'resultado na guia Laudos'):'em andamento · previsto '+fmt(o.due))+'</td></tr>').join('')+'</table></div>':'<p style="margin:0">Nenhum exame solicitado.</p>')+'</div>';
   return h;
@@ -245,7 +244,7 @@ function lauBlock(P,o){
   if(UI.exInfo===k&&EXINFO[k])h+='<div class="infobox">'+EXINFO[k]+' <button class="btn sm" data-a="exinfo:">Fechar</button></div>';
   if(o.bad)return h+'<p class="warn">PROBLEMA: '+esc(o.bad)+'</p></div>';
   if(LP[k])return h+labTable(P,k,o.vals||labVals(P,k))+NOTE(P.c.res[k])+'</div>';
-  if(o.nol&&!o.laudo)return h+'<p class="laudo">Exame realizado e disponível na telerradiologia, sem laudo: radiografias e tomografias sem contraste só são laudadas quando o residente pede.</p>'+(o.cur?'<div class="row" style="margin:4px 0 0">'+(o.laudoAt?'<span>Laudo solicitado; previsão '+fmt(o.laudoAt)+'.</span>':'<button class="btn sm" data-a="laudo:'+k+'">Pedir laudo ao residente '+tm(1)+'</button>')+'</div>':'')+'</div>';
+  if(o.nol&&!o.laudo)return h+'<p class="laudo">Exame realizado e disponível na telerradiologia, sem laudo: radiografias e tomografias sem contraste só são laudadas quando você pede à radiologia.</p>'+(o.cur?'<div class="row" style="margin:4px 0 0">'+(o.laudoAt?'<span>Laudo solicitado; previsão '+fmt(o.laudoAt)+'.</span>':'<button class="btn sm" data-a="laudo:'+k+'">Pedir laudo à radiologia '+tm(1)+'</button>')+'</div>':'')+'</div>';
   return h+'<p class="laudo">'+esc(o.alt||P.c.res[k]||(k==='ecg'?'Ritmo sinusal, sem alterações agudas.':k==='rx'?'Sem alterações.':k==='us'?'Sem alterações ao exame à beira-leito.':k==='tc'?'Sem alterações agudas.':'Sem alterações relevantes.'))+'</p></div>';
 }
 function fluxoHtml(P){
@@ -292,7 +291,7 @@ function atbHtml(P){
 /* transfusão */
 function traHtml(P){
   const T=UI.tx,D=DRUGS[T.id],tip=P.ord.tipag&&P.ord.tipag.done&&!P.ord.tipag.bad;
-  return'<div class="card2"><h4>Solicitação de transfusão (modelo Rev. 5)</h4><p style="margin:0 0 6px">Confira transfusões anteriores e preencha com os dados da AIH. Imprima em duas vias, leve ao residente para carimbo e entregue à enfermeira.</p><div class="fgrid">'
+  return'<div class="card2"><h4>Solicitação de transfusão (modelo Rev. 5)</h4><p style="margin:0 0 6px">Confira transfusões anteriores e preencha com os dados da AIH. Imprima em duas vias, carimbe, assine e entregue à enfermeira.</p><div class="fgrid">'
    +'<label class="f">Hemocomponente<select data-s="tx:id">'+HEMO.map(k=>'<option value="'+k+'"'+(T.id===k?' selected':'')+'>'+DRUGS[k].n+'</option>').join('')+'</select></label>'
    +'<label class="f">Quantidade<select data-s="tx:dose">'+D.d.map((d,i)=>'<option value="'+i+'"'+(+T.dose===i?' selected':'')+'>'+esc(d)+'</option>').join('')+'</select></label>'
    +'<label class="f">Indicação<select data-s="tx:ind"><option value="">—</option>'+['Anemia sintomática ou Hb abaixo de 7','Sangramento ativo com instabilidade','Plaquetopenia com sangramento','Coagulopatia com sangramento','Reposição em procedimento'].map(x=>'<option'+(T.ind===x?' selected':'')+'>'+x+'</option>').join('')+'</select></label></div>'
@@ -300,7 +299,7 @@ function traHtml(P){
    +'<label class="orient2"><input type="checkbox" data-s="tx:urg"'+(T.urg?' checked':'')+'> Urgência extrema: sangue O sem prova cruzada</label>'
    +'<p class="infobox">'+HEMOREF+'</p>'+msgHtml()+'<div class="row"><button class="btn" data-a="txfill">Preencher e imprimir 2 vias '+tm(2)+'</button></div></div>'
    +'<div class="card2"><h4>Solicitações</h4>'+((P.tx||[]).length?'<ul class="qa">'+P.tx.map((x,i)=>'<li><b>'+DRUGS[x.id].n+' · '+esc(DRUGS[x.id].d[x.dose])+(x.urg?' · urgência extrema':'')+'</b><br>'
-     +({impresso:'Impresso. <button class="btn sm" data-a="txstep:'+i+'">Levar ao residente para carimbo</button>',carimbado:'Carimbado. <button class="btn sm" data-a="txstep:'+i+'">Entregar à enfermeira</button>',entregue:'Com a enfermagem; instalação prevista '+fmt(x.at||0)+'.',instalado:'Instalado.',recusado:'<span class="warn">'+esc(x.why||'Recusado.')+'</span>'})[x.st]+'</li>').join('')+'</ul>':'<p style="margin:0">Nenhuma solicitação.</p>')+'</div>';
+     +({impresso:'Impresso. <button class="btn sm" data-a="txstep:'+i+'">Carimbar e assinar</button>',carimbado:'Carimbado. <button class="btn sm" data-a="txstep:'+i+'">Entregar à enfermeira</button>',entregue:'Com a enfermagem; instalação prevista '+fmt(x.at||0)+'.',instalado:'Instalado.',recusado:'<span class="warn">'+esc(x.why||'Recusado.')+'</span>'})[x.st]+'</li>').join('')+'</ul>':'<p style="margin:0">Nenhuma solicitação.</p>')+'</div>';
 }
 /* termos e procedimentos */
 function terHtml(P){
@@ -333,15 +332,15 @@ function recHtml(P){
 function ajuHtml(P){
   const card=(w,t,d)=>{const S=helpState(P,w),H=(P.help||{})[w];return'<div class="card2"><h4>'+t+'</h4><p style="margin:0 0 6px">'+d+'</p>'
     +(H?(H.done?'<p class="msg">Respondido. Veja abaixo.</p>':'<p class="msg">Aguardando resposta (por volta de '+fmt(H.at)+').</p>'):S.no?'<p class="msg err">'+esc(S.no)+'</p>':'<button class="btn" data-a="help:'+w+'">'+(w==='r1'?'Mandar mensagem':'Perguntar')+'</button>')+'</div>'};
-  return'<div class="two even">'+card('r1','R1 colega (WhatsApp)','Conte o caso e pergunte o que pode ser. Ele erra às vezes.')+card('enf','Enfermagem','Pergunte o que a enfermeira acha do quadro.')+'</div>'+card('tec','Técnicas de enfermagem (feridas e lesões)','Para cuidado de feridas, picadas e lesões de pele.')
+  return'<div class="two even">'+card('r1','R2 / R3 (WhatsApp)','Conte o caso para um residente mais velho e pergunte o que pode ser. Ele erra às vezes.')+card('enf','Enfermagem','Pergunte o que a enfermeira acha do quadro.')+'</div>'+card('tec','Técnicas de enfermagem (feridas e lesões)','Para cuidado de feridas, picadas e lesões de pele.')
    +msgHtml()+'<div class="card2"><h4>Respostas</h4>'+logL(P,['h'],'Nenhuma resposta ainda.')+'</div>'
    +'<p style="margin:0;color:#3b5a73">Dificuldade: '+difOf().n+'. A ajuda depende de quem está disponível; nenhuma resposta substitui o seu raciocínio.</p>';
 }
 /* destino e alta */
 function desHtml(P){
-  const info=k=>k==='UTI'?bedFree('uti')+' livres':k==='ENF'?bedFree('enf')+' livres':k==='OBS'?bedFree('obs')+' livres':k==='AMA'?bedFree('ama')+' livres':k==='ALTA'?'liberar o paciente':k==='EMG'?'manter monitorizado':'regulação ~60-100 min';
+  const info=k=>P.c.visit&&((k==='ENF'&&turnOf()==='enf')||(k==='UTI'&&turnOf()==='uti'))?'segue no leito '+esc(leitoOf(P)):k==='UTI'?bedFree('uti')+' livres':k==='ENF'?bedFree('enf')+' livres':k==='OBS'?bedFree('obs')+' livres':k==='AMA'?bedFree('ama')+' livres':k==='ALTA'?'liberar o paciente':k==='EMG'?(turnOf()==='porta'?'colega da sala vermelha':'manter monitorizado'):'regulação ~60-100 min';
   const home=P.rx.filter(r=>r.home||(DRUGS[r.id]&&!isEVrx(DRUGS[r.id],r.via)&&DRUGS[r.id].v[0]!=='Solicitação'&&r.id!=='o2'&&r.dur!=='u'));
-  let h=(window.visitHint?visitHint(P):'')+'<div class="dests">'+DESTS.map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0)||(k==='AMA'&&bedFree('ama')<=0);
+  let h=(window.visitHint?visitHint(P):'')+'<div class="dests">'+(window.destList?destList(P):DESTS).map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0)||(k==='AMA'&&bedFree('ama')<=0);
     return'<button class="dest dest2" data-a="dest:'+k+'" aria-pressed="'+(UI.destSel===k)+'"'+(dis?' disabled':'')+'>'+n+'<small>'+(dis?'lotado':info(k))+'</small></button>'}).join('')+'</div>';
   if(UI.destSel==='ALTA'){h+='<div class="card2"><h4>Alta médica</h4><p style="margin:0 0 6px">Antes: evolução de alta, receitas para casa, atestado e encaminhamento (guia Receitas e atestados), orientações.</p><div class="orient">'+ORIENT.map(([k,n])=>'<label class="orient2"><input type="checkbox" data-s="or" value="'+k+'"'+(P.orient.has(k)?' checked':'')+'> '+n+'</label>').join('')+'</div>'
     +'<label class="f" style="margin-top:6px">Retorno<select data-s="ret"><option value="">— escolha —</option>'+RET.map(([k,n])=>'<option value="'+k+'"'+(P.ret===k?' selected':'')+'>'+n+'</option>').join('')+'</select></label>'

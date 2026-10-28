@@ -2,7 +2,7 @@
 const lg=(P,k,q,a)=>P.log.push({t:G.t,k,q,a,fresh:1});
 const first=P=>P.c.nome.split(' ')[0];
 /* o residente carimba e assina tudo o que é impresso; às vezes está ocupado */
-function carimbo(P,what){const R=difOf().carimbo,m=rnd(R[0],R[1]);if(m)adv(m);if(P)lg(P,'p','Residente',what+': carimbado e assinado ('+m+' min).');return m}
+function carimbo(P,what){adv(.5);if(P)lg(P,'p','Documento',what+': impresso, carimbado e assinado por você.');return .5}
 
 /* ---------- medidas iniciais: agora custam tempo ---------- */
 function doMov(P,k){
@@ -28,6 +28,7 @@ function order(P,id,free,urg){
   G.ins=Math.max(0,G.ins-cc);
   const o=P.ord[id]={t0:G.t,due:G.t+tt,done:tt<=1,urg:U,dt:gameDate(G.t)+' '+fmt(G.t)};
   if(NOLAUDO.includes(id))o.nol=1;
+  if(G.mode==='visit'&&!U&&E.t>=20&&!['ecg','glic','rx','us','tc','hemoc','escarro','bacil','lcr','sorol','gota','tipag'].includes(id)){o.due=1380;o.done=false;o.rot=1;o.dt=gameDate(1380)+' 06:00'}
   const er=examErr(id);if(er){if(er.bad)o.bad=er.bad;if(er.extra){o.due+=er.extra;o.done=false;alert_(fmt(G.t)+' '+er.note)}}
   if(!o0&&!P.c.util.includes(id)&&id!=='glic'&&id!=='ecg'){P.pen.push([2,'Exame sem indicação: '+E.n+'.']);if(window.rqe)rqe('ex',.35)}
   if(o.done)ordDone(P,id,o);
@@ -42,7 +43,7 @@ function ordDone(P,k,o){
 }
 function reqLaudo(P,id){
   const o=P.ord[id];if(!o||!o.done)return'O exame ainda não foi realizado.';if(o.laudo||o.laudoAt)return'Laudo já solicitado.';
-  adv(1);o.laudoAt=G.t+rnd(20,40);lg(P,'p','Telerradiologia',EXAMS[id].n+': laudo solicitado pelo residente; previsão '+fmt(o.laudoAt)+'.');return null;
+  adv(1);o.laudoAt=G.t+rnd(20,40);lg(P,'p','Telerradiologia',EXAMS[id].n+': laudo solicitado à radiologia; previsão '+fmt(o.laudoAt)+'.');return null;
 }
 /* carrinho de solicitação (laboratório, imagem, outros) */
 function cartOf(P){return P.cart=P.cart||{items:[],just:'',tc:{tipo:'',ctr:'',cons:''},urg:false}}
@@ -72,8 +73,8 @@ function tcCheck(P,f){
 
 /* ---------- sinais vitais registrados ao longo da noite ---------- */
 function vrec(P,by,t){const tt=t!=null?t:G.t;(P.vs=P.vs||[]).push({t:tt,dt:gameDate(tt)+' '+fmt(tt),v:window.vitNow?vitNow(P,Math.max(tt,G.t)):(P.c.vit[P.stage]||P.c.vit[0]).slice(),by})}
-function vitals(P){adv(1);P.lv={t:G.t,v:vitNow(P)};vrec(P,'Médico')}
-function reassess(P){const prev=P.lv;adv(3);const v=vitNow(P);P.lv={t:G.t,v};vrec(P,'Médico (reavaliação)');
+function vitals(P){if(window.intercSeen)intercSeen(P);adv(1);P.lv={t:G.t,v:vitNow(P)};vrec(P,'Médico')}
+function reassess(P){if(window.intercSeen)intercSeen(P);const prev=P.lv;adv(3);const v=vitNow(P);P.lv={t:G.t,v};vrec(P,'Médico (reavaliação)');
   const tr=prev&&prev.v?' Desde '+fmt(prev.t)+': PA '+prev.v[0]+' → '+v[0]+', FC '+prev.v[1]+' → '+v[1]+', FR '+prev.v[2]+' → '+v[2]+', SatO2 '+prev.v[3]+' → '+v[3]+'%, Tax '+prev.v[4]+' → '+v[4]+'.':'';
   const txt=(P.c.reav[P.stage]||'Sem mudanças.').replace(/\b(PA|FC|FR|Sat ?O2|SatO2|SpO2|Tax|Temp)\s*(de\s*)?[\d,./]+\s*(mmHg|bpm|irpm|%|°C)?(\s*(e|,))?\s*/gi,'').replace(/^[,.;\s]+/,'').replace(/\s+([,.])/g,'$1');
   const ae=P.log.filter(x=>x.k==='ae').slice(-1)[0];if(ae&&G.t-ae.t<60&&P.stage<0){lg(P,'r','Reavaliação','Após o evento adverso das '+fmt(ae.t)+': '+ae.a+tr);return}
@@ -184,7 +185,7 @@ function pendList(P){
   ords.filter(([k,o])=>o.done&&o.nol&&!o.laudoAt).forEach(([k])=>L.push(EXAMS[k].n+': sem laudo (pedir ao residente)'));
   ords.filter(([k,o])=>o.laudoAt&&!o.laudo).forEach(([k,o])=>L.push(EXAMS[k].n+': laudo previsto '+fmt(o.laudoAt)));
   Object.entries(P.par||{}).forEach(([k,p])=>{if(p.st==='salvo')L.push('Parecer '+parN(k)+': falta a comunicação interna');if(p.st==='perdido')L.push('Parecer '+parN(k)+': reenviar com identificação');if(p.st==='enviado')L.push('Parecer '+parN(k)+': aguardando resposta');if(p.st==='devolvido')L.push('Parecer '+parN(k)+': devolvido, reenviar')});
-  (P.tx||[]).forEach(x=>{if(x.st==='impresso')L.push('Transfusão: falta carimbo do residente');if(x.st==='carimbado')L.push('Transfusão: entregar à enfermeira');if(x.st==='entregue')L.push('Transfusão: instalação prevista '+fmt(x.at))});
+  (P.tx||[]).forEach(x=>{if(x.st==='impresso')L.push('Transfusão: falta carimbar e assinar');if(x.st==='carimbado')L.push('Transfusão: entregar à enfermeira');if(x.st==='entregue')L.push('Transfusão: instalação prevista '+fmt(x.at))});
   if(P.rx.some(r=>r.ccih))L.push('Antimicrobiano restrito aguardando a solicitação à CCIH');
   if(P.c.visit&&!(P.evos||[]).some(e=>e.type==='dia'||e.type==='alta'))L.push('Evolução do dia não registrada');
   if(P.evf)L.push('Evolução em rascunho, não salva');
@@ -193,6 +194,7 @@ function pendList(P){
 
 /* ---------- a cada minuto (chamado pelo motor) ---------- */
 function v2Tick(P,t){
+  if(P.interc&&P.interc.fired==null&&P.c.visit&&t>=P.interc.at&&window.fireInterc)fireInterc(P,t);
   if(window.pharmTick)pharmTick(P,t);
   Object.entries(P.ord).forEach(([k,o])=>{if(o.done&&o.sys===false&&t>=o.sysAt){o.sys=true;P.newRes++;alert_(fmt(t)+' Resultado liberado no sistema: '+EXAMS[k].n+' de '+first(P)+'.')}});
   ['r1','enf','tec'].forEach(w=>{const H=(P.help||{})[w];if(H&&!H.done&&t>=H.at)deliverHelp(P,w)});

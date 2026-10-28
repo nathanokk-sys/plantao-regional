@@ -4,7 +4,7 @@ Jogo de plantão de Clínica Médica num hospital regional do SUS, em pixel art 
 
 **Jogar (versão 1):** https://nathanokk-sys.github.io/plantao-regional
 
-**Jogar (versão 2, prontuário eletrônico com guias e seletor de dificuldade):** https://nathanokk-sys.github.io/plantao-regional/v2/
+**Jogar (versão 2: você é R1, um setor por turno, prontuário eletrônico com guias e seletor de dificuldade):** https://nathanokk-sys.github.io/plantao-regional/v2/
 
 - Pacientes com 16 anos ou mais, sorteados a cada plantão (nome, rosto, idade, cidade, sinais vitais e alergias)
 - Anamnese, exame físico por sistemas, exames, prescrição com dose, via, frequência e duração

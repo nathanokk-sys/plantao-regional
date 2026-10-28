@@ -1395,15 +1395,15 @@ const BICSTD={norad:[25,'4 mg em SG 5% 250 mL (16 mcg/mL)'],adrebic:[25,'4 mg em
  sf:[125,'SF 0,9% em frasco de 500 mL'],ringer:[125,'Ringer lactato em frasco de 500 mL'],sg10:[42,'SG 10% em frasco de 500 mL'],sg5:[63,'SG 5% em frasco de 500 mL'],o2:[0,'']};
 const BICRATES=[1,2,3,5,7,10,13,15,20,25,30,33,42,50,63,80,100,125,150,200,250,500,999];
 const BICHRS=[['1','1 h'],['2','2 h'],['6','6 h'],['12','12 h'],['24','24 h'],['0','Contínuo (até reavaliação)']];
-/* ===== v2: dificuldade, ajuda (R1, enfermagem, técnicas) e telefone do laboratório ===== */
+/* ===== v2: dificuldade, ajuda (R2, enfermagem, técnicas) e telefone do laboratório ===== */
 const DIFS=[
- {id:'mf',n:'Muito fácil',d:'Insumos ilimitados, exames saem rápido e sobem na hora para o sistema. O R1 responde no WhatsApp na hora (70% de acerto); a enfermagem opina (70%) e as técnicas ajudam com feridas (80%).',
+ {id:'mf',n:'Muito fácil',d:'Insumos ilimitados, exames saem rápido e sobem na hora para o sistema. O R2 responde no WhatsApp na hora (70% de acerto); a enfermagem opina (70%) e as técnicas ajudam com feridas (80%).',
   ins:99999,exf:.3,lagP:0,lag:[0,0],errF:0,alF:0,byF:1.6,pts:8,beds:-2,r1:{d:[0,0],acc:.7},enf:{mode:'sempre',d:[0,0],acc:.7},tec:{d:[0,0],acc:.8},labNo:0,labPri:1,carimbo:[0,1],bronca:0,repF:0,rqeF:.4},
- {id:'f',n:'Fácil',d:'Insumos folgados e exames um pouco mais lentos. O R1 responde em 10 a 20 min (65%); enfermagem (60%) e técnicas (70%) ajudam quando dá.',
+ {id:'f',n:'Fácil',d:'Insumos folgados e exames um pouco mais lentos. O R2 responde em 10 a 20 min (65%); enfermagem (60%) e técnicas (70%) ajudam quando dá.',
   ins:200,exf:.6,lagP:.1,lag:[5,15],errF:.5,alF:.5,byF:1.3,pts:9,beds:-1,r1:{d:[10,20],acc:.65},enf:{mode:'sempre',d:[5,10],acc:.6},tec:{d:[5,15],acc:.7},labNo:.1,labPri:.9,carimbo:[1,2],bronca:0,repF:0,rqeF:.7},
  {id:'m',n:'Médio',d:'Sem colega disponível na hora: só mensagem, com resposta em cerca de 1 h (65%). A enfermagem está ocupada e só ajuda em intercorrência séria. Às vezes o exame sai e não sobe para o sistema.',
   ins:100,exf:1,lagP:.25,lag:[10,40],errF:1,alF:1,byF:1,pts:10,beds:0,r1:{d:[55,70],acc:.65},enf:{mode:'grave',d:[0,5],acc:.6},tec:{d:[20,40],acc:.6},labNo:.2,labPri:.7,carimbo:[1,4],bronca:0,repF:0,rqeF:1},
- {id:'d',n:'Difícil',d:'Pouco insumo, laboratório lento e telefone que toca sem ninguém atender. O R1 demora 1h30 a 2h30 (55%). A enfermagem só aparece se o paciente estiver parando.',
+ {id:'d',n:'Difícil',d:'Pouco insumo, laboratório lento e telefone que toca sem ninguém atender. O R2 demora 1h30 a 2h30 (55%). A enfermagem só aparece se o paciente estiver parando.',
   ins:80,exf:1.25,lagP:.35,lag:[20,60],errF:1.5,alF:1.5,byF:.85,pts:11,beds:1,r1:{d:[90,150],acc:.55},enf:{mode:'critico',d:[0,5],acc:.55},tec:null,labNo:.35,labPri:.5,carimbo:[2,6],bronca:0,repF:.5,rqeF:1.3},
  {id:'md',n:'Muito difícil',d:'Hospital lotado, ninguém vai te ajudar e qualquer erro vira bronca do preceptor na hora.',
   ins:60,exf:1.45,lagP:.45,lag:[30,90],errF:2,alF:2,byF:.75,pts:12,beds:2,r1:null,enf:null,tec:null,labNo:.5,labPri:.35,carimbo:[3,8],bronca:1,repF:1,rqeF:2},
@@ -1435,7 +1435,7 @@ function guessTxt(P,acc){
 function helpState(P,who){
   const D=difOf(),H=(P.help=P.help||{});
   if(H[who])return{used:1};
-  if(who==='r1'){if(!D.r1)return{no:'Nenhum colega disponível: o R1 está no centro cirúrgico e não responde mensagens.'};return{ok:1,d:D.r1}}
+  if(who==='r1'){if(!D.r1)return{no:'Nenhum veterano disponível: o R2 está com uma parada na UTI e o staff não atende o celular.'};return{ok:1,d:D.r1}}
   if(who==='enf'){if(!D.enf)return{no:'A enfermagem está com 18 pacientes por técnica e não consegue ajudar.'};
     if(D.enf.mode==='grave'&&P.stage>-1)return{no:'A enfermagem está ocupada: só ajuda em intercorrência séria.'};
     if(D.enf.mode==='critico'&&P.stage>-2)return{no:'A enfermagem só consegue vir se o paciente estiver muito grave.'};return{ok:1,d:D.enf}}
@@ -1444,7 +1444,7 @@ function helpState(P,who){
 }
 function askHelp(P,who){
   const S=helpState(P,who);if(S.used)return'Você já perguntou.';if(S.no)return S.no;
-  if(who!=='tec'&&P.asked.size+P.examined.size<2){adv(1);return(who==='r1'?'R1: "Me passa mais coisa: anamnese e exame físico, senão não dá pra pensar."':'Enfermeira: "Doutor, examina primeiro que eu te digo o que acho."')}
+  if(who!=='tec'&&P.asked.size+P.examined.size<2){adv(1);return(who==='r1'?'R2: "Me passa mais coisa: anamnese e exame físico, senão não dá pra pensar."':'Enfermeira: "Doutor, examina primeiro que eu te digo o que acho."')}
   adv(who==='r1'?1:.5);const at=G.t+rnd(S.d.d[0],S.d.d[1]),H=P.help;
   if(who==='tec'){const W=WOUND[P.c.base||P.c.id],ok=Math.random()<S.d.acc;H.tec={at,ok,txt:ok?W[0]:W[1][Math.floor(Math.random()*W[1].length)]}}
   else{const g=guessTxt(P,S.d.acc);H[who]=Object.assign({at},g)}
@@ -1453,8 +1453,8 @@ function askHelp(P,who){
 }
 function deliverHelp(P,who){
   const H=P.help[who];if(!H||H.done)return;H.done=1;
-  const txt=who==='r1'?'R1 (WhatsApp): "Pelo que você contou, pensa em '+H.txt+'."':who==='enf'?'Enfermeira: "Doutor, pra mim isso é '+H.txt+'."':'Técnica de enfermagem: "'+H.txt+'"';
-  lg(P,'h',who==='r1'?'WhatsApp':who==='enf'?'Enfermagem':'Técnicas',txt);alert_(fmt(G.t)+' '+(who==='r1'?'WhatsApp do R1':who==='enf'?'Enfermagem':'Técnicas')+' sobre '+first(P)+'.');
+  const txt=who==='r1'?'R2 (WhatsApp): "Pelo que você contou, pensa em '+H.txt+'."':who==='enf'?'Enfermeira: "Doutor, pra mim isso é '+H.txt+'."':'Técnica de enfermagem: "'+H.txt+'"';
+  lg(P,'h',who==='r1'?'WhatsApp':who==='enf'?'Enfermagem':'Técnicas',txt);alert_(fmt(G.t)+' '+(who==='r1'?'WhatsApp do R2':who==='enf'?'Enfermagem':'Técnicas')+' sobre '+first(P)+'.');
 }
 /* ---------- telefone do laboratório ---------- */
 function callLab(P){
@@ -1596,7 +1596,7 @@ function mkPt(c){const P={id:c.id,c,look:mkLook(c),st:'wait',stage:0,worst:0,ks:
 function admit(c,slot){
   c.arr=Math.max(G.slots[slot]!=null?G.slots[slot]:c.arr,G.t);
   const P=mkPt(c);P.no=++G.no;P.off=sprite(P);G.pts.push(P);G.filled++;
-  if(c.arr<=G.t){P.st='queue';if(window.vrec)vrec(P,'Triagem',c.arr);alert_(fmt(G.t)+' Chegou '+c.nome.split(' ')[0]+' ('+c.tri.toLowerCase()+').',c.tri==='VERMELHO')}
+  if(c.arr<=G.t){P.st='queue';if(window.onArrive)onArrive(P);if(window.vrec)vrec(P,'Triagem',c.arr);alert_(fmt(G.t)+' Chegou '+c.nome.split(' ')[0]+' ('+c.tri.toLowerCase()+').',c.tri==='VERMELHO')}
 }
 const pt=id=>G.pts.find(p=>p.id===id);
 const cur=()=>G&&G.act?pt(G.act):null;
@@ -1638,7 +1638,7 @@ function die(P){
 function tickMin(){
   const t=G.t;
   G.pts.forEach(P=>{
-    if(P.st==='wait'&&P.c.arr<=t){P.st='queue';if(window.vrec&&!(P.vs&&P.vs.length))vrec(P,'Triagem',P.c.arr);alert_(fmt(t)+' Chegou '+P.c.nome.split(' ')[0]+' ('+P.c.tri.toLowerCase()+').',P.c.tri==='VERMELHO')}
+    if(P.st==='wait'&&P.c.arr<=t){P.st='queue';if(window.onArrive)onArrive(P);if(window.vrec&&!(P.vs&&P.vs.length))vrec(P,'Triagem',P.c.arr);alert_(fmt(t)+' Chegou '+P.c.nome.split(' ')[0]+' ('+P.c.tri.toLowerCase()+').',P.c.tri==='VERMELHO')}
     if(!ACTIVE.includes(P.st))return;
     Object.entries(P.ord).forEach(([k,o])=>{if(!o.done&&t>=o.due){o.done=true;if(window.ordDone)ordDone(P,k,o);else P.newRes++;if(o.sys===false);else if(o.bad)alert_(fmt(t)+' Problema no exame '+EXAMS[k].n+' de '+P.c.nome.split(' ')[0]+': '+o.bad,true);else alert_(fmt(t)+' Resultado pronto: '+EXAMS[k].n+' de '+P.c.nome.split(' ')[0]+'.')}});
     if(window.v2Tick)v2Tick(P,t);
@@ -1732,16 +1732,16 @@ function canGo(d){
   return null;
 }
 function commit(P,d){
-  const e=canGo(d);if(e)return e;
+  const e=(P.c.visit&&P.c.sec===d)?null:canGo(d);if(e)return e;
   if(d==='ALTA'&&P.orient.size===0)P.pen.push([6,'Alta sem orientações registradas.']);
-  if(d==='EMG'){P.st='emg';P.emgT=G.t;P.emgChk=0;P.log.push({t:G.t,k:'d',q:'Destino',a:'Mantido na sala de emergência, monitorizado.',fresh:1});adv(2);return null}
+  if(d==='EMG'&&G.posto!=='porta'){P.st='emg';P.emgT=G.t;P.emgChk=0;P.log.push({t:G.t,k:'d',q:'Destino',a:'Mantido na sala de emergência, monitorizado.',fresh:1});adv(2);return null}
   if(d==='TRANS'){P.st='reg';P.reg={at:G.t+rnd(60,100)};P.log.push({t:G.t,k:'d',q:'Destino',a:'Regulação acionada. Aguardando vaga e transporte.',fresh:1});adv(2);return null}
   finalize(P,d);if(G.act===P.id)G.act=null;adv(2);return null;
 }
 function depart(P){P.depT=G.t;finalize(P,'TRANS',true);alert_(fmt(G.t)+' '+P.c.nome.split(' ')[0]+' saiu em transferência regulada.');if(G.act===P.id)G.act=null}
 function finalize(P,d,fromReg){
   const c=P.c;if(window.pendFinal)pendFinal(P);
-  if(!fromReg){ if(d==='UTI')G.beds.uti.used++;if(d==='ENF')G.beds.enf.used++;if(d==='OBS')G.beds.obs.used++;if(d==='AMA')G.beds.ama.used++ }
+  if(!fromReg&&!(c.visit&&c.sec===d)){ if(d==='UTI')G.beds.uti.used++;if(d==='ENF')G.beds.enf.used++;if(d==='OBS')G.beds.obs.used++;if(d==='AMA')G.beds.ama.used++ }
   const pen=P.pen.slice(),good=P.good.slice(),goods=[];
   const best=c.dest.best.includes(d),okd=c.dest.ok.includes(d);
   if(best)goods.push('Destino adequado: '+DESTS.find(x=>x[0]===d)[1]+'.');else if(okd)pen.push([8,'Destino aceitável, mas não o melhor: '+DESTS.find(x=>x[0]===d)[1]+'.']);
@@ -2020,7 +2020,7 @@ function loadGame(){
 function saveInfo(){
   try{const S=JSON.parse(localStorage.getItem('pr2_cur')||'null');if(!S||!S.G)return null;const g=S.G;
     const done=g.pts.filter(p=>p.st==='done'||p.st==='dead').length;
-    return(g.mode==='visit'?'Visita da manhã':'Plantão '+g.n)+' · '+fmt(g.t)+' · '+done+' de '+g.slots.length+' pacientes resolvidos'}catch(e){return null}
+    return(g.mode==='visit'?'Turno de '+(g.turn==='uti'?'UTI':'enfermaria'):'Plantão '+g.n)+' · '+fmt(g.t)+' · '+done+' de '+g.slots.length+' pacientes resolvidos'}catch(e){return null}
 }
 function nextN(){try{return(JSON.parse(localStorage.getItem('pr2_save')||'{"shifts":[]}').shifts.length||0)+1}catch(e){return 1}}
 function resetAll(){['pr2_cur','pr2_save','pr2_hist','pr2_used','pr2_week'].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});G=null;W=null;UI.menu=false;UI.confirmReset=false}
@@ -2131,7 +2131,7 @@ function flag(v,ref,k,F){if(typeof v==='string')return /> |HI|incoag|Positivo|\+
   let r=ref;if(k==='hb')r=F?[12,16]:[13.5,17.5];if(k==='ht')r=F?[36,46]:[40,52];return v<r[0]?'L':v>r[1]?'H':''}
 /* data do jogo: a semana começa na data real em que foi iniciada */
 function gameDate(t){
-  const base=(W&&W.d0)||(G&&G.d0)||Date.now(),day0=(G&&G.mode==='visit'?1:0)+((W&&G&&G.week?W.day:1)-1);
+  const base=(W&&W.d0)||(G&&G.d0)||Date.now(),day0=(W&&G&&G.week?W.day:1)-1;
   const m=(G&&G.t0!=null?G.t0:T0)+t,d=new Date(base+(day0+Math.floor(m/1440))*864e5);
   return pad(d.getDate())+'/'+pad(d.getMonth()+1)}
 function stamp(o){return'Coleta '+gameDate(o.t0)+' '+fmt(o.t0)+' · liberado '+gameDate(o.due)+' '+fmt(o.due)+(o.urg?' · URGÊNCIA':'')}
@@ -2519,7 +2519,7 @@ function shiftOutcomes(){
 const lg=(P,k,q,a)=>P.log.push({t:G.t,k,q,a,fresh:1});
 const first=P=>P.c.nome.split(' ')[0];
 /* o residente carimba e assina tudo o que é impresso; às vezes está ocupado */
-function carimbo(P,what){const R=difOf().carimbo,m=rnd(R[0],R[1]);if(m)adv(m);if(P)lg(P,'p','Residente',what+': carimbado e assinado ('+m+' min).');return m}
+function carimbo(P,what){adv(.5);if(P)lg(P,'p','Documento',what+': impresso, carimbado e assinado por você.');return .5}
 
 /* ---------- medidas iniciais: agora custam tempo ---------- */
 function doMov(P,k){
@@ -2545,6 +2545,7 @@ function order(P,id,free,urg){
   G.ins=Math.max(0,G.ins-cc);
   const o=P.ord[id]={t0:G.t,due:G.t+tt,done:tt<=1,urg:U,dt:gameDate(G.t)+' '+fmt(G.t)};
   if(NOLAUDO.includes(id))o.nol=1;
+  if(G.mode==='visit'&&!U&&E.t>=20&&!['ecg','glic','rx','us','tc','hemoc','escarro','bacil','lcr','sorol','gota','tipag'].includes(id)){o.due=1380;o.done=false;o.rot=1;o.dt=gameDate(1380)+' 06:00'}
   const er=examErr(id);if(er){if(er.bad)o.bad=er.bad;if(er.extra){o.due+=er.extra;o.done=false;alert_(fmt(G.t)+' '+er.note)}}
   if(!o0&&!P.c.util.includes(id)&&id!=='glic'&&id!=='ecg'){P.pen.push([2,'Exame sem indicação: '+E.n+'.']);if(window.rqe)rqe('ex',.35)}
   if(o.done)ordDone(P,id,o);
@@ -2559,7 +2560,7 @@ function ordDone(P,k,o){
 }
 function reqLaudo(P,id){
   const o=P.ord[id];if(!o||!o.done)return'O exame ainda não foi realizado.';if(o.laudo||o.laudoAt)return'Laudo já solicitado.';
-  adv(1);o.laudoAt=G.t+rnd(20,40);lg(P,'p','Telerradiologia',EXAMS[id].n+': laudo solicitado pelo residente; previsão '+fmt(o.laudoAt)+'.');return null;
+  adv(1);o.laudoAt=G.t+rnd(20,40);lg(P,'p','Telerradiologia',EXAMS[id].n+': laudo solicitado à radiologia; previsão '+fmt(o.laudoAt)+'.');return null;
 }
 /* carrinho de solicitação (laboratório, imagem, outros) */
 function cartOf(P){return P.cart=P.cart||{items:[],just:'',tc:{tipo:'',ctr:'',cons:''},urg:false}}
@@ -2589,8 +2590,8 @@ function tcCheck(P,f){
 
 /* ---------- sinais vitais registrados ao longo da noite ---------- */
 function vrec(P,by,t){const tt=t!=null?t:G.t;(P.vs=P.vs||[]).push({t:tt,dt:gameDate(tt)+' '+fmt(tt),v:window.vitNow?vitNow(P,Math.max(tt,G.t)):(P.c.vit[P.stage]||P.c.vit[0]).slice(),by})}
-function vitals(P){adv(1);P.lv={t:G.t,v:vitNow(P)};vrec(P,'Médico')}
-function reassess(P){const prev=P.lv;adv(3);const v=vitNow(P);P.lv={t:G.t,v};vrec(P,'Médico (reavaliação)');
+function vitals(P){if(window.intercSeen)intercSeen(P);adv(1);P.lv={t:G.t,v:vitNow(P)};vrec(P,'Médico')}
+function reassess(P){if(window.intercSeen)intercSeen(P);const prev=P.lv;adv(3);const v=vitNow(P);P.lv={t:G.t,v};vrec(P,'Médico (reavaliação)');
   const tr=prev&&prev.v?' Desde '+fmt(prev.t)+': PA '+prev.v[0]+' → '+v[0]+', FC '+prev.v[1]+' → '+v[1]+', FR '+prev.v[2]+' → '+v[2]+', SatO2 '+prev.v[3]+' → '+v[3]+'%, Tax '+prev.v[4]+' → '+v[4]+'.':'';
   const txt=(P.c.reav[P.stage]||'Sem mudanças.').replace(/\b(PA|FC|FR|Sat ?O2|SatO2|SpO2|Tax|Temp)\s*(de\s*)?[\d,./]+\s*(mmHg|bpm|irpm|%|°C)?(\s*(e|,))?\s*/gi,'').replace(/^[,.;\s]+/,'').replace(/\s+([,.])/g,'$1');
   const ae=P.log.filter(x=>x.k==='ae').slice(-1)[0];if(ae&&G.t-ae.t<60&&P.stage<0){lg(P,'r','Reavaliação','Após o evento adverso das '+fmt(ae.t)+': '+ae.a+tr);return}
@@ -2701,7 +2702,7 @@ function pendList(P){
   ords.filter(([k,o])=>o.done&&o.nol&&!o.laudoAt).forEach(([k])=>L.push(EXAMS[k].n+': sem laudo (pedir ao residente)'));
   ords.filter(([k,o])=>o.laudoAt&&!o.laudo).forEach(([k,o])=>L.push(EXAMS[k].n+': laudo previsto '+fmt(o.laudoAt)));
   Object.entries(P.par||{}).forEach(([k,p])=>{if(p.st==='salvo')L.push('Parecer '+parN(k)+': falta a comunicação interna');if(p.st==='perdido')L.push('Parecer '+parN(k)+': reenviar com identificação');if(p.st==='enviado')L.push('Parecer '+parN(k)+': aguardando resposta');if(p.st==='devolvido')L.push('Parecer '+parN(k)+': devolvido, reenviar')});
-  (P.tx||[]).forEach(x=>{if(x.st==='impresso')L.push('Transfusão: falta carimbo do residente');if(x.st==='carimbado')L.push('Transfusão: entregar à enfermeira');if(x.st==='entregue')L.push('Transfusão: instalação prevista '+fmt(x.at))});
+  (P.tx||[]).forEach(x=>{if(x.st==='impresso')L.push('Transfusão: falta carimbar e assinar');if(x.st==='carimbado')L.push('Transfusão: entregar à enfermeira');if(x.st==='entregue')L.push('Transfusão: instalação prevista '+fmt(x.at))});
   if(P.rx.some(r=>r.ccih))L.push('Antimicrobiano restrito aguardando a solicitação à CCIH');
   if(P.c.visit&&!(P.evos||[]).some(e=>e.type==='dia'||e.type==='alta'))L.push('Evolução do dia não registrada');
   if(P.evf)L.push('Evolução em rascunho, não salva');
@@ -2710,6 +2711,7 @@ function pendList(P){
 
 /* ---------- a cada minuto (chamado pelo motor) ---------- */
 function v2Tick(P,t){
+  if(P.interc&&P.interc.fired==null&&P.c.visit&&t>=P.interc.at&&window.fireInterc)fireInterc(P,t);
   if(window.pharmTick)pharmTick(P,t);
   Object.entries(P.ord).forEach(([k,o])=>{if(o.done&&o.sys===false&&t>=o.sysAt){o.sys=true;P.newRes++;alert_(fmt(t)+' Resultado liberado no sistema: '+EXAMS[k].n+' de '+first(P)+'.')}});
   ['r1','enf','tec'].forEach(w=>{const H=(P.help||{})[w];if(H&&!H.done&&t>=H.at)deliverHelp(P,w)});
@@ -2790,7 +2792,8 @@ function profile(P,r,pd,t){
 }
 function effects(P,t){
   const e=[0,0,0,0,0,0],b=P.c.base||P.c.id,L=[...P.rx,...(P.rxOff||[])];
-  L.forEach(r=>{if(r.keyCred||(P.c.visit&&r.carry))return;
+  L.forEach(r=>{if(r.carry&&r.bic&&PD[r.id]&&r.bic.rate0!=null){const pd=PD[r.id],S=(BICSTD[r.id]||[r.bic.rate0])[0]||1,run=r.bic.run&&accOk(P),f=((run?r.bic.rate:0)-r.bic.rate0)/S;['s','d','fc','fr','sat','t'].forEach((k,j)=>{e[j]+=(pd[k]||0)*f});return}
+    if(r.keyCred||(P.c.visit&&r.carry))return;
     if(r.id==='o2'&&r.off==null){e[4]+=[4,6,10,12][r.i]||0;return}
     const pd=PD[r.id];
     if(pd){const f=profile(P,r,pd,t);if(!f)return;const add=(o)=>{if(!o)return;e[0]+=(o.s||0)*f;e[1]+=(o.d||0)*f;e[2]+=(o.fc||0)*f;e[3]+=(o.fr||0)*f;e[4]+=(o.sat||0)*f;e[5]+=(o.t||0)*f};
@@ -2802,6 +2805,7 @@ function effects(P,t){
 function vitNow(P,t){
   t=t==null?G.t:t;if(!P.vb)P.vb=parseV(P.c.vit[P.stage]||P.c.vit[0]);
   const e=effects(P,t),a=P.vb.map((x,i)=>x+e[i]);
+  if(P.icAdd&&P.interc&&P.interc.fired!=null&&t>=P.interc.fired){const fx=P.ks[P.c.key.length-1];let f=clamp((t-P.interc.fired)/10,0,1);if(fx!=null&&t>=fx)f*=Math.max(0,1-(t-fx)/30);Object.entries(P.icAdd).forEach(([k,v])=>{a[{s:0,d:1,fc:2,fr:3,sat:4,t:5}[k]]+=v*f})}
   let h=0;for(const ch of P.id)h=(h*31+ch.charCodeAt(0))%9973;const n=k=>Math.round(Math.sin((Math.floor(t/3)+h)*(k+1.7))*([3,2,2,1,1,0][k]||0));
   const o=[clamp(a[0]+n(0),50,260),clamp(a[1]+n(1),25,150),clamp(a[2]+n(2),28,210),clamp(a[3]+n(3),5,50),clamp(a[4]+n(4),45,100),clamp(a[5],33.5,42)];
   if(o[1]>=o[0]-10)o[1]=o[0]-15;return fmtVit(o);
@@ -2853,6 +2857,225 @@ function pendFinal(P){
   P.ksPend=P.ksPend.filter(x=>{if(x.ccih||x.waitAcc||P.ks[x.ki]!=null)return true;const k=c.key[x.ki];if(!k)return false;
     if(x.at<=c.arr+k.by*bf){P.ks[x.ki]=x.at;return false}
     P.ks[x.ki]=x.at;P.pen.push([8,'Primeira dose aprazada para '+fmt(x.at)+', depois do prazo: '+k.lb+'. Prescreva AGORA além da manutenção.']);return false});
+}
+/* ===== v2: escala do R1 — um setor por turno (turno avulso, semana ou mês fixos, ou rodízio) ===== */
+const SETORES={porta:{n:'Porta do PS',p:'noite',h:'19:00 às 07:00',d:'amarelos, verdes e azuis'},sala:{n:'Sala vermelha',p:'noite',h:'19:00 às 07:00',d:'vermelhos e laranjas'},
+  enf:{n:'Enfermaria de Clínica Médica',p:'dia',h:'07:00 às 19:00',d:'visita diária, evoluções, intercorrências e admissões'},uti:{n:'UTI',p:'dia',h:'07:00 às 19:00',d:'pacientes graves, drogas vasoativas e intercorrências'}};
+const MODOS={turno:['Um turno',1],semana:['Semana fixa no setor',7],mes:['Mês fixo no setor',30],rodizio:['Semana em rodízio',7]};
+const RODIZIO=['enf','porta','enf','sala','uti','enf','porta'];
+POSTOS.porta=['Porta do PS','amarelos, verdes e azuis'];POSTOS.sala=['Sala vermelha','vermelhos e laranjas'];POSTOS.enf=['Enfermaria','visita e intercorrências'];POSTOS.uti=['UTI','pacientes graves'];
+const isPS=s=>s==='porta'||s==='sala';
+const turnOf=()=>(G&&G.turn)||(W&&W.posto)||'porta';
+const dLbl=n=>{const d=new Date(((W&&W.d0)||Date.now())+n*864e5);return pad(d.getDate())+'/'+pad(d.getMonth()+1)};
+/* ---------- início do jogo e passagem entre turnos ---------- */
+function startWeek(setor,modo,dif){
+  const len=MODOS[modo]?MODOS[modo][1]:7;
+  W={v:2,dif:dif||'m',d0:Date.now(),modo,setor,len,day:1,esc:Array.from({length:len},(_,i)=>modo==='rodizio'?RODIZIO[i%7]:setor),phase:'turno',inp:[],done:[],days:[],pendRet:[],rep:50,eq:50,news:[]};
+  startTurn();
+}
+function startTurn(){
+  const sec=W.esc[W.day-1];W.posto=sec;W.mark=W.done.length;try{localStorage.removeItem('pr2_cur')}catch(e){}
+  if(isPS(sec)){newShift(nextN(),'proc',sec,W.dif);G.rep=W.rep;G.eq=W.eq;G.week=1;G.turn=sec}
+  else newWard(sec);
+  (W.news||[]).forEach(x=>addNews(x[0],x[1],x[2]));W.news=[];W.phase='turno';saveWeek();
+}
+function nextTurn(){W.day++;if(UI.nextSec&&W.modo==='rodizio'){W.esc[W.day-1]=UI.nextSec;UI.nextSec=null}dailyEvolve(W.esc[W.day-1]);startTurn()}
+/* o dia que passou: os internados evoluem; quem não está com você fica com a equipe do setor */
+function dailyEvolve(today){
+  const news=W.news=W.news||[];
+  (W.pendRet||[]).forEach(x=>{const R=x.rec,N=firstN(R);
+    if(x.unsafe&&Math.random()<.6){R.trend=-2;R.hd=1;R.adm={day:W.day,cls:'ruim',score:0,stage:-1};R.destOk=true;R.ksMiss=[];R.path.push('Voltou em piora e foi internado pelo plantão');R.could.push('Não dar alta antes da estabilização.');R.night=['Voltou ao pronto-socorro em piora, depois da alta.'];R.returned=1;R.mine=1;W.inp.push(R);
+      W.done=W.done.filter(d=>!(d.nome===R.nome&&/^Alta/.test(d.out)));news.push(['Voltou · '+N,'Plantão do PS: "'+N+' voltou pior do que saiu e foi internado na '+SECN[R.sector].toLowerCase()+'."',true])}
+    else if(!x.unsafe&&Math.random()<.35)news.push(['Retorno · '+N,'Porta: "'+N+' voltou com a mesma queixa, sem melhora com o que foi prescrito. O colega ajustou e deu alta de novo."',false]);
+    else if(x.unsafe)news.push(['Sem notícias · '+N,'Ninguém sabe como '+N+' passou em casa depois da alta.',false]);
+  });W.pendRet=[];
+  W.inp.slice().forEach(R=>{if(R.returned){R.returned=0;R.hd=1;return}
+    const ward=['ENF','AMA','OBS'].includes(R.sector);
+    if((R.sector==='UTI'&&today!=='uti')||(ward&&today!=='enf')||R.colega)R.adjust=true;R.colega=0;
+    if(nightEvolve(R)){W.inp=W.inp.filter(x=>x!==R);
+      if(R.mine){const h=pad(rnd(1,6))+':'+pad(rnd(0,59));W.done.push({nome:R.nome,idade:R.idade,dx:dxLabel(R.c.hyp),out:'Óbito no D'+(R.hd-1),path:R.path.concat('Óbito às '+h),could:R.could.concat(idealFor(R.c).filter(x=>!R.could.join(' ').includes(x)).map(x=>'Indicado: '+x))});
+        news.push(['Óbito · '+firstN(R),SECDOC[R.sector==='UTI'?'UTI':'ENF']+': "'+firstN(R)+' parou às '+h+'. Reanimação por 30 minutos, sem retorno. '+(R.night||[]).join(' ')+'"',true])}return}
+    if(R.sector==='UTI'&&today!=='uti'&&R.trend>=1&&R.hd>=3){R.sector='ENF';R.leito=freeBed('ENF');R.path.push('D'+R.hd+': alta da UTI para a enfermaria');if(R.mine)news.push(['UTI · '+firstN(R),SECDOC.UTI+': "'+firstN(R)+' melhorou e desceu para a enfermaria."',false])}
+    else if(ward&&today!=='enf'&&R.trend>=1&&R.hd>=R.need){W.inp=W.inp.filter(x=>x!==R);if(R.mine){W.done.push({nome:R.nome,idade:R.idade,dx:dxLabel(R.c.hyp),out:'Alta no D'+R.hd,path:R.path.concat('D'+R.hd+': alta pela equipe da enfermaria'),could:R.could});news.push(['Enfermaria · '+firstN(R),SECDOC.ENF.split(',')[0]+': "Dei alta para '+firstN(R)+' hoje, estável."',false])}}
+    else if(R.mine&&R.sector==='UTI'&&today!=='uti')news.push(['Boletim da UTI · '+firstN(R),SECDOC.UTI+': "'+firstN(R)+', D'+R.hd+' de UTI, '+(R.trend>=1?'melhorando':R.trend>=0?'estável':'grave, em piora')+'."',R.trend<0]);
+  });
+  /* pacientes gerados que ninguém do jogo acompanha saem com o tempo */
+  W.inp=W.inp.filter(R=>!(R.gen&&!R.mine&&R.hd>6));
+}
+/* ---------- turno na enfermaria ou na UTI ---------- */
+const HSEC=s=>s==='uti'?'UTI':'ENF';
+function wardPool(sec){const L=CASES.filter(c=>sec==='uti'?c.dest.best.includes('UTI'):(c.dest.best.includes('ENF')||c.dest.ok.includes('ENF'))&&!c.dest.alta);return L.length?L:CASES.slice()}
+function labFlow(c,id,day,hh){const fp={id:c.id,c,stage:-1};return{id,dt:dLbl(day)+' '+hh,dd:dLbl(day)+' '+hh,vals:labVals(fp,id)}}
+function genRec(sector){
+  const sec=sector==='UTI'?'uti':'enf',H=loadH(),tpl=pickOf(wardPool(sec)),c=vary(tpl,rnd(100,999),H,new Set(W.inp.map(firstN)));H.n.push(c.nome);H.t.push(tpl.id);saveH(H);
+  const hd=sector==='UTI'?rnd(1,3):rnd(2,4),R={uid:c.id,nome:c.nome,idade:c.idade,sexo:c.sexo,look:c.look,c,sector,hd,trend:rnd(-1,1),need:(sector==='UTI'?4:3)+rnd(0,1),
+    hyp:Math.random()<.12?distractor(c.hyp):c.hyp,ksMiss:[],jej:false,iso:c.iso?ISOK[c.iso]:undefined,rx:[],reqs:{},adm:{day:W.day-hd,cls:'bom',score:80,stage:0},destOk:true,
+    evos:[],flow:[],vs:[],par:{},leito:freeBed(sector),path:['Internado pela equipe ('+SECN[sector]+')'],could:[],gen:1};
+  let miss=Math.random()<.15?rnd(0,c.key.length-1):-1;
+  c.key.forEach((k,i)=>{const id=k.ids[0],D=DRUGS[id];if(!D||['Solicitação','Procedimento'].includes(D.v[0])||HEMO.includes(id))return;if(i===miss){R.trend=Math.min(R.trend,-1);R.prevMiss=k.lb;return}
+    const fq=D.f.split(' ').find(x=>x!=='u')||'u';R.rx.push({id,i:okIdx(k,id)[0],via:0,freq:fq,dur:fq==='u'?'u':D.dr.split(' ')[0],t:-600,adm:-600,day:dayIdx()-hd+1,carry:1,bic:fq==='ic'?{rate:(BICSTD[id]||[20])[0],rate0:(BICSTD[id]||[20])[0],hrs:'0',run:true,vol:0,sol:(BICSTD[id]||[0,''])[1]}:undefined})});
+  R.evos.push({t:-600,dt:dLbl(W.day-hd)+' 21:40',type:'adm',hyp:R.hyp,S:c.queixa,O:'',C:'Conduta da admissão: '+(R.rx.map(r=>DRUGS[r.id].n).join(', ')||'suporte clínico')+'.',pend:'',dup:0,by:'Plantonista do PS'});
+  if(hd>1)R.evos.push({t:-600,dt:dLbl(W.day-2)+' 10:20',type:'dia',hyp:R.hyp,S:'Evolução da equipe.',O:'',C:'Mantida a conduta.',pend:'',dup:0,by:'Equipe da enfermaria'});
+  c.util.filter(id=>LP[id]&&!['glic','hbrap'].includes(id)).slice(0,5).forEach(id=>R.flow.push(labFlow(c,id,W.day-hd,'20:30')));
+  return R;
+}
+function makeWardP(R,isU){
+  const c=visitCase(R),P=mkPt(c);P.no=++G.no;P.off=sprite(P);P.st='queue';P.hyp=R.hyp;P.mov={ace:0};if(isU||R.sector==='UTI')P.mov.mon=0;if(R.jej)P.mov.jej=0;
+  P.stage=wkStage(R.trend);P.worst=0;P.rx=(R.rx||[]).map(r=>Object.assign({},r,{t:0,carry:1,bic:r.bic?Object.assign({},r.bic,{rate0:r.bic.rate0!=null?r.bic.rate0:r.bic.rate}):undefined}));if(R.iso)P.mov.iso=R.iso;
+  P.leito=R.leito;P.prevEvos=R.evos||[];P.flow=R.flow||[];P.vs=(R.vs||[]).slice(-8);P.par=JSON.parse(JSON.stringify(R.par||{}));
+  Object.entries(P.par).forEach(([k,p])=>{if(p.st==='agendado'){p.st='respondido';p.resp=parResp(P,k);p.respAt=-30;P.newPar=(P.newPar||0)+1}});
+  if(isU||R.sector==='UTI')P.acc={tipo:'Central',cal:'triplo lúmen',local:'veia jugular interna direita',t:-1440,st:'pérvio'};
+  (R.pendLabs||[]).forEach(id=>{if(EXAMS[id])P.ord[id]={t0:-60,due:rnd(90,180),done:false,urg:false,dt:dLbl(W.day-1)+' 06:00',rot:1}});R.pendLabs=[];
+  if(R.prevMiss&&!R.missNoted){R.missNoted=1;c.queixa+=' (Na prescrição da equipe anterior não consta: '+R.prevMiss.toLowerCase()+'.)'}
+  if(window.vrec)vrec(P,'Enfermagem',-60);P.lv={t:0,v:vitNow(P)};R.cared=1;R.mine=1;return P;
+}
+function newWard(sec){
+  const isU=sec==='uti',D=difOf(),cap=isU?{mf:4,f:4,m:5,d:6,md:6,inf:7}[D.id]:{mf:6,f:7,m:8,d:9,md:10,inf:12}[D.id];
+  const inSec=R=>isU?R.sector==='UTI':['ENF','AMA','OBS'].includes(R.sector);
+  const L=W.inp.filter(inSec).sort((a,b)=>(b.mine?1:0)-(a.mine?1:0)||a.trend-b.trend);
+  while(L.length<cap){const R=genRec(HSEC(sec));W.inp.push(R);L.push(R)}
+  const census=L.slice(0,cap);L.slice(cap).forEach(R=>{R.colega=1});
+  G={n:W.day,t0:7*60,t:0,end:720,act:null,ins:100,rep:W.rep,eq:W.eq,al:[],over:false,modal:null,chefia:0,unsafe:0,news:[],sched:[],unread:0,
+    pts:[],mode:'visit',turn:sec,posto:sec,dif:W.dif||'m',week:1,slots:[],filled:0,no:0,stock:{sorobot:6,hemac:8},off:{},
+    beds:{emg:{cap:6,bg:2},obs:{cap:10,used:5},ama:{cap:8,used:5},enf:{cap:20,used:14},uti:{cap:isU?cap+1:5,used:isU?cap:4}},evs:[]};
+  if(window.difApply)difApply();
+  if(isU){G.beds.uti.cap=cap+1;G.beds.uti.used=cap}
+  census.forEach(R=>{const P=makeWardP(R,isU);G.pts.push(P);G.slots.push(0);G.filled++});
+  /* intercorrências durante o dia */
+  const nI=Math.min(census.length,(isU?2:1)+(['d','md','inf'].includes(D.id)?1:0)+(D.id==='inf'?1:0));
+  shuffle(G.pts.slice()).slice(0,nI).forEach(P=>{P.interc={at:rnd(25,240),kind:null}});
+  /* admissões que sobem do PS ao longo do dia */
+  const nA=isU?rnd(0,1)+(D.id==='inf'?1:0):rnd(1,2)+(['md','inf'].includes(D.id)?1:0),H=loadH(),taken=new Set(G.pts.map(p=>p.c.nome.split(' ')[0]));
+  for(let i=0;i<nA;i++){const tpl=pickOf(wardPool(sec)),c=vary(tpl,200+i,H,taken);H.n.push(c.nome);H.t.push(tpl.id);const at=rnd(60,540);c.fromPS=1;c.queixa='Admissão vinda do PS ('+fmt(at)+'): '+c.queixa;
+    G.slots.push(at);admit(c,G.slots.length-1);G.filled=G.slots.length}
+  saveH(H);
+  alert_(fmt(0)+' Início do turno na '+(isU?'UTI':'enfermaria')+': '+census.length+' leitos sob sua responsabilidade.');
+}
+/* admissão vinda do PS chega com parte da prescrição feita pelo plantonista */
+function onArrive(P){
+  const c=P.c;if(!c.fromPS||P.psDone)return;P.psDone=1;P.mov.ace=c.arr;if(turnOf()==='uti')P.mov.mon=c.arr;const names=[];
+  c.key.forEach((k,i)=>{if(i%2)return;const id=k.ids[0],D=DRUGS[id];if(!D)return;P.ks[i]=c.arr;
+    if(!['Solicitação','Procedimento'].includes(D.v[0])&&!HEMO.includes(id)){const fq=D.f.split(' ').find(x=>x!=='u')||'u';P.rx.push({id,i:okIdx(k,id)[0],via:0,freq:fq,dur:fq==='u'?'u':D.dr.split(' ')[0],t:c.arr,adm:c.arr,carry:1,keyCred:1,day:dayIdx()});names.push(D.n)}});
+  P.log.push({t:c.arr,k:'m',q:'Admissão',a:'Prescrição do plantonista do PS: '+(names.join(', ')||'sem prescrição')+'. Reavalie e complete.',fresh:1});
+}
+/* ---------- intercorrências na enfermaria e na UTI ---------- */
+const ICK={dessat:['dessaturou para 86% em ar ambiente e está taquipneico',{sat:-9,fr:7,fc:12},{ids:['o2'],ok:[0,1,2,3],lb:'Oxigênio na dessaturação'},2],
+  febre:['teve febre de 38,9 °C com calafrios',{t:2,fc:16},{ids:['dipi','para'],ok:{dipi:[1],para:[1,2]},lb:'Antitérmico na febre'},1],
+  hipot:['está hipotenso, PA caiu e está sudoreico',{s:-38,d:-20,fc:22},{ids:['sf','ringer'],ok:{sf:[0,1,2],ringer:[0,1,2]},lb:'Volume na hipotensão'},2],
+  hipogli:['está sudoreico e confuso; glicemia capilar de 46 mg/dL',{fc:16},{ids:['glic50'],ok:[1],lb:'Glicose 50% na hipoglicemia'},1],
+  dor:['está com dor intensa (8 de 10) e agitado',{s:18,d:8,fc:18},{ids:['dipi','tram','morf'],ok:{dipi:[1],tram:[0,1],morf:[0,1]},lb:'Analgesia'},1]};
+function fireInterc(P,t){
+  const b=P.c.base||P.c.id,ks=Object.keys(ICK).filter(k=>!(k==='hipot'&&CONG.includes(b))),k=P.interc.kind||pickOf(ks),I=ICK[k];
+  P.interc.kind=k;P.interc.fired=t;P.icAdd=I[1];const c=P.c;c.key.push(Object.assign({by:t+60},JSON.parse(JSON.stringify(I[2]))));P.ks.push(null);
+  I[2].ids.forEach(id=>{if(!c.allowed.includes(id))c.allowed.push(id)});if(k==='febre'&&!c.util.includes('hemoc'))c.util.push('hemoc');
+  if(I[3]>=2&&!c.dest.best.includes('UTI')&&turnOf()!=='uti')c.dest.ok.push('UTI');
+  P.stage=Math.min(P.stage,0)-(I[3]>=2?1:0);if(P.stage<-2)P.stage=-2;c.tri=P.stage<=-1?'LARANJA':'AMARELO';
+  const txt='Enfermagem: '+first(P)+' ('+leitoOf(P)+') '+I[0]+'. Pode avaliar?';P.interc.txt=I[0];
+  P.log.push({t,k:'m',q:'Intercorrência',a:txt,fresh:1});alert_(fmt(t)+' '+txt,true);if(window.sfx)sfx('alarm');
+}
+function intercSeen(P){if(P.interc&&P.interc.fired!=null&&P.interc.seen==null)P.interc.seen=G.t}
+/* desfecho da visita: inclui a intercorrência */
+function visitPen(P,d,pen,goods){
+  const c=P.c,R=W&&W.inp.find(x=>x.uid===c.uid);
+  if(P.mov.jej!=null&&!P.rx.some(x=>x.id==='eda')&&!(R||{reqs:{}}).reqs.eda)pen.push([4,'Dieta zero mantida sem procedimento programado.']);
+  if(R&&d===R.sector&&c.dest.best.includes(d))goods.push('Manteve internado no setor certo.');
+  const I=P.interc;if(I&&I.fired!=null){if(I.seen==null)pen.push([8,'Intercorrência não reavaliada: '+I.txt+'.']);else if(I.seen-I.fired>45)pen.push([4,'Intercorrência reavaliada com atraso ('+Math.round(I.seen-I.fired)+' min).']);else goods.push('Intercorrência reavaliada a tempo.')}
+  if(R&&R.hyp!==c.hyp&&P.hyp===c.hyp)goods.push('Corrigiu o diagnóstico da equipe anterior.');
+}
+/* ---------- fim de cada turno ---------- */
+function weekAfter(){
+  if(!W||W.phase==='end')return;
+  W.rep=G.rep;W.eq=G.eq;const sec=turnOf(),lbl='Dia '+W.day+': '+SETORES[sec].n.toLowerCase();
+  W.days.push({k:'Dia '+W.day+' · '+SETORES[sec].n,score:G.final.score,sec});
+  const admitFrom=(P,s,note)=>{const R=wkRec(P,s);R.mine=1;R.path[0]=lbl+' → '+(note||SECN[s]);W.inp.push(R)};
+  G.pts.forEach(P=>{
+    const c=P.c,r=P.res;if(P.st==='skip')return;
+    if(c.visit){
+      const R=W.inp.find(x=>x.uid===c.uid);if(!R)return;const c0=R.c;
+      R.hyp=P.hyp||R.hyp;R.jej=P.mov.jej!=null;
+      P.rx.forEach(x=>{const D=DRUGS[x.id];if(D&&D.v[0]==='Solicitação'&&x.id!=='ccih'&&R.reqs[x.id]!=='ok')R.reqs[x.id]='pend'});
+      R.rx=P.rx.filter(r=>r.freq!=='u'&&DRUGS[r.id]&&DRUGS[r.id].v[0]!=='Solicitação').map(r=>Object.assign({},r));R.iso=P.mov.iso;
+      R.evos=(R.evos||[]).concat(P.evos||[]);R.flow=(R.flow||[]).concat(flowOf(P));R.vs=(P.vs||[]).slice(-12);R.par=JSON.parse(JSON.stringify(P.par||{}));
+      R.pendLabs=Object.entries(P.ord).filter(([k,o])=>o.rot&&!o.done).map(([k])=>k);
+      R.adjust=P.rx.some(x=>!x.carry&&c0.key.some(k=>k.ids.includes(x.id)&&okIdx(k,x.id).includes(x.i)));
+      if(R.prevMiss&&P.rx.some(x=>!x.carry&&c0.key.some(k=>k.lb===R.prevMiss&&k.ids.includes(x.id)))){R.prevMiss=null;R.trend=Math.max(R.trend,0)}
+      if(P.interc&&P.interc.fired!=null&&(P.interc.seen==null||P.ks[P.ks.length-1]==null)){R.trend=Math.max(-2,R.trend-1);R.could.push('Reavaliar e tratar a intercorrência ('+P.interc.txt+').')}
+      if(R.ksMiss.length&&R.adjust)R.ksMiss=[];
+      R.missedVisit=P.st==='handoff';
+      const d=P.dest,lb='Dia '+W.day+' (D'+R.hd+'): ';
+      if(P.reg||d==='TRANS'){W.inp=W.inp.filter(x=>x!==R);W.done.push({nome:R.nome,idade:R.idade,dx:dxLabel(c0.hyp),out:'Transferido no D'+R.hd,path:R.path.concat(lb+'transferido'),could:R.could});return}
+      if(P.st==='handoff'){R.path.push(lb+'não foi visto no turno');return}
+      if(d==='ALTA'){W.inp=W.inp.filter(x=>x!==R);const safe=P.c.dest.alta;
+        W.done.push({nome:R.nome,idade:R.idade,dx:dxLabel(c0.hyp),out:safe?'Alta no D'+R.hd:'Alta precoce no D'+R.hd,path:R.path.concat(lb+'alta'),could:safe?R.could:R.could.concat(couldFor(c0,P.res.errs))});
+        if(!safe)W.pendRet.push({rec:Object.assign(R,{trend:-1,hd:1,path:R.path.concat(lb+'alta precoce')}),unsafe:true});return}
+      if(d&&d!==R.sector){R.path.push(lb+SECN[R.sector]+' → '+SECN[d]);R.sector=d;R.leito=freeBed(d)}else R.path.push(lb+'segue em '+SECN[R.sector]);
+      if(P.res&&['ruim','parcial'].includes(P.res.cls))R.could=R.could.concat(P.res.errs.slice(0,2));
+      return;
+    }
+    if(P.st==='dead'||(r&&r.cls==='obito')){doneRec(P,'Óbito',P.st==='dead'?'óbito no atendimento':'óbito no transporte');return}
+    if(P.reg&&P.st==='handoff'){doneRec(P,'Transferido','transferência regulada');return}
+    if(P.st==='handoff'){const s=c.dest.best.find(x=>WARD.includes(x))||(c.dest.best.includes('EMG')?'UTI':null);
+      if(s){const R=wkRec(P,s);R.mine=1;R.adm.cls='parcial';R.path[0]=lbl+': passado sem desfecho; o colega internou em '+SECN[s];W.inp.push(R)}else doneRec(P,'Alta pelo colega','passado sem desfecho; o colega deu alta');return}
+    if(P.dest==='TRANS'){doneRec(P,'Transferido','transferência regulada');return}
+    if(P.dest==='ALTA'){doneRec(P,c.dest.alta?'Alta':'Alta insegura','alta pelo '+SETORES[sec].n.toLowerCase());
+      if(!c.dest.alta||r.cls==='ruim')W.pendRet.push({rec:Object.assign(wkRec(P,c.dest.best.find(x=>WARD.includes(x))||'ENF'),{mine:1}),unsafe:!c.dest.alta});return}
+    if(P.dest==='EMG'){const s=c.dest.best.includes('UTI')||c.dest.ok.includes('UTI')?'UTI':'ENF';admitFrom(P,s,'sala vermelha (colega) → '+SECN[s]);return}
+    if(WARD.includes(P.dest))admitFrom(P,P.dest);
+  });
+  W.phase=W.day>=W.len?'end':'next';saveWeek();
+}
+function doneRec(P,out,note){
+  const c=P.c,r=P.res||{};const bad=['obito','ruim','parcial'].includes(r.cls)||/óbito|insegura/i.test(out);
+  W.done.push({nome:c.nome,idade:c.idade,dx:dxLabel(c.hyp),out,path:['Dia '+W.day+': '+note],could:bad?couldFor(c,r.errs):[]});
+}
+/* ---------- ações, rótulos e botões ---------- */
+function wkAction(v){
+  const [a,b]=v.split(':');
+  if(a==='setor'){UI.wkSetor=b;return}if(a==='modo'){UI.wkModo=b;return}if(a==='dif'){UI.wkDif=b;return}
+  UI.menu=false;UI.confirmReset=false;UI.tab='leito';UI.destSel=null;UI.msg='';UI.weekRep=false;
+  if(a==='start'||a==='again'){const s=a==='again'&&W?W.setor:UI.wkSetor||'porta',m=a==='again'&&W?W.modo:UI.wkModo||'turno',d=a==='again'&&W?W.dif:UI.wkDif||'m';startWeek(s,m,d);return}
+  if(a==='next'){nextTurn();return}
+  if(a==='resume'){if(W.phase==='next')nextTurn();else if(W.phase==='turno'&&(!G||G.over))startTurn();else if(W.phase==='end')UI.weekRep=true;return}
+  if(a==='rep'){W.phase='end';saveWeek();UI.weekRep=true;return}
+  if(a==='new'){W=null;saveWeek();G=null;UI.weekRep=false;UI.menu=true;return}
+}
+function shiftLbl(){
+  if(!G)return'';const s=SETORES[turnOf()]||SETORES.porta;
+  return(W&&W.len>1?'Dia '+W.day+' de '+W.len+' · ':'')+s.n+' ('+s.h.replace(' às ','–')+')';
+}
+function nextBtns(){
+  if(!W)return'<button class="btn" data-a="menu">Menu</button>';
+  if(W.len===1)return'<button class="btn red" data-a="wk:again">Novo turno no mesmo setor</button><button class="btn" data-a="menu">Menu</button>';
+  if(W.phase==='end')return'<button class="btn red" data-a="wk:rep">Ver o relatório '+(W.len>7?'do mês':'da semana')+'</button>';
+  const ns=UI.nextSec||W.esc[W.day],S=SETORES[ns];
+  return(W.modo==='rodizio'?'<label class="f" style="color:var(--ink2)">Próximo turno (pode trocar com um colega)<select data-s="nextsec">'+Object.entries(SETORES).map(([k,x])=>'<option value="'+k+'"'+(k===ns?' selected':'')+'>'+x.n+' ('+x.h+')</option>').join('')+'</select></label>':'')
+   +'<button class="btn red" data-a="wk:next">Próximo turno: dia '+(W.day+1)+' · '+S.n+' ('+S.h+')</button>';
+}
+function visitHint(P){
+  if(!P||!P.c.visit)return'';const R=W&&W.inp.find(x=>x.uid===P.c.uid);if(!R)return'';
+  return'<p style="margin:0 0 6px;color:#3b5a73;font-size:17px">Internado em <b>'+SECN[R.sector]+'</b>, D'+R.hd+'. Para seguir internado, carimbe "Manter"; para mudar de setor, escolha outro; ou dê alta.</p>';
+}
+function destList(P){
+  const t=turnOf(),L=k=>(DESTS.find(x=>x[0]===k)||[k,k])[1];
+  if(t==='porta')return[['ALTA',L('ALTA')],['OBS',L('OBS')],['AMA',L('AMA')],['ENF','Internar na enfermaria'],['EMG','Sala vermelha (passa ao colega)'],['TRANS',L('TRANS')]];
+  if(t==='sala')return[['ALTA',L('ALTA')],['OBS',L('OBS')],['AMA',L('AMA')],['ENF','Internar na enfermaria'],['UTI','UTI'],['EMG','Manter na sala vermelha'],['TRANS',L('TRANS')]];
+  if(t==='uti')return[['UTI',P.c.visit?'Manter na UTI':'Internar na UTI'],['ENF','Alta da UTI para a enfermaria'],['TRANS',L('TRANS')]];
+  return[['ENF',P.c.visit?'Manter na enfermaria':'Internar na enfermaria'],['ALTA','Alta hospitalar'],['UTI','Pedir vaga de UTI'],['TRANS',L('TRANS')]];
+}
+function weekReportHtml(){
+  const all=[...W.done,...W.inp.filter(R=>R.mine).map(R=>({nome:R.nome,idade:R.idade,dx:dxLabel(R.c.hyp),out:'Ainda internado (D'+R.hd+', '+SECN[R.sector]+')',path:R.path,could:R.could}))];
+  const ob=all.filter(x=>/^Óbito/.test(x.out)).length,al=all.filter(x=>/^Alta/.test(x.out)).length,tr=all.filter(x=>/^Transf/.test(x.out)).length;
+  const avg=a=>a.length?Math.round(a.reduce((s,d)=>s+d.score,0)/a.length):0,sc=Math.round(avg(W.days)-ob*14/W.len);
+  const by=Object.keys(SETORES).map(k=>{const L=W.days.filter(d=>d.sec===k);return L.length?SETORES[k].n+': '+L.length+' turno'+(L.length>1?'s':'')+' (média '+avg(L)+')':''}).filter(Boolean).join(' · ');
+  const rk=x=>/^Óbito/.test(x.out)?0:x.could.length?1:2,sorted=all.slice().sort((a,b)=>rk(a)-rk(b));
+  return'<article class="doc px card"><h3>Relatório '+(W.len>7?'do mês':W.len>1?'da semana':'do turno')+' <span>'+(W.modo==='rodizio'?'rodízio':SETORES[W.setor].n)+' · '+difOf(W.dif).n+'</span></h3><div class="big">Nota '+Math.max(0,sc)+'/100</div>'
+   +'<p><b>Preceptor (RQE):</b> "'+esc(rqeFinal(sc))+'"</p><p>'+by+'.</p>'
+   +'<p>Pacientes seus: <b>'+all.length+'</b>. Altas: <b>'+al+'</b>. Transferências: <b>'+tr+'</b>. Óbitos: <b>'+ob+'</b>. Reputação final '+Math.round(W.rep)+'.</p>'
+   +'<p class="sub">Notas por turno</p><p>'+W.days.map(d=>esc(d.k)+': <b>'+d.score+'</b>').join(' · ')+'</p>'
+   +'<p class="sub">Cada paciente, do começo ao fim</p><div class="rep">'+sorted.map(x=>'<div class="rp"><h4><span>'+esc(x.nome)+', '+x.idade+'</span><span class="tag t-'+(/^Óbito/.test(x.out)?'obito':/insegura|precoce/.test(x.out)?'ruim':/^Alta/.test(x.out)?'otimo':'pend')+'">'+esc(x.out.toUpperCase())+'</span></h4>'
+     +'<div style="font-size:18px">'+esc(x.dx)+'</div><div style="color:var(--ink2);font-size:18px">'+x.path.map(esc).join(' → ')+'</div>'
+     +(x.could.length?'<div style="font-size:18px"><b>Nesse caso, poderia ter feito:</b></div><ul class="warn">'+[...new Set(x.could)].slice(0,7).map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')+'</div>').join('')+'</div>'
+   +'<div class="row"><button class="btn red" data-a="wk:new">Novo jogo</button></div></article>';
 }
 /* ===== TRILHA SONORA (chiptune em Web Audio, sem arquivos) =====
  Cada faixa é uma música com seções (introdução, tema, variação com melodia, ponte, retorno e final) e dura de 3:30 a 4:00.
@@ -3002,16 +3225,15 @@ const ABX=new Set([...(CATS.find(c=>c[0]==='Antibióticos')||[0,[]])[1],...(CATS
 const msgHtml=()=>UI.msg?'<p class="msg'+(UI.err?' err':'')+'">'+esc(UI.msg)+'</p>':'';
 const tm=m=>m>=1?'('+(m%1?String(m).replace('.',','):m)+' min)':'('+Math.round(m*60)+' s)';
 /* ---------- setor, leito e estado ---------- */
-const SECS=[['todos','Todos'],['porta','Porta'],['sv','Sala vermelha'],['obs','Observação'],['ama','Sala amarela'],['enf','Enfermaria'],['uti','UTI'],['reg','Regulação'],['done','Atendidos']];
+const SECS_PS=[['todos','Todos'],['fila','Aguardando'],['atend','Em atendimento'],['done','Atendidos']],SECS_W=[['todos','Leitos'],['done','Concluídos']];
+const secsNow=()=>G.mode==='visit'?SECS_W:SECS_PS;
 function setorOf(P){
   if(['done','dead','handoff','skip'].includes(P.st))return'done';if(P.st==='wait')return'x';
-  if(P.c.visit)return({ENF:'enf',AMA:'ama',OBS:'obs',UTI:'uti'})[P.c.sec]||'enf';
-  if(P.st==='reg')return'reg';if(P.st==='emg')return'sv';
-  if(G.posto==='sala')return'sv';if(G.posto==='porta')return'porta';return SALA_TRI.includes(P.c.tri)?'sv':'porta';
+  if(G.mode==='visit')return'leito';return P.st==='queue'?'fila':'atend';
 }
-function leitoOf(P){if(!P.leito)P.leito=setorOf(P)==='sv'?'Maca '+(((P.no-1)%6)+1):'Cadeira '+pad(P.no);if(P.st==='emg'&&!/^Maca/.test(P.leito))P.leito='Maca '+(((P.no-1)%6)+1);return P.leito}
+function leitoOf(P){if(!P.leito&&P.c.fromPS)P.leito=freeBed(turnOf()==='uti'?'UTI':'ENF');if(!P.leito)P.leito=G.posto==='sala'?'Maca '+(((P.no-1)%6)+1):'Cadeira '+pad(P.no);if(P.st==='emg'&&!/^Maca/.test(P.leito))P.leito='Maca '+(((P.no-1)%6)+1);return P.leito}
 function statusOf(P){
-  if(P.st==='queue')return P.c.visit?'Visita pendente':'Aguardando · '+Math.max(0,Math.floor(G.t-P.c.arr))+' min';
+  if(P.st==='queue')return P.c.visit?'Visita pendente':P.c.fromPS?'Admissão do PS · aguardando':'Aguardando · '+Math.max(0,Math.floor(G.t-P.c.arr))+' min';
   if(P.st==='care')return P.c.visit?'Em visita':'Em atendimento';if(P.st==='emg')return'Monitorizado na sala vermelha';if(P.st==='reg')return'Aguardando regulação (até '+fmt(P.reg.at)+')';
   if(P.st==='dead')return'Óbito';if(P.st==='done')return'Destino: '+((DESTS.find(x=>x[0]===P.dest)||[0,P.dest])[1]);return'';
 }
@@ -3050,8 +3272,8 @@ function plistHtml(){
 function pacHtml(){
   const cnt=k=>G.pts.filter(P=>P.st!=='wait'&&P.st!=='skip'&&(k==='todos'?setorOf(P)!=='done':setorOf(P)===k)).length;
   const visit=G.mode==='visit',ck=visit?active().map(P=>{const L=pendList(P);return'<li><b>'+esc(P.c.nome.split(' ')[0])+' ('+esc(P.c.secLbl)+')</b>: '+(L.length?L.map(esc).join('; '):'sem pendências')+'</li>'}).join(''):'';
-  return'<section class="win"><h2 class="wt">Pacientes <span>'+(visit?'visita da manhã':'plantão')+' · selecione o setor</span></h2><div class="wb">'
-   +'<div class="secs">'+SECS.map(([k,n])=>{const c=cnt(k);return c||k==='todos'||UI.sec===k?'<button class="btn'+(UI.sec===k?' on':'')+'" data-a="sec:'+k+'">'+n+' ('+c+')</button>':''}).join('')+'</div>'
+  return'<section class="win"><h2 class="wt">Pacientes <span>'+esc(shiftLbl())+'</span></h2><div class="wb">'
+   +'<div class="secs">'+secsNow().map(([k,n])=>{const c=cnt(k);return c||k==='todos'||UI.sec===k?'<button class="btn'+(UI.sec===k?' on':'')+'" data-a="sec:'+k+'">'+n+' ('+c+')</button>':''}).join('')+'</div>'
    +'<label class="f">Buscar por nome ou CPS<input type="search" data-s="q" value="'+esc(UI.q||'')+'" placeholder="ex.: Maria ou 123456"></label>'
    +'<div class="plist" id="plist">'+plistHtml()+'</div>'+waitBtns()
    +(visit?'<div class="card2"><h4>Antes da visita: checklist</h4><p style="margin:0 0 4px">Veja os leitos, leia a admissão e a última evolução, confira pendências, sinais vitais das últimas 24 h, laudos, pareceres e a prescrição atual. Depois visite cada leito e registre a evolução do dia.</p><ul style="margin:0;padding-left:18px">'+ck+'</ul></div>':'')
@@ -3215,9 +3437,9 @@ function solHtml(P){
      +'<label class="f">Tipo<select data-s="tc:tipo"><option value="">—</option>'+[['cranio','Crânio'],['torax','Tórax'],['angio','Angiotomografia de tórax (TEP)'],['abdome','Abdome'],['coluna','Coluna lombar']].map(([k,n])=>'<option value="'+k+'"'+(C.tc.tipo===k?' selected':'')+'>'+n+'</option>').join('')+'</select></label>'
      +'<label class="f">Contraste<select data-s="tc:ctr"><option value="">—</option><option value="sim"'+(C.tc.ctr==='sim'?' selected':'')+'>Com contraste iodado</option><option value="nao"'+(C.tc.ctr==='nao'?' selected':'')+'>Sem contraste</option></select></label>'
      +'<label class="f">Nível de consciência<select data-s="tc:cons"><option value="">—</option>'+['Lúcido e orientado','Confuso','Rebaixado (Glasgow ≤ 12)'].map(x=>'<option'+(C.tc.cons===x?' selected':'')+'>'+x+'</option>').join('')+'</select></label></div></div>':'')
-   +'<div class="row"><label class="orient2"><input type="radio" name="urg" data-s="cart:urg" value="0"'+(C.urg?'':' checked')+'> Rotina</label><label class="orient2"><input type="radio" name="urg" data-s="cart:urg" value="1"'+(C.urg?' checked':'')+'> Imediato (metade do tempo, +1 insumo)</label></div>'
+   +'<div class="row"><label class="orient2"><input type="radio" name="urg" data-s="cart:urg" value="0"'+(C.urg?'':' checked')+'> Rotina'+(G.mode==='visit'?' (coleta amanhã 06:00)':'')+'</label><label class="orient2"><input type="radio" name="urg" data-s="cart:urg" value="1"'+(C.urg?' checked':'')+'> Imediato (metade do tempo, +1 insumo)</label></div>'
    +msgHtml()+'<div class="row"><button class="btn red" data-a="csend"'+(C.items.length?'':' disabled')+'>Imprimir, carimbar e enviar '+tm(1)+'</button></div>'
-   +'<p style="margin:4px 0 0;color:#3b5a73">Laboratório: caixa de coleta. Imagem: entregue à enfermeira do setor. O residente carimba (demora conforme a correria).</p></div></div>';
+   +'<p style="margin:4px 0 0;color:#3b5a73">Laboratório: caixa de coleta. Imagem: entregue à enfermeira do setor. Você carimba e assina.'+(G.mode==='visit'?' Na enfermaria e na UTI, a rotina é colhida amanhã às 06:00; imediato sai hoje.':'')+'</p></div></div>';
   const done=Object.entries(P.ord);
   h+='<div class="card2"><h4>Busca: exames já solicitados</h4>'+(done.length?'<div class="tscroll"><table class="tbl"><tr><th>Exame</th><th>Coleta</th><th>Situação</th></tr>'+done.map(([k,o])=>'<tr><td>'+EXAMS[k].n+(o.urg?' (imediato)':'')+'</td><td>'+esc(o.dt||fmt(o.t0))+'</td><td>'+(o.done?(o.sys===false?'realizado, ainda não consta no sistema':o.bad?'problema na amostra':'resultado na guia Laudos'):'em andamento · previsto '+fmt(o.due))+'</td></tr>').join('')+'</table></div>':'<p style="margin:0">Nenhum exame solicitado.</p>')+'</div>';
   return h;
@@ -3233,7 +3455,7 @@ function lauBlock(P,o){
   if(UI.exInfo===k&&EXINFO[k])h+='<div class="infobox">'+EXINFO[k]+' <button class="btn sm" data-a="exinfo:">Fechar</button></div>';
   if(o.bad)return h+'<p class="warn">PROBLEMA: '+esc(o.bad)+'</p></div>';
   if(LP[k])return h+labTable(P,k,o.vals||labVals(P,k))+NOTE(P.c.res[k])+'</div>';
-  if(o.nol&&!o.laudo)return h+'<p class="laudo">Exame realizado e disponível na telerradiologia, sem laudo: radiografias e tomografias sem contraste só são laudadas quando o residente pede.</p>'+(o.cur?'<div class="row" style="margin:4px 0 0">'+(o.laudoAt?'<span>Laudo solicitado; previsão '+fmt(o.laudoAt)+'.</span>':'<button class="btn sm" data-a="laudo:'+k+'">Pedir laudo ao residente '+tm(1)+'</button>')+'</div>':'')+'</div>';
+  if(o.nol&&!o.laudo)return h+'<p class="laudo">Exame realizado e disponível na telerradiologia, sem laudo: radiografias e tomografias sem contraste só são laudadas quando você pede à radiologia.</p>'+(o.cur?'<div class="row" style="margin:4px 0 0">'+(o.laudoAt?'<span>Laudo solicitado; previsão '+fmt(o.laudoAt)+'.</span>':'<button class="btn sm" data-a="laudo:'+k+'">Pedir laudo à radiologia '+tm(1)+'</button>')+'</div>':'')+'</div>';
   return h+'<p class="laudo">'+esc(o.alt||P.c.res[k]||(k==='ecg'?'Ritmo sinusal, sem alterações agudas.':k==='rx'?'Sem alterações.':k==='us'?'Sem alterações ao exame à beira-leito.':k==='tc'?'Sem alterações agudas.':'Sem alterações relevantes.'))+'</p></div>';
 }
 function fluxoHtml(P){
@@ -3280,7 +3502,7 @@ function atbHtml(P){
 /* transfusão */
 function traHtml(P){
   const T=UI.tx,D=DRUGS[T.id],tip=P.ord.tipag&&P.ord.tipag.done&&!P.ord.tipag.bad;
-  return'<div class="card2"><h4>Solicitação de transfusão (modelo Rev. 5)</h4><p style="margin:0 0 6px">Confira transfusões anteriores e preencha com os dados da AIH. Imprima em duas vias, leve ao residente para carimbo e entregue à enfermeira.</p><div class="fgrid">'
+  return'<div class="card2"><h4>Solicitação de transfusão (modelo Rev. 5)</h4><p style="margin:0 0 6px">Confira transfusões anteriores e preencha com os dados da AIH. Imprima em duas vias, carimbe, assine e entregue à enfermeira.</p><div class="fgrid">'
    +'<label class="f">Hemocomponente<select data-s="tx:id">'+HEMO.map(k=>'<option value="'+k+'"'+(T.id===k?' selected':'')+'>'+DRUGS[k].n+'</option>').join('')+'</select></label>'
    +'<label class="f">Quantidade<select data-s="tx:dose">'+D.d.map((d,i)=>'<option value="'+i+'"'+(+T.dose===i?' selected':'')+'>'+esc(d)+'</option>').join('')+'</select></label>'
    +'<label class="f">Indicação<select data-s="tx:ind"><option value="">—</option>'+['Anemia sintomática ou Hb abaixo de 7','Sangramento ativo com instabilidade','Plaquetopenia com sangramento','Coagulopatia com sangramento','Reposição em procedimento'].map(x=>'<option'+(T.ind===x?' selected':'')+'>'+x+'</option>').join('')+'</select></label></div>'
@@ -3288,7 +3510,7 @@ function traHtml(P){
    +'<label class="orient2"><input type="checkbox" data-s="tx:urg"'+(T.urg?' checked':'')+'> Urgência extrema: sangue O sem prova cruzada</label>'
    +'<p class="infobox">'+HEMOREF+'</p>'+msgHtml()+'<div class="row"><button class="btn" data-a="txfill">Preencher e imprimir 2 vias '+tm(2)+'</button></div></div>'
    +'<div class="card2"><h4>Solicitações</h4>'+((P.tx||[]).length?'<ul class="qa">'+P.tx.map((x,i)=>'<li><b>'+DRUGS[x.id].n+' · '+esc(DRUGS[x.id].d[x.dose])+(x.urg?' · urgência extrema':'')+'</b><br>'
-     +({impresso:'Impresso. <button class="btn sm" data-a="txstep:'+i+'">Levar ao residente para carimbo</button>',carimbado:'Carimbado. <button class="btn sm" data-a="txstep:'+i+'">Entregar à enfermeira</button>',entregue:'Com a enfermagem; instalação prevista '+fmt(x.at||0)+'.',instalado:'Instalado.',recusado:'<span class="warn">'+esc(x.why||'Recusado.')+'</span>'})[x.st]+'</li>').join('')+'</ul>':'<p style="margin:0">Nenhuma solicitação.</p>')+'</div>';
+     +({impresso:'Impresso. <button class="btn sm" data-a="txstep:'+i+'">Carimbar e assinar</button>',carimbado:'Carimbado. <button class="btn sm" data-a="txstep:'+i+'">Entregar à enfermeira</button>',entregue:'Com a enfermagem; instalação prevista '+fmt(x.at||0)+'.',instalado:'Instalado.',recusado:'<span class="warn">'+esc(x.why||'Recusado.')+'</span>'})[x.st]+'</li>').join('')+'</ul>':'<p style="margin:0">Nenhuma solicitação.</p>')+'</div>';
 }
 /* termos e procedimentos */
 function terHtml(P){
@@ -3321,15 +3543,15 @@ function recHtml(P){
 function ajuHtml(P){
   const card=(w,t,d)=>{const S=helpState(P,w),H=(P.help||{})[w];return'<div class="card2"><h4>'+t+'</h4><p style="margin:0 0 6px">'+d+'</p>'
     +(H?(H.done?'<p class="msg">Respondido. Veja abaixo.</p>':'<p class="msg">Aguardando resposta (por volta de '+fmt(H.at)+').</p>'):S.no?'<p class="msg err">'+esc(S.no)+'</p>':'<button class="btn" data-a="help:'+w+'">'+(w==='r1'?'Mandar mensagem':'Perguntar')+'</button>')+'</div>'};
-  return'<div class="two even">'+card('r1','R1 colega (WhatsApp)','Conte o caso e pergunte o que pode ser. Ele erra às vezes.')+card('enf','Enfermagem','Pergunte o que a enfermeira acha do quadro.')+'</div>'+card('tec','Técnicas de enfermagem (feridas e lesões)','Para cuidado de feridas, picadas e lesões de pele.')
+  return'<div class="two even">'+card('r1','R2 / R3 (WhatsApp)','Conte o caso para um residente mais velho e pergunte o que pode ser. Ele erra às vezes.')+card('enf','Enfermagem','Pergunte o que a enfermeira acha do quadro.')+'</div>'+card('tec','Técnicas de enfermagem (feridas e lesões)','Para cuidado de feridas, picadas e lesões de pele.')
    +msgHtml()+'<div class="card2"><h4>Respostas</h4>'+logL(P,['h'],'Nenhuma resposta ainda.')+'</div>'
    +'<p style="margin:0;color:#3b5a73">Dificuldade: '+difOf().n+'. A ajuda depende de quem está disponível; nenhuma resposta substitui o seu raciocínio.</p>';
 }
 /* destino e alta */
 function desHtml(P){
-  const info=k=>k==='UTI'?bedFree('uti')+' livres':k==='ENF'?bedFree('enf')+' livres':k==='OBS'?bedFree('obs')+' livres':k==='AMA'?bedFree('ama')+' livres':k==='ALTA'?'liberar o paciente':k==='EMG'?'manter monitorizado':'regulação ~60-100 min';
+  const info=k=>P.c.visit&&((k==='ENF'&&turnOf()==='enf')||(k==='UTI'&&turnOf()==='uti'))?'segue no leito '+esc(leitoOf(P)):k==='UTI'?bedFree('uti')+' livres':k==='ENF'?bedFree('enf')+' livres':k==='OBS'?bedFree('obs')+' livres':k==='AMA'?bedFree('ama')+' livres':k==='ALTA'?'liberar o paciente':k==='EMG'?(turnOf()==='porta'?'colega da sala vermelha':'manter monitorizado'):'regulação ~60-100 min';
   const home=P.rx.filter(r=>r.home||(DRUGS[r.id]&&!isEVrx(DRUGS[r.id],r.via)&&DRUGS[r.id].v[0]!=='Solicitação'&&r.id!=='o2'&&r.dur!=='u'));
-  let h=(window.visitHint?visitHint(P):'')+'<div class="dests">'+DESTS.map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0)||(k==='AMA'&&bedFree('ama')<=0);
+  let h=(window.visitHint?visitHint(P):'')+'<div class="dests">'+(window.destList?destList(P):DESTS).map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0)||(k==='AMA'&&bedFree('ama')<=0);
     return'<button class="dest dest2" data-a="dest:'+k+'" aria-pressed="'+(UI.destSel===k)+'"'+(dis?' disabled':'')+'>'+n+'<small>'+(dis?'lotado':info(k))+'</small></button>'}).join('')+'</div>';
   if(UI.destSel==='ALTA'){h+='<div class="card2"><h4>Alta médica</h4><p style="margin:0 0 6px">Antes: evolução de alta, receitas para casa, atestado e encaminhamento (guia Receitas e atestados), orientações.</p><div class="orient">'+ORIENT.map(([k,n])=>'<label class="orient2"><input type="checkbox" data-s="or" value="'+k+'"'+(P.orient.has(k)?' checked':'')+'> '+n+'</label>').join('')+'</div>'
     +'<label class="f" style="margin-top:6px">Retorno<select data-s="ret"><option value="">— escolha —</option>'+RET.map(([k,n])=>'<option value="'+k+'"'+(P.ret===k?' selected':'')+'>'+n+'</option>').join('')+'</select></label>'
@@ -3399,7 +3621,7 @@ function renderVeil(){
      +'<button class="btn paper" data-a="dil:1">Dar alta ao paciente do leito 4, estável e com alta já planejada para amanhã.</button><button class="btn paper" data-a="dil:2">Liberar o leito 6, com PA ainda 170/100 e sem acompanhamento definido, para atender à direção.</button><button class="btn paper" data-a="dil:3">Recusar e justificar por escrito que não há paciente apto à alta segura.</button></div></article>';return}
   if(G&&G.over&&G.final){
     const F=G.final;
-    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>'+(G.mode==='visit'?'Fim da visita':'Passagem de plantão')+' <span>relatório · '+difOf().n+'</span></h3><div class="big">Nota '+F.score+'/100</div><p><b>Preceptor (RQE):</b> "'+esc(F.rqe||(F.rqe=rqeFinal(F.score)))+'"</p>'
+    v.hidden=false;v.innerHTML='<article class="doc px card"><h3>'+(G.mode==='visit'?'Fim do turno':'Passagem de plantão')+' <span>relatório · '+difOf().n+'</span></h3><div class="big">Nota '+F.score+'/100</div><p><b>Preceptor (RQE):</b> "'+esc(F.rqe||(F.rqe=rqeFinal(F.score)))+'"</p>'
      +'<p>Média dos atendimentos: <b>'+F.avg+'</b>. Óbitos: <b>'+F.dead+'</b>. Altas inseguras: <b>'+F.unsafe+'</b>. Exames desnecessários: <b>'+F.exams+'</b>. Prescrições inadequadas: <b>'+F.rx+'</b>. Diagnósticos perdidos: <b>'+F.missed+'</b>. Decisões corretas: <b>'+F.right+'</b>.</p>'
      +'<p>Reputação '+Math.round(G.rep)+' · Confiança da equipe '+Math.round(G.eq)+' · Insumos restantes '+insTxt()+'.</p>'
      +(G.news.length?'<p class="sub">Recados</p><ul class="qa">'+G.news.slice().reverse().map(n=>'<li><b>'+fmt(n.t)+' · '+esc(n.title)+'</b><br>'+esc(n.txt)+'</li>').join('')+'</ul>':'')
@@ -3415,23 +3637,22 @@ function introHtml(){
   const sv=saveInfo(),mid=G&&!G.over,wk=W&&W.phase!=='end'?W:null;
   let hist='';try{const s=JSON.parse(localStorage.getItem('pr2_save')||'{"shifts":[]}');if(s.shifts.length){const l=s.shifts[s.shifts.length-1];hist='<p>Plantões concluídos: <b>'+s.shifts.length+'</b>. Último: nota <b>'+l.score+'</b>, reputação '+l.rep+'.</p>'}}catch(e){}
   let btns='';
-  if(mid)btns+='<button class="btn red" data-a="closemenu">Voltar '+(G.mode==='visit'?'à visita':'ao plantão')+'</button>';
-  else if(sv)btns+='<button class="btn red" data-a="cont">Continuar '+(sv.indexOf('Visita')===0?'a visita':'o plantão')+'</button>';
-  else if(wk)btns+='<button class="btn red" data-a="wk:resume">Continuar '+(W.len>7?'o mês':'a semana')+' ('+({visit:'visita da manhã',night:'noite '+(G&&G.over?W.day+1:W.day),visiting:'visita'}[W.phase]||'')+')</button>';
-  else if(W&&W.phase==='end')btns+='<button class="btn red" data-a="wk:resume">Ver o relatório da semana</button>';
+  if(mid)btns+='<button class="btn red" data-a="closemenu">Voltar ao turno</button>';
+  else if(sv)btns+='<button class="btn red" data-a="cont">Continuar o turno</button>';
+  else if(wk)btns+='<button class="btn red" data-a="wk:resume">Continuar '+(W.len>7?'o mês':W.len>1?'a semana':'o turno')+' (dia '+(W.phase==='next'?W.day+1:W.day)+')</button>';
+  else if(W&&W.phase==='end'&&W.len>1)btns+='<button class="btn red" data-a="wk:resume">Ver o relatório</button>';
   if(G&&G.over&&!mid)btns+='<button class="btn" data-a="closemenu">Voltar ao relatório</button>';
-  const P=UI.wkPosto||'porta',L=UI.wkLen||7,Df=UI.wkDif||'m',on=(a,b)=>a===b?' on':'';
-  const pick='<p class="sub">Novo jogo · seu posto</p><div class="row">'
-    +'<button class="btn paper'+on(P,'porta')+'" data-a="wk:posto:porta">Porta<br><small>amarelos, verdes e azuis</small></button>'
-    +'<button class="btn paper'+on(P,'sala')+'" data-a="wk:posto:sala">Sala vermelha + observação<br><small>vermelhos e laranjas</small></button>'
-    +'<button class="btn paper'+on(P,'misto')+'" data-a="wk:posto:misto">Os dois<br><small>todas as cores</small></button></div>'
-    +'<p class="sub">Duração</p><div class="row"><button class="btn paper'+on(L,7)+'" data-a="wk:len:7">Semana (7 noites)</button><button class="btn paper'+on(L,30)+'" data-a="wk:len:30">Mês (30 noites)</button><button class="btn paper'+on(L,1)+'" data-a="wk:len:1">Plantão avulso</button></div>'
+  const S=UI.wkSetor||'porta',M=UI.wkModo||'turno',Df=UI.wkDif||'m',on=(a,b)=>a===b?' on':'';
+  const pick='<p class="sub">Novo jogo · onde você está escalado</p><div class="diflist">'
+    +Object.entries(SETORES).map(([k,x])=>'<button class="btn paper'+on(S,k)+'" data-a="wk:setor:'+k+'"'+(M==='rodizio'?' disabled':'')+'><b style="font-weight:400;font-size:21px">'+x.n+'</b><small>'+x.h+' · '+x.d+'</small></button>').join('')+'</div>'
+    +'<p class="sub">Duração</p><div class="row">'+Object.entries(MODOS).map(([k,x])=>'<button class="btn paper'+on(M,k)+'" data-a="wk:modo:'+k+'">'+x[0]+'</button>').join('')+'</div>'
+    +'<p style="margin:4px 0;color:var(--ink2)">'+(M==='turno'?'Um turno de 12 h no setor escolhido.':M==='rodizio'?'Sete turnos alternando enfermaria, porta, sala vermelha e UTI; antes de cada turno dá para trocar com um colega.':'Todos os turnos no mesmo setor.'+(S==='enf'||S==='uti'?' Na enfermaria e na UTI, os mesmos pacientes continuam com você de um dia para o outro: você reavalia diariamente, vê os exames da manhã e decide alta, piora ou UTI.':' Quem você interna passa para a equipe da enfermaria; você recebe recados com o desfecho.'))+'</p>'
     +'<p class="sub">Dificuldade</p><div class="diflist">'+DIFS.map(d=>'<button class="btn paper'+on(Df,d.id)+'" data-a="wk:dif:'+d.id+'"><b style="font-weight:400;font-size:21px">'+d.n+'</b><small>'+d.d+'</small></button>').join('')+'</div>'
-    +'<div class="row"><button class="btn'+(sv||mid||wk?'':' red')+'" data-a="wk:start">Começar '+(L===1?'o plantão':L===7?'a semana':'o mês')+'</button></div>';
-  const conf=UI.confirmReset?'<div class="doc" style="border:3px double #9c2a1a;margin-top:10px"><p class="warn"><b>Começar do zero apaga tudo da v2:</b> plantão e semana em andamento, notas e histórico de pacientes. A v1 não é afetada.</p><div class="row"><button class="btn red" data-a="resetok">Apagar tudo e começar do zero</button><button class="btn paper" data-a="resetno">Cancelar</button></div></div>':'';
+    +'<div class="row"><button class="btn'+(sv||mid||wk?'':' red')+'" data-a="wk:start">Começar</button></div>';
+  const conf=UI.confirmReset?'<div class="doc" style="border:3px double #9c2a1a;margin-top:10px"><p class="warn"><b>Começar do zero apaga tudo da v2:</b> turno e semana em andamento, notas e histórico de pacientes. A v1 não é afetada.</p><div class="row"><button class="btn red" data-a="resetok">Apagar tudo e começar do zero</button><button class="btn paper" data-a="resetno">Cancelar</button></div></div>':'';
   return'<article class="doc px card"><h3>Hospital Regional <span>'+(mid?'Menu':'versão 2')+'</span></h3><div class="big">PLANTÃO<br>REGIONAL 2</div>'
-   +(mid?'':'<p>Você é interno de Clínica Médica num hospital regional do SUS no Vale do São Francisco, agora trabalhando dentro do prontuário eletrônico: lista de pacientes por setor, central de assistência com guias, evolução, prescrição, solicitação de exames, laudos, pareceres, transfusão, termos e receitas.</p>'
-   +'<ul><li><b>Noite (19:00 às 07:00):</b> você fica num posto; o colega do outro posto manda recados e às vezes pacientes.</li><li><b>Manhã:</b> visita aos seus internados, com checklist de pendências, evolução do dia e fluxo laboratorial.</li><li>Tudo custa tempo, inclusive as medidas iniciais. O residente carimba o que você imprime.</li><li>Regra de ouro: converse com o residente antes de procedimentos e documentos.</li></ul>'
+   +(mid?'':'<p>Você é <b>R1 de Clínica Médica</b> num hospital regional do SUS no Vale do São Francisco, trabalhando dentro do prontuário eletrônico. Cada turno você fica num setor só, como na escala real.</p>'
+   +'<ul><li><b>Porta do PS e sala vermelha (19:00 às 07:00):</b> admissões e emergências. O colega do outro posto manda recados e às vezes pacientes.</li><li><b>Enfermaria e UTI (07:00 às 19:00):</b> seus leitos, visita, evolução diária, exames da manhã, intercorrências e admissões que sobem do PS.</li><li>Tudo custa tempo. Você carimba e assina; os internos colhem exames (e às vezes erram). Discuta o que for maior com o staff.</li></ul>'
    +'<p>'+CASES.length+' quadros clínicos; as pessoas são sempre novas. O sistema PRONTO é fictício. Tudo roda no seu navegador, sem usar o Claude.</p>')
    +hist+(sv?'<p>Salvo: <b>'+esc(sv)+'</b>. O jogo salva sozinho a cada ação.</p>':'')
    +(btns?'<div class="row">'+btns+'</div>':'')+(mid?'':pick)+'<div class="row"><button class="btn" data-a="reset">Começar do zero</button></div>'+conf+'</article>';
@@ -3459,7 +3680,7 @@ document.addEventListener('click',e=>{
   if(k==='reset'){UI.confirmReset=true;render();return}
   if(k==='resetno'){UI.confirmReset=false;render();return}
   if(k==='resetok'){resetAll();render();return}
-  if(k==='wk'){wkAction(v);if(G&&!G.over&&['start','visit','night','again','resume'].includes(v.split(':')[0])){UI.scr='pac';UI.sec='todos'}render();return}
+  if(k==='wk'){wkAction(v);if(G&&!G.over&&['start','next','again','resume'].includes(v.split(':')[0])){UI.scr='pac';UI.sec='todos'}render();return}
   if(k==='ciente'){const P=pt(UI.pop&&UI.pop.id);if(P){P.ciente=1;P.log.push({t:G.t,k:'m',q:'Alerta',a:'Alergia registrada na triagem: ciente.',fresh:1})}UI.pop=null;render();return}
   if(!G||G.over)return;
   if(k==='dil'){resolveDil(+v);render();return}
@@ -3522,6 +3743,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   const s=e.target.closest('[data-s]');if(!s)return;const n=s.dataset.s,P=G&&cur(),F=UI.F,val=s.type==='checkbox'?(s.checked?1:0):s.value;
   if(n==='trk'){musSelect(s.value);renderTop();return}
+  if(n==='nextsec'){UI.nextSec=s.value;renderVeil();return}
   if(!G)return;
   const [g,f]=n.split(':');
   if(['dose','via','freq','dur','dil','inf','rate','hrs'].includes(n)){F[n]=['dose','via','rate'].includes(n)?+val:val;if(n==='freq'){if(val==='u')F.dur='u';else if(F.dur==='u'&&DRUGS[F.drug])F.dur=DRUGS[F.drug].dr.split(' ').find(x=>x!=='u')||'ct';if(val==='ic'){F.inf='cont';F.dil='bic';F.rate=F.rate||(BICSTD[F.drug]||[20])[0]}}}
