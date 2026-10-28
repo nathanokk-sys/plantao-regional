@@ -1,6 +1,6 @@
 /* ===== MOTOR: tempo, evolução clínica, prescrição, destino, relatório (sem tocar na interface) ===== */
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
-const fmt=t=>{const m=Math.floor(T0+t)%1440;return pad(Math.floor(m/60))+':'+pad(m%60)};
+const fmt=t=>{const m=Math.floor((G&&G.t0!=null?G.t0:T0)+t)%1440;return pad(Math.floor(m/60))+':'+pad(m%60)};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 const clamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,n));
@@ -17,11 +17,11 @@ const cur=()=>G&&G.act?pt(G.act):null;
 const active=()=>G.pts.filter(p=>ACTIVE.includes(p.st));
 function alert_(txt,hot){G.al.unshift({t:G.t,txt,hot:!!hot});G.al.length=Math.min(G.al.length,400);if(window.sfx)sfx(hot?'alarm':'blip')}
 function bedFree(k){const b=G.beds[k];return b.cap-(k==='emg'?b.bg+active().length:b.used)}
-function newShift(n,mode){
+function newShift(n,mode,posto){
   G={n,t:0,end:SHIFT,act:null,ins:100,rep:50,eq:50,al:[],over:false,modal:null,chefia:0,unsafe:0,news:[],sched:[],unread:0,
     pts:[],mode:mode||'local',slots:mode==='local'?CASES.map(c=>c.arr):SLOTS.slice(),filled:0,no:0,stock:{sorobot:6,hemac:8},off:Math.random()<.3?{tc:{until:9999,why:'Tomógrafo em manutenção neste plantão. Só por regulação.'}}:{},
     beds:{emg:{cap:6,bg:2},obs:{cap:10,used:6},ama:{cap:8,used:5},enf:{cap:20,used:14},uti:{cap:5,used:4}},
-    evs:mkEvs()};
+    evs:mkEvs(mode,posto||'misto'),posto:posto||'misto'};
   if(G.mode==='local')CASES.forEach((c,i)=>admit(JSON.parse(JSON.stringify(c)),i));else procStart();
   tickMin();
 }
@@ -32,6 +32,7 @@ function setStage(P,ns){
 }
 function evolve(P){
   if(P.ksPend&&P.ksPend.length)P.ksPend=P.ksPend.filter(x=>{if(G.t>=x.at){if(P.ks[x.ki]==null)P.ks[x.ki]=x.at;return false}return true});
+  if(P.c.visit)return;
   const c=P.c,t=G.t;let lag=0;
   c.key.forEach((k,i)=>{if(P.ks[i]==null&&t-c.arr>k.by)lag++});
   lag+=P.adv.filter(x=>t-x<45).length;
@@ -136,6 +137,7 @@ function canGo(d){
   if(d==='ENF')return bedFree('enf')>0?null:'Enfermaria lotada.';
   if(d==='OBS')return bedFree('obs')>0?null:'Observação lotada.';
   if(d==='AMA')return bedFree('ama')>0?null:'Sala amarela lotada.';
+  if(G.mode==='visit'&&d==='EMG')return'Na visita o paciente já está internado: mantenha no setor, mude de setor (UTI se instável), transfira ou dê alta.';
   return null;
 }
 function commit(P,d){
@@ -163,6 +165,7 @@ function finalize(P,d,fromReg){
   if(P.asked.size>=4)goods.push('Anamnese dirigida.');
   if(P.seen!=null){const w=Math.round(P.seen-c.arr);if(c.tri==='VERMELHO'&&w>12)pen.push([10,'Atendimento tardio de paciente vermelho (espera de '+w+' min).']);else if(c.tri==='LARANJA'&&w>25)pen.push([5,'Atendimento tardio de paciente laranja (espera de '+w+' min).'])}
   if(c.tri==='VERMELHO'||c.tri==='LARANJA'){if(P.mov.mon==null)pen.push([8,'Paciente grave sem monitorização.']);else goods.push('Paciente grave monitorizado.');if(P.mov.ace==null)pen.push([6,'Paciente grave sem acesso venoso.'])}
+  if(c.visit&&window.visitPen)visitPen(P,d,pen,goods);
   if(P.worst<=-2)pen.push([20,'Deterioração clínica importante durante o atendimento.']);else if(P.worst===-1)pen.push([8,'Piora clínica durante o atendimento.']);
   if(d==='TRANS'&&P.stage<0)pen.push([25,'Transferido ainda instável.']);
   let sc=100;const errs=[];pen.forEach(([p,t])=>{sc-=p;errs.push(t)});sc=clamp(sc);
@@ -198,6 +201,8 @@ function endShift(){
     rx:G.pts.reduce((a,p)=>a+p.pen.filter(x=>/Prescrição sem|Dose|Medicação|Frequência|Ordem errada/.test(x[1])).length,0),
     missed:G.pts.reduce((a,p)=>a+(p.res&&p.res.errs.some(e=>/Diagnóstico perdido|Hipótese diagnóstica não/.test(e))?1:0),0),
     missing:G.slots.length-G.filled,right:G.pts.reduce((a,p)=>a+(p.res?p.res.goods.length:0),0)};
-  try{const s=JSON.parse(localStorage.getItem('pr_save')||'{"shifts":[]}');s.shifts.push({n:G.n,score,rep:Math.round(G.rep)});localStorage.setItem('pr_save',JSON.stringify(s));localStorage.removeItem('pr_cur')}catch(e){}
+  if(G.mode!=='visit')try{const s=JSON.parse(localStorage.getItem('pr_save')||'{"shifts":[]}');s.shifts.push({n:G.n,score,rep:Math.round(G.rep)});localStorage.setItem('pr_save',JSON.stringify(s));localStorage.removeItem('pr_cur')}catch(e){}
+  if(G.mode==='visit')try{localStorage.removeItem('pr_cur')}catch(e){}
+  if(window.weekAfter)weekAfter();
   if(window.sfx)sfx('bell');
 }

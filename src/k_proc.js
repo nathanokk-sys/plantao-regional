@@ -66,12 +66,3 @@ function vary(tpl,i,H,taken){
     beard:sx==='M'?pickOf(['none','none','stubble','full','mustache']):'none',glasses:mid&&Math.random()<.4,cloth:pickOf(CLOTH)};
   return c;
 }
-function procStart(){
-  const H=loadH(),last={};H.t.forEach((t,i)=>{last[t]=i});
-  const order=shuffle(CASES.slice()).sort((a,b)=>(last[a.id]==null?-1:last[a.id])-(last[b.id]==null?-1:last[b.id]));
-  const pick=shuffle(order.slice(0,G.slots.length));
-  const g=pick.findIndex(c=>c.tri==='VERMELHO'||c.tri==='LARANJA');if(g>0)[pick[0],pick[g]]=[pick[g],pick[0]];
-  const taken=new Set();
-  pick.forEach((tpl,i)=>{const c=vary(tpl,i,H,taken);H.n.push(c.nome);H.t.push(tpl.id);admit(c,i)});
-  saveH(H);
-}

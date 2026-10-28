@@ -30,6 +30,7 @@ function scheduleFate(P,d){
   const c=P.c,first=c.nome.split(' ')[0],inOK=c.dest.best.includes(d)||c.dest.ok.includes(d);
   const miss=c.key.filter((k,i)=>P.ks[i]==null).map(k=>k.lb.toLowerCase());
   P.missAtDest=miss;P.stageAtDest=P.stage;
+  if(G.mode==='visit')return;
   if(d==='ALTA')return;
   if(d==='UTI'&&!inOK){G.sched.push({at:G.t+rnd(25,45),P,kind:'ret',sec:'UTI',msg:'Avaliei '+first+': sem critério de UTI no momento. Leito de UTI é escasso e tem paciente esperando. Estou devolvendo para a emergência definir outro destino.'});return}
   if((d==='ENF'||d==='OBS'||d==='AMA')&&(!inOK||(c.fatal&&miss.length&&P.stage<0))){G.sched.push({at:G.t+rnd(20,40),P,kind:'ret',sec:d,msg:first+' piorou aqui'+(miss.length?' e chegou sem '+miss.join(', '):'')+'. Não temos monitorização para esse quadro. Estou devolvendo para a sala vermelha.'});return}
@@ -68,13 +69,14 @@ function emgCheck(P){
   P.log.push({t:G.t,k:'d',q:'Devolução · Sala vermelha',a:SECDOC.EMG+': "'+msg+'"',fresh:1});addNews('Sala vermelha · '+c.nome.split(' ')[0],SECDOC.EMG+': "'+msg+'"',true);
 }
 /* ===== MEDIDAS INICIAIS (MOV e cuidados básicos) ===== */
-const MOV=[['pac','Pacote MOV',0],['mon','Monitorizar',0],['ace','Acesso venoso',0],['o2c','O2 cateter nasal',0],['o2v','Máscara de Venturi',0],['o2m','Máscara não reinalante',0],['vni','VNI / CPAP',0],['cab','Cabeceira 45°',0],['jej','Jejum',0],['glic','Glicemia capilar',0],['ecg','ECG',0]];
+const MOV=[['pac','Pacote MOV',0],['mon','Monitorizar',0],['ace','Acesso venoso',0],['o2c','O2 cateter nasal',0],['o2v','Máscara de Venturi',0],['o2m','Máscara não reinalante',0],['vni','VNI / CPAP',0],['cab','Cabeceira 45°',0],['jej','Dieta zero',0],['glic','Glicemia capilar',0],['ecg','ECG',0]];
 /* medidas básicas: a enfermagem executa em paralelo, sem custo de tempo e sem penalidade por excesso */
 function doMov(P,k){
   P.mov=P.mov||{};
   if(k==='pac'){['mon','ace'].forEach(x=>doMov(P,x));['glic','ecg'].forEach(x=>{if(!P.ord[x])order(P,x,true)});return null}
   if(k==='glic'||k==='ecg')return P.ord[k]?null:order(P,k,true);
   if(k==='o2c'||k==='o2v'||k==='o2m'||k==='vni')return rxAdd(P,{drug:'o2',dose:{o2c:0,o2v:1,o2m:2,vni:3}[k],via:0,freq:'ic',dur:'ct'},true);
+  if(k==='jej'&&P.mov.jej!=null){delete P.mov.jej;P.log.push({t:G.t,k:'m',q:'Enfermagem',a:'Dieta liberada.',fresh:1});return null}
   if(P.mov[k]!=null)return null;const it=MOV.find(x=>x[0]===k);P.mov[k]=G.t;
   P.log.push({t:G.t,k:'m',q:'Enfermagem',a:it[1]+': feito.',fresh:1});return null;
 }
@@ -82,7 +84,7 @@ function movHtml(P){
   const m=P.mov||{},o2r=P.rx.find(r=>r.id==='o2'),o2=o2r?o2r.i:-1;
   const on=k=>k==='pac'?(m.mon!=null&&m.ace!=null&&!!P.ord.glic&&!!P.ord.ecg):k==='glic'||k==='ecg'?!!P.ord[k]:k==='o2c'?o2===0:k==='o2v'?o2===1:k==='o2m'?o2===2:k==='vni'?o2===3:m[k]!=null;
   return'<div class="doc px"><h3>Medidas iniciais <span>enfermagem executa, sem custo de tempo</span></h3><div class="grid mov">'+MOV.map(([k,n,t])=>{const d=on(k);
-    return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d?' disabled':'')+'>'+n+'<small>'+(d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG':'imediato')+'</small></button>'}).join('')+'</div></div>';
+    return'<button class="btn paper opt'+(d?' on':'')+'" data-a="mov:'+k+'"'+(d&&k!=='jej'?' disabled':'')+'>'+n+'<small>'+(d&&k==='jej'?'ativa · toque para liberar':d?'feito':k==='pac'?'monitor, acesso, glicemia, ECG':'imediato')+'</small></button>'}).join('')+'</div></div>';
 }
 /* ===== procedimentos e lista de medicamentos por classe ===== */
 function doProc(P,id){

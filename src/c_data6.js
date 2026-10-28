@@ -5,17 +5,17 @@ const REQIND={hda:['eda','pgastro','pcir'],iam:['pcard','eco'],eap:['eco','pcard
 CASES.forEach(c=>{(REQIND[c.id]||[]).forEach(r=>c.allowed.push(r));c.allowed.push('jej')});
 const REQOK={eda:'EDA realizada: ',eco:'Ecocardiograma realizado sem intercorrências.',hd:'Hemodiálise de urgência realizada; potássio normalizado.',pcir:'A cirurgia geral avaliou e acompanha o caso.',pcard:'A cardiologia avaliou e concordou com a conduta.',pneuro:'A neurologia avaliou e ajustou os anticonvulsivantes.',pgastro:'A gastroenterologia avaliou e acompanha o caso.',pinfec:'A infectologia avaliou e ajustou o esquema.',fisio:'A fisioterapia acompanhou a ventilação.',nutri:'A nutrição ajustou a dieta.',social:'O serviço social organizou o acesso aos remédios e o retorno.'};
 function reqNews(P){
-  const c=P.c,b=c.base||c.id,ind=REQIND[b]||[],out=[];
+  const c=P.c,b=c.base||c.id,ind=REQIND[b]||[],out=[],S=P.reqSt=P.reqSt||{};
   P.rx.filter(r=>DRUGS[r.id]&&DRUGS[r.id].v[0]==='Solicitação').forEach(r=>{
     const n=DRUGS[r.id].n;
-    if(!ind.includes(r.id)){out.push(n+': "Sem indicação de avaliação neste caso."');return}
+    if(!ind.includes(r.id)){S[r.id]='noind';out.push(n+': "Sem indicação de avaliação neste caso."');return}
     if(r.id==='eda'){
-      if(P.mov.jej==null)out.push('EDA suspensa: o paciente não estava em dieta zero e tomou café da manhã.');
-      else if(Math.random()<.05)out.push('A requisição da EDA não chegou ao serviço de endoscopia; remarcada para amanhã.');
-      else if(Math.random()<.08)out.push('EDA perdida: o paciente ficou com fome e comeu escondido o lanche do acompanhante.');
-      else out.push(REQOK.eda+(b==='hda'?'varizes de esôfago de grosso calibre com sinal de sangramento recente; feita ligadura elástica.':'sem alterações significativas.'));
+      if(P.mov.jej==null){S.eda='fail';out.push('EDA suspensa: o paciente não estava em dieta zero e tomou café da manhã.')}
+      else if(Math.random()<.05){S.eda='pend';out.push('A requisição da EDA não chegou ao serviço de endoscopia; remarcada para amanhã.')}
+      else if(Math.random()<.08){S.eda='fail';out.push('EDA perdida: o paciente ficou com fome e comeu escondido o lanche do acompanhante.')}
+      else{S.eda='ok';out.push(REQOK.eda+(b==='hda'?'varizes de esôfago de grosso calibre com sinal de sangramento recente; feita ligadura elástica.':'sem alterações significativas.'))}
       return}
-    out.push(Math.random()<.03?n+': o pedido ficou esquecido no posto e só foi visto pelo plantão seguinte.':REQOK[r.id]||n+': realizado.');
+    const lost=Math.random()<.03;S[r.id]=lost?'pend':'ok';out.push(lost?n+': o pedido ficou esquecido no posto e só foi visto pelo plantão seguinte.':REQOK[r.id]||n+': realizado.');
   });
   return out.length?' Pedidos: '+out.join(' '):'';
 }

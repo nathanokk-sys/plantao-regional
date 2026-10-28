@@ -19,7 +19,7 @@ const vAbn=(i,x)=>i===0?(+String(x).split('/')[0]>=180||+String(x).split('/')[0]
 function renderTop(){
   const b=G.beds,u=k=>k==='emg'?b.emg.bg+active().length:b[k].used,ch=(n,k)=>{const x=u(k),c=b[k].cap;return'<span class="chip'+(x>=c?' full':'')+'">'+n+' <b>'+x+'/'+c+'</b></span>'};
   const m=(n,v)=>'<span class="meter">'+n+'<i><b style="width:'+Math.round(clamp(v))+'%"></b></i></span>';
-  $('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL<small>Hospital Regional · Plantão '+G.n+' · Rotina normal</small></div>'
+  $('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL<small>Hospital Regional · '+esc(shiftLbl())+'</small></div>'
    +'<div class="lcd" aria-label="Horário">'+fmt(Math.min(G.t,G.end))+'</div>'
    +'<div class="mini">'+ch('Emerg.','emg')+ch('Verde','obs')+ch('Amarela','ama')+ch('Enf.','enf')+ch('UTI','uti')+'<span class="chip">Insumos <b>'+G.ins+'</b></span><span class="chip">Pacientes <b>'+G.pts.filter(p=>p.st!=='wait').length+'/'+G.slots.length+'</b></span></div>'
    +'<div class="mini">'+m('Equipe',G.eq)+m('Reputação',G.rep)+'</div>'
@@ -105,7 +105,7 @@ function tabHtml(P){
 function renderDecide(P){
   const d=$('#decide');if(!P){d.hidden=true;return}d.hidden=false;
   const info=k=>k==='UTI'?bedFree('uti')+' livres':k==='ENF'?bedFree('enf')+' livres':k==='OBS'?bedFree('obs')+' livres':k==='AMA'?bedFree('ama')+' livres':k==='ALTA'?'liberar o paciente':k==='EMG'?'manter monitorizado':'regulação ~60-100 min';
-  d.innerHTML='<h4>CARIMBO DE DESTINO</h4><div class="dests">'+DESTS.map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0)||(k==='AMA'&&bedFree('ama')<=0);
+  d.innerHTML='<h4>CARIMBO DE DESTINO</h4>'+visitHint(P)+'<div class="dests">'+DESTS.map(([k,n])=>{const dis=(k==='UTI'&&bedFree('uti')<=0)||(k==='ENF'&&bedFree('enf')<=0)||(k==='OBS'&&bedFree('obs')<=0)||(k==='AMA'&&bedFree('ama')<=0);
     return'<button class="dest" data-a="dest:'+k+'" aria-pressed="'+(UI.destSel===k)+'"'+(dis?' disabled':'')+'>'+n+'<small>'+(dis?'lotado':info(k))+'</small></button>'}).join('')+'</div>'
    +(UI.destSel==='ALTA'?'<div class="orient">'+ORIENT.map(([k,n])=>'<label><input type="checkbox" data-s="or" value="'+k+'"'+(P.orient.has(k)?' checked':'')+'> '+n+'</label>').join('')+'</div>':'')
    +(UI.msg2?'<p class="warn" style="color:#f0a79b;margin:0">'+esc(UI.msg2)+'</p>':'')
@@ -114,8 +114,9 @@ function renderDecide(P){
 function renderVeil(){
   const v=$('#veil');
   if(UI.menu){v.hidden=false;v.innerHTML=introHtml();return}
+  if(UI.weekRep&&W){v.hidden=false;v.innerHTML=weekReportHtml();return}
   if(G&&UI.news&&!G.over){v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Mensagens <span>'+fmt(G.t)+'</span></h3><p class="sub">Recados dos setores</p>'+(G.news.length?'<ul class="qa">'+G.news.map(n=>'<li class="'+(n.hot?'new':'')+'"><b>'+fmt(n.t)+' · '+esc(n.title)+'</b><br>'+esc(n.txt)+'</li>').join('')+'</ul>':'<p>Nenhum recado ainda. Pacientes que recebem alta não geram retorno de informação.</p>')+'<p class="sub">Histórico do plantão (mais recentes primeiro)</p><ul class="qa">'+G.al.map(a=>'<li class="'+(a.hot?'new':'')+'">'+esc(a.txt)+'</li>').join('')+'</ul><div class="row"><button class="btn red" data-a="closenews">Voltar ao plantão</button></div></article>';return}
-  if(G&&G.modal&&G.modal.k==='dil'){
+  if(G&&G.modal&&G.modal.k==='dil'&&!G.over){
     v.hidden=false;v.innerHTML='<article class="doc px card"><h3>Ofício da direção <span>'+fmt(G.t)+'</span></h3><div class="big">Produtividade</div>'
      +'<p>A direção pede que você libere um leito da observação até as 21:00 para reduzir a fila. Como você responde?</p><div class="row" style="flex-direction:column;align-items:stretch">'
      +'<button class="btn paper" data-a="dil:1">Dar alta ao paciente do leito 4, estável e com alta já planejada para amanhã.</button>'
@@ -131,21 +132,21 @@ function renderVeil(){
      +'<div class="rep">'+G.pts.map(P=>{const r=P.res;return'<div class="rp"><h4><span>'+esc(P.c.nome)+', '+P.c.idade+'</span><span class="tag t-'+r.cls+'">'+({otimo:'ÓTIMO',bom:'BOM',parcial:'PARCIAL',ruim:'RUIM',obito:'ÓBITO',pend:'PENDENTE'})[r.cls]+' · '+r.score+'</span></h4>'
       +'<div>'+esc(r.txt)+'</div>'+(r.errs.length?'<ul class="warn">'+r.errs.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')+(r.goods.length?'<ul class="good">'+r.goods.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')
       +'<div style="font-size:18px"><b>O que estava indicado:</b> '+esc(idealFor(P.c).join(' · '))+'</div><div style="color:var(--ink2);font-size:18px">'+esc(P.c.ensina)+'</div></div>'}).join('')+'</div>'
-     +'<div class="row"><button class="btn red" data-a="start:'+G.mode+'">Novo plantão</button></div></article>';return;
+     +'<div class="row">'+nextBtns()+'</div></article>';return;
   }
   if(!G){v.hidden=false;v.innerHTML=introHtml();return}
   v.hidden=true;
 }
 function renderClock(){
   const c=$('#clockbar');if(!c)return;c.hidden=false;const left=Math.max(0,G.end-Math.floor(G.t)),P=cur(),sp=100-G.ins+(G.overCota||0);
-  c.innerHTML='<span class="lcd">'+fmt(Math.min(G.t,G.end))+'</span><span>Plantão '+G.n+' · faltam '+Math.floor(left/60)+'h'+pad(left%60)+'</span>'
+  c.innerHTML='<span class="lcd">'+fmt(Math.min(G.t,G.end))+'</span><span>'+esc(shiftLbl())+' · faltam '+Math.floor(left/60)+'h'+pad(left%60)+'</span>'
    +'<span>Leitos livres: verde <b>'+bedFree('obs')+'</b> · amarela <b>'+bedFree('ama')+'</b> · enf <b>'+bedFree('enf')+'</b> · UTI <b>'+bedFree('uti')+'</b></span>'
    +'<span>Insumos <b>'+G.ins+'</b>/100 · gastos <b>'+sp+'</b></span>'
    +(P?'<span style="color:var(--tc-'+P.c.tri+')">Na mesa: '+esc(P.c.nome.split(' ')[0])+'</span>':'');
 }
 function render(){
   if(!G){$('#top').innerHTML='<div class="brand">PLANTÃO REGIONAL</div>';$('#queue').innerHTML='';$('#work').innerHTML='';$('#decide').hidden=true;$('#clockbar').hidden=true;renderVeil();return}
-  renderClock();renderTop();renderQueue();renderWork();renderVeil();saveGame();
+  renderClock();renderTop();renderQueue();renderWork();renderVeil();saveGame();if(window.saveWeek)saveWeek();
 }
 /* ===== eventos ===== */
 document.addEventListener('click',e=>{
@@ -165,6 +166,7 @@ document.addEventListener('click',e=>{
   if(k==='resetno'){UI.confirmReset=false;render();return}
   if(k==='resetok'){resetAll();render();return}
   if(k==='start'){UI.news=false;UI.menu=false;UI.confirmReset=false;newShift(nextN(),v||'local');UI.tab='anam';UI.destSel=null;UI.msg='';UI.msg2='';render();return}
+  if(k==='wk'){wkAction(v);render();return}
   if(!G||G.over)return;
   const P=cur();
   if(k==='dil'){resolveDil(+v);render();return}
